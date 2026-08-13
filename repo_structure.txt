@@ -1,0 +1,21 @@
+q-flow/
+├── .env.example
+├── .gitignore
+├── README.md
+├── package.json
+├── tsconfig.json
+├── db/
+│   └── schema.sql                  # Copy-paste setup for Supabase/Neon
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   └── token/
+│   │   │       └── issue/
+│   │   │           └── route.ts    # Atomic Token Generation API
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── lib/
+│   │   ├── db.ts                   # Database Client
+│   │   └── redis.ts                # Upstash Redis Client
+│   └── types/
+│       └── index.ts                # Shared TypeScript definitions
