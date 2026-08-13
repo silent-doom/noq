@@ -10,6 +10,7 @@ export default function LandingPage() {
   const [bizName, setBizName] = useState('');
   const [category, setCategory] = useState('clinic');
   const [phone, setPhone] = useState('');
+  const [adminPasscode, setAdminPasscode] = useState('123456');
   const [basePace, setBasePace] = useState(15);
   const [capacity, setCapacity] = useState(100);
   const [loading, setLoading] = useState(false);
@@ -30,6 +31,7 @@ export default function LandingPage() {
           name: bizName,
           category,
           phone,
+          adminPasscode,
           baseServiceTimeMins: basePace,
           maxDailyCapacity: capacity,
         }),
@@ -332,6 +334,21 @@ export default function LandingPage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
+                  Admin Terminal Security PIN *
+                </label>
+                <input
+                  type="password"
+                  required
+                  maxLength={10}
+                  placeholder="Set your 6-digit PIN (Default: 123456)"
+                  value={adminPasscode}
+                  onChange={(e) => setAdminPasscode(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-emerald-500 text-white"
                 />
               </div>
 

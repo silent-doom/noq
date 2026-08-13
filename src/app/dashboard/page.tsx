@@ -39,6 +39,11 @@ function DashboardContent() {
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
 
+  // Admin PIN Protection State
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [pinInput, setPinInput] = useState<string>('');
+  const [pinError, setPinError] = useState<string | null>(null);
+
   // Modal States
   const [isWalkInOpen, setIsWalkInOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
@@ -48,6 +53,40 @@ function DashboardContent() {
   const [broadcastMsg, setBroadcastMsg] = useState<string>('');
 
   const terms = getDomainTerminology(streamInfo?.category);
+
+  // Check saved session PIN authentication
+  useEffect(() => {
+    if (!streamId) return;
+    const sessionAuth = sessionStorage.getItem(`noq_auth_${streamId}`);
+    if (sessionAuth === 'true') {
+      setIsAuthenticated(true);
+    }
+  }, [streamId]);
+
+  const handleVerifyPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!streamId || !pinInput.trim()) return;
+
+    try {
+      const res = await fetch('/api/admin/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ streamId, passcode: pinInput }),
+      });
+      const json = await res.json();
+
+      if (res.ok && json.success) {
+        setIsAuthenticated(true);
+        sessionStorage.setItem(`noq_auth_${streamId}`, 'true');
+        setPinError(null);
+        setPinInput('');
+      } else {
+        setPinError(json.error || 'Incorrect Admin PIN');
+      }
+    } catch (err) {
+      setPinError('Connection error. Please try again.');
+    }
+  };
 
   // 1. Dynamic Stream Resolution
   useEffect(() => {
@@ -365,6 +404,25 @@ function DashboardContent() {
               />
             </div>
 
+            {/* Lock / Unlock Status Indicator */}
+            <button
+              onClick={() => {
+                if (isAuthenticated) {
+                  if (confirm('Lock Admin Terminal session?')) {
+                    setIsAuthenticated(false);
+                    if (streamId) sessionStorage.removeItem(`noq_auth_${streamId}`);
+                  }
+                }
+              }}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition ${
+                isAuthenticated
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                  : 'bg-amber-50 text-amber-700 border border-amber-200'
+              }`}
+            >
+              <span>{isAuthenticated ? '🔒 Admin Unlocked' : '🔑 Lock Active'}</span>
+            </button>
+
             {/* Settings Gear Icon Modal Toggle */}
             <button
               onClick={() => setIsSettingsOpen(true)}
@@ -378,6 +436,48 @@ function DashboardContent() {
             </button>
           </div>
         </header>
+
+        {/* ADMIN AUTHENTICATION LOCK OVERLAY */}
+        {!isAuthenticated && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-8 max-w-sm w-full text-center text-white shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+              <div className="w-14 h-14 bg-emerald-950 border border-emerald-800 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto text-2xl font-bold">
+                🔒
+              </div>
+              <div>
+                <h2 className="text-xl font-bold tracking-tight">Admin Terminal Locked</h2>
+                <p className="text-xs text-zinc-400 mt-1">
+                  Enter Admin Security PIN to access controls for {streamInfo?.business_name || 'Venue'}.
+                </p>
+              </div>
+
+              <form onSubmit={handleVerifyPin} className="space-y-4">
+                <input
+                  type="password"
+                  required
+                  maxLength={10}
+                  placeholder="Enter Admin PIN (Default: 123456)"
+                  value={pinInput}
+                  onChange={(e) => setPinInput(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3.5 text-center text-sm font-mono tracking-widest text-white focus:outline-none focus:border-emerald-500"
+                />
+
+                {pinError && (
+                  <p className="text-xs text-red-400 font-semibold bg-red-950/60 border border-red-800/60 py-2 rounded-xl">
+                    {pinError}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold py-3.5 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer shadow-lg shadow-emerald-500/20"
+                >
+                  UNLOCK TERMINAL
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Live Broadcast Announcement Banner if Active */}
         {streamInfo?.broadcast_message && (

@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
   const client = await db.connect();
   try {
     const body = await req.json();
-    const { name, category, phone, baseServiceTimeMins, maxDailyCapacity } = body;
+    const { name, category, phone, baseServiceTimeMins, maxDailyCapacity, adminPasscode } = body;
 
     if (!name?.trim()) {
       return NextResponse.json(
@@ -13,6 +13,8 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    const passcodeVal = adminPasscode?.trim() || '123456';
 
     const rawCat = (category || '').toLowerCase().trim();
     let businessCategory = 'RETAIL';
@@ -38,10 +40,10 @@ export async function POST(req: NextRequest) {
 
     // 1. Insert Business
     const bRes = await client.query(
-      `INSERT INTO businesses (name, category, phone, base_service_time_mins, max_daily_capacity, qr_code_slug)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO businesses (name, category, phone, base_service_time_mins, max_daily_capacity, qr_code_slug, admin_passcode)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
-      [name.trim(), businessCategory, phoneVal, paceMins, capacity, qrSlug]
+      [name.trim(), businessCategory, phoneVal, paceMins, capacity, qrSlug, passcodeVal]
     );
 
     const newBusiness = bRes.rows[0];
