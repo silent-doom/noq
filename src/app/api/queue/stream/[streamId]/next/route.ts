@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { notifyNowServing, notifyUpcomingTurn } from '@/lib/notifications';
+import { publishQueueUpdate } from '@/lib/ably';
 
 export async function POST(
   req: NextRequest,
@@ -52,6 +53,7 @@ export async function POST(
       );
 
       await client.query('COMMIT');
+      await publishQueueUpdate(streamId, 'TOKEN_CALLED', { serving_token: null });
       return NextResponse.json({ success: true, message: 'Queue is now empty', serving_token: null });
     }
 
@@ -83,6 +85,9 @@ export async function POST(
     );
 
     await client.query('COMMIT');
+
+    // Fire real-time Ably update
+    await publishQueueUpdate(streamId, 'TOKEN_CALLED', { serving_token: updatedTokenRes.rows[0] });
 
     // 7. Fire async SMS notifications (non-blocking, after commit)
     if (nextToken.customer_phone) {

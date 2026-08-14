@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Ably from 'ably';
 import { AccessChannelBadge } from '@/components/AccessChannelBadge';
 import { getDomainTerminology, formatWaitTime } from '@/lib/domain';
 
@@ -146,14 +147,44 @@ function DashboardContent() {
     }
   }, [streamId]);
 
-  // 3. Auto-polling every 3 seconds
+  // 3. Real-time updates via Ably Pub/Sub & 10s fallback polling
   useEffect(() => {
     if (!streamId) return;
 
     fetchQueueData();
-    const interval = setInterval(fetchQueueData, 3000);
+    const interval = setInterval(fetchQueueData, 10000);
 
     return () => clearInterval(interval);
+  }, [streamId, fetchQueueData]);
+
+  useEffect(() => {
+    if (!streamId) return;
+
+    const key = process.env.NEXT_PUBLIC_ABLY_SUBSCRIBE_KEY || process.env.ABLY_API_KEY;
+    if (!key) return;
+
+    let ably: any = null;
+    try {
+      ably = new Ably.Realtime({ key });
+      const channel = ably.channels.get(`queue:${streamId}`);
+
+      const onRealtimeEvent = () => {
+        fetchQueueData();
+      };
+
+      channel.subscribe(onRealtimeEvent);
+
+      return () => {
+        try {
+          channel.unsubscribe(onRealtimeEvent);
+          ably.close();
+        } catch (e) {
+          // ignore cleanup error
+        }
+      };
+    } catch (err) {
+      console.error('Ably client connection error in Dashboard:', err);
+    }
   }, [streamId, fetchQueueData]);
 
   // 4. Update Token Status Action

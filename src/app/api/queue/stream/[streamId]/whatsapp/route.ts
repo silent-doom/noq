@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { publishQueueUpdate } from '@/lib/ably';
 
 export async function POST(
   req: NextRequest,
@@ -61,6 +62,8 @@ export async function POST(
     const newToken = insertRes.rows[0];
 
     await client.query('COMMIT');
+
+    await publishQueueUpdate(streamId, 'TOKEN_ADDED', { token: newToken });
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const passUrl = `${appUrl}/t/${newToken.id}`;

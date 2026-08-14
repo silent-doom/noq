@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { publishQueueUpdate } from '@/lib/ably';
 
 export async function GET(
   req: NextRequest,
@@ -108,7 +109,10 @@ export async function PATCH(
       );
     }
 
-    return NextResponse.json({ success: true, stream: updateRes.rows[0] });
+    const updatedStream = updateRes.rows[0];
+    await publishQueueUpdate(streamId, 'STREAM_UPDATED', { stream: updatedStream });
+
+    return NextResponse.json({ success: true, stream: updatedStream });
   } catch (error: any) {
     console.error('Error updating queue stream pace:', error);
     return NextResponse.json(

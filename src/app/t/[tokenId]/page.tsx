@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import Ably from 'ably';
 import { getDomainTerminology, formatWaitTime } from '@/lib/domain';
 
 interface TokenData {
@@ -39,6 +40,68 @@ export default function TokenPassPage() {
   const [comment, setComment] = useState<string>('');
   const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(false);
   const [feedbackSubmitting, setFeedbackSubmitting] = useState<boolean>(false);
+  const [audioEnabled, setAudioEnabled] = useState<boolean>(false);
+
+  // Synthesize Web Audio Chime (Ding-Dong double tone)
+  const playServingChime = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+
+      // High Bell Tone (G5 - 783.99 Hz)
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(783.99, ctx.currentTime);
+      gain1.gain.setValueAtTime(0.5, ctx.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(ctx.currentTime);
+      osc1.stop(ctx.currentTime + 0.5);
+
+      // Chime Tone (C6 - 1046.50 Hz)
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.25);
+      gain2.gain.setValueAtTime(0.6, ctx.currentTime + 0.25);
+      gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(ctx.currentTime + 0.25);
+      osc2.stop(ctx.currentTime + 1.2);
+    } catch (err) {
+      console.error('Audio chime error:', err);
+    }
+  };
+
+  const triggerServingAlert = (tokenNumber: number, businessName: string) => {
+    playServingChime();
+
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate([300, 150, 300, 150, 500]);
+    }
+
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        new Notification(`🔔 YOUR TURN NOW! Token #${tokenNumber}`, {
+          body: `Please proceed to counter at ${businessName} immediately!`,
+        });
+      }
+    }
+  };
+
+  const requestAlertPermissions = async () => {
+    playServingChime();
+    setAudioEnabled(true);
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+        await Notification.requestPermission();
+      }
+    }
+  };
 
   const fetchTokenStatus = async (showLoadingState = false) => {
     if (showLoadingState) setLoading(true);
@@ -52,8 +115,17 @@ export default function TokenPassPage() {
       }
 
       setTokenData((prev) => {
-        if (prev && prev.status === 'SKIPPED' && json.data.status === 'WAITING') {
-          setShowReinsertedBanner(true);
+        if (prev) {
+          if (prev.status === 'SKIPPED' && json.data.status === 'WAITING') {
+            setShowReinsertedBanner(true);
+          }
+
+          const wasServing = prev.current_serving_token === prev.token_number || prev.status === 'SERVING';
+          const isNowServing = json.data.current_serving_token === json.data.token_number || json.data.status === 'SERVING';
+
+          if (!wasServing && isNowServing) {
+            triggerServingAlert(json.data.token_number, json.data.business_name || 'the venue');
+          }
         }
         return json.data;
       });
@@ -71,12 +143,44 @@ export default function TokenPassPage() {
 
     fetchTokenStatus(true);
 
+    // Fallback polling interval (10s)
     const interval = setInterval(() => {
       fetchTokenStatus(false);
-    }, 3000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [tokenId]);
+
+  // Ably Real-Time Subscription
+  useEffect(() => {
+    if (!tokenData?.stream_id) return;
+
+    const key = process.env.NEXT_PUBLIC_ABLY_SUBSCRIBE_KEY || process.env.ABLY_API_KEY;
+    if (!key) return;
+
+    let ably: any = null;
+    try {
+      ably = new Ably.Realtime({ key });
+      const channel = ably.channels.get(`queue:${tokenData.stream_id}`);
+
+      const onRealtimeEvent = () => {
+        fetchTokenStatus(false);
+      };
+
+      channel.subscribe(onRealtimeEvent);
+
+      return () => {
+        try {
+          channel.unsubscribe(onRealtimeEvent);
+          ably.close();
+        } catch (e) {
+          // ignore cleanup error
+        }
+      };
+    } catch (err) {
+      console.error('Ably client connection error:', err);
+    }
+  }, [tokenData?.stream_id]);
 
   const handleLeaveQueue = async () => {
     if (!confirm('Are you sure you want to leave the queue?')) return;
@@ -188,9 +292,17 @@ export default function TokenPassPage() {
         <div className="bg-[#0b0b0b] px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-white font-extrabold tracking-tight text-xl">noQ</span>
-            <span className="bg-[#222222] text-[#888888] text-[10px] font-semibold tracking-wider px-2.5 py-0.5 rounded-full uppercase">
-              PASS
-            </span>
+            <button
+              onClick={requestAlertPermissions}
+              className={`text-[10px] font-bold tracking-wider px-2.5 py-1 rounded-full uppercase transition ${
+                audioEnabled
+                  ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                  : 'bg-amber-950 text-amber-300 border border-amber-800 animate-pulse cursor-pointer'
+              }`}
+              title="Click to test & enable audio chime and phone alerts"
+            >
+              {audioEnabled ? '🔔 ALERTS ON' : '🔊 ENABLE SOUND'}
+            </button>
           </div>
 
           <div className="bg-[#042115] border border-[#0d472a] text-[#22c55e] text-[11px] font-semibold px-3 py-1 rounded-full flex items-center gap-1.5">

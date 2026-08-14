@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { publishQueueUpdate } from '@/lib/ably';
 
 export async function POST(req: NextRequest) {
   const client = await db.connect();
@@ -122,6 +123,8 @@ export async function POST(req: NextRequest) {
     // If a WAITING token was moved to waitlist, the stream state stays as-is.
 
     await client.query('COMMIT');
+
+    await publishQueueUpdate(streamId, 'TOKEN_CALLED', { serving_token: nextServingToken });
 
     return NextResponse.json({
       success: true,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { publishQueueUpdate } from '@/lib/ably';
 
 export async function POST(
   req: NextRequest,
@@ -54,9 +55,12 @@ export async function POST(
       [streamId, nextTokenNum, customer_name.trim(), phoneVal]
     );
 
+    const newToken = insertRes.rows[0];
     await client.query('COMMIT');
 
-    return NextResponse.json({ success: true, token: insertRes.rows[0] });
+    await publishQueueUpdate(streamId, 'TOKEN_ADDED', { token: newToken });
+
+    return NextResponse.json({ success: true, token: newToken });
   } catch (error: any) {
     await client.query('ROLLBACK');
     console.error('Error creating walk-in token:', error);

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Ably from 'ably';
 import { getDomainTerminology } from '@/lib/domain';
 
 interface Token {
@@ -49,12 +50,42 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
     }
   }, [streamId]);
 
-  // Real-time polling every 3 seconds
+  // Real-time updates via Ably Pub/Sub & 10s fallback polling
   useEffect(() => {
     fetchDisplayData();
-    const interval = setInterval(fetchDisplayData, 3000);
+    const interval = setInterval(fetchDisplayData, 10000);
     return () => clearInterval(interval);
   }, [fetchDisplayData]);
+
+  useEffect(() => {
+    if (!streamId) return;
+
+    const key = process.env.NEXT_PUBLIC_ABLY_SUBSCRIBE_KEY || process.env.ABLY_API_KEY;
+    if (!key) return;
+
+    let ably: any = null;
+    try {
+      ably = new Ably.Realtime({ key });
+      const channel = ably.channels.get(`queue:${streamId}`);
+
+      const onRealtimeEvent = () => {
+        fetchDisplayData();
+      };
+
+      channel.subscribe(onRealtimeEvent);
+
+      return () => {
+        try {
+          channel.unsubscribe(onRealtimeEvent);
+          ably.close();
+        } catch (e) {
+          // ignore cleanup error
+        }
+      };
+    } catch (err) {
+      console.error('Ably connection error on TV Display:', err);
+    }
+  }, [streamId, fetchDisplayData]);
 
   const terms = getDomainTerminology(streamInfo?.category);
 
