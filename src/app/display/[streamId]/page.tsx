@@ -57,6 +57,23 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
     return () => clearInterval(interval);
   }, [fetchDisplayData]);
 
+  const [ttsEnabled, setTtsEnabled] = useState<boolean>(true);
+  const [servingCounter, setServingCounter] = useState<string>('Counter 1');
+
+  const speakAnnouncement = (tokenNum: number, counter: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const text = `Attention please. Token number ${tokenNum}, please proceed to ${counter}.`;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.9;
+      utterance.pitch = 1.0;
+      window.speechSynthesis.speak(utterance);
+    } catch (err) {
+      console.error('Speech synthesis error:', err);
+    }
+  };
+
   useEffect(() => {
     if (!streamId) return;
 
@@ -68,8 +85,14 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
       ably = new Ably.Realtime({ key });
       const channel = ably.channels.get(`queue:${streamId}`);
 
-      const onRealtimeEvent = () => {
+      const onRealtimeEvent = (msg: any) => {
         fetchDisplayData();
+        if (msg?.name === 'TOKEN_CALLED' && msg?.data?.serving_token && ttsEnabled) {
+          const st = msg.data.serving_token;
+          const counter = st.counter_name || 'Counter 1';
+          setServingCounter(counter);
+          speakAnnouncement(st.token_number, counter);
+        }
       };
 
       channel.subscribe(onRealtimeEvent);
@@ -85,7 +108,7 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
     } catch (err) {
       console.error('Ably connection error on TV Display:', err);
     }
-  }, [streamId, fetchDisplayData]);
+  }, [streamId, fetchDisplayData, ttsEnabled]);
 
   const terms = getDomainTerminology(streamInfo?.category);
 
@@ -110,13 +133,31 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
           </div>
         </div>
 
-        <div className="text-right">
-          <h1 className="text-2xl font-bold text-white tracking-tight">
-            {streamInfo?.business_name || 'Business Venue'}
-          </h1>
-          <p className="text-xs text-zinc-400 font-medium mt-0.5">
-            {streamInfo?.stream_name || terms.queueTitle}
-          </p>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => {
+              setTtsEnabled(!ttsEnabled);
+              if (!ttsEnabled && currentServingToken) {
+                speakAnnouncement(currentServingToken.token_number, servingCounter);
+              }
+            }}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              ttsEnabled
+                ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40'
+                : 'bg-zinc-900 text-zinc-500 border border-zinc-800'
+            }`}
+          >
+            <span>{ttsEnabled ? '🔊 VOICE ANNOUNCEMENT ON' : '🔇 VOICE MUTED'}</span>
+          </button>
+
+          <div className="text-right">
+            <h1 className="text-2xl font-bold text-white tracking-tight">
+              {streamInfo?.business_name || 'Business Venue'}
+            </h1>
+            <p className="text-xs text-zinc-400 font-medium mt-0.5">
+              {streamInfo?.stream_name || terms.queueTitle}
+            </p>
+          </div>
         </div>
       </header>
 
@@ -134,7 +175,7 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
         {/* LEFT COLUMN: NOW SERVING HERO BOX */}
         <div className="col-span-7 bg-[#0d0e12] border-2 border-emerald-500/60 rounded-[2.5rem] p-12 flex flex-col items-center justify-center text-center relative shadow-[0_0_60px_rgba(16,185,129,0.08)]">
           
-          <span className="text-sm font-bold text-emerald-400 tracking-widest uppercase mb-6">
+          <span className="text-sm font-bold text-emerald-400 tracking-widest uppercase mb-4">
             {currentServingToken && currentServingToken.token_number > 0
               ? 'NOW SERVING / CURRENT TURN'
               : 'COUNTER AT REST'}
@@ -147,11 +188,17 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
               : '--'}
           </div>
 
-          <div className="text-2xl font-medium text-zinc-400 tracking-wide mt-4">
+          <div className="text-2xl font-medium text-zinc-300 tracking-wide mt-2">
             {currentServingToken && currentServingToken.token_number > 0
               ? currentServingToken.customer_name
               : terms.atRestStatus}
           </div>
+
+          {currentServingToken && (
+            <div className="mt-6 px-6 py-2 bg-emerald-500 text-black font-extrabold text-lg rounded-full tracking-wider uppercase shadow-lg shadow-emerald-500/20 animate-pulse">
+              ➔ PROCEED TO {servingCounter.toUpperCase()}
+            </div>
+          )}
         </div>
 
         {/* RIGHT COLUMN: UP NEXT & WAITLIST */}

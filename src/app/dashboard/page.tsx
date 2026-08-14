@@ -227,13 +227,19 @@ function DashboardContent() {
     }
   };
 
+  const [activeCounter, setActiveCounter] = useState<string>('Counter 1');
+
   // 5. CALL NEXT Action
   const handleNextToken = async () => {
     if (!streamId || actionLoading) return;
     setActionLoading(true);
 
     try {
-      const res = await fetch(`/api/queue/stream/${streamId}/next`, { method: 'POST' });
+      const res = await fetch(`/api/queue/stream/${streamId}/next`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ counter_name: activeCounter }),
+      });
 
       if (!res.ok) {
         const activeServing = tokens.find((t) => t.status === 'SERVING');
@@ -384,6 +390,18 @@ function DashboardContent() {
               <span>Analytics</span>
             </Link>
 
+            <Link
+              href={streamId ? `/dashboard/poster?streamId=${streamId}` : '/dashboard/poster'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full text-zinc-400 hover:text-white hover:bg-zinc-900 font-medium text-sm px-4 py-3 rounded-2xl flex items-center gap-3 transition"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+              <span>Print QR Poster ↗</span>
+            </Link>
+
             {/* DYNAMIC TV DISPLAY LINK */}
             <Link
               href={streamId ? `/display/${streamId}` : '/display'}
@@ -422,6 +440,24 @@ function DashboardContent() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Multi-Counter Active Station Selector */}
+            <div className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 rounded-full px-3 py-1 text-xs text-white">
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">STATION:</span>
+              <select
+                value={activeCounter}
+                onChange={(e) => setActiveCounter(e.target.value)}
+                className="bg-transparent font-bold text-emerald-400 focus:outline-none cursor-pointer"
+              >
+                <option value="Counter 1" className="bg-zinc-900 text-white">Counter 1</option>
+                <option value="Counter 2" className="bg-zinc-900 text-white">Counter 2</option>
+                <option value="Counter 3" className="bg-zinc-900 text-white">Counter 3</option>
+                <option value="Desk A" className="bg-zinc-900 text-white">Desk A</option>
+                <option value="Desk B" className="bg-zinc-900 text-white">Desk B</option>
+                <option value="Doctor Room 1" className="bg-zinc-900 text-white">Doctor Room 1</option>
+                <option value="Doctor Room 2" className="bg-zinc-900 text-white">Doctor Room 2</option>
+              </select>
+            </div>
+
             <div className="relative">
               <svg className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

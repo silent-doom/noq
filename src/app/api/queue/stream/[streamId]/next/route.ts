@@ -13,6 +13,14 @@ export async function POST(
     const resolvedParams = await Promise.resolve(params);
     const { streamId } = resolvedParams;
 
+    let counterName = 'Counter 1';
+    try {
+      const body = await req.json();
+      if (body?.counter_name?.trim()) {
+        counterName = body.counter_name.trim();
+      }
+    } catch (e) {}
+
     await client.query('BEGIN');
 
     // 1. Lock the stream row to serialise concurrent "Call Next" taps
@@ -69,6 +77,11 @@ export async function POST(
       [nextToken.id]
     );
 
+    const servingTokenPayload = {
+      ...updatedTokenRes.rows[0],
+      counter_name: counterName,
+    };
+
     // 5. Update queue stream state
     await client.query(
       `UPDATE queue_streams 
@@ -88,14 +101,14 @@ export async function POST(
     await client.query('COMMIT');
 
     // Fire real-time Ably update
-    await publishQueueUpdate(streamId, 'TOKEN_CALLED', { serving_token: updatedTokenRes.rows[0] });
+    await publishQueueUpdate(streamId, 'TOKEN_CALLED', { serving_token: servingTokenPayload });
 
     // Fire Lock-Screen Native Web Push Notification
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     sendTokenPushNotification({
       tokenId: nextToken.id,
       title: `🔔 YOUR TURN NOW! Token #${nextToken.token_number}`,
-      body: `Hi ${nextToken.customer_name}! Your token is NOW SERVING. Please proceed to the counter immediately.`,
+      body: `Hi ${nextToken.customer_name}! Your token is NOW SERVING at ${counterName}. Please proceed immediately.`,
       url: `${appUrl}/t/${nextToken.id}`,
     });
 

@@ -110,6 +110,33 @@ function AnalyticsContent() {
   const feedbacks = data?.recentFeedbacks || [];
   const maxHourlyCount = Math.max(...hourlyData.map((h) => h.count), 1);
 
+  const exportToCSV = () => {
+    if (!data?.recentActivity || data.recentActivity.length === 0) {
+      alert('No data available to export.');
+      return;
+    }
+
+    const headers = ['Token Number', 'Customer Name', 'Phone', 'Channel', 'Status', 'Created At'];
+    const rows = data.recentActivity.map((t) => [
+      `"#${t.token_number}"`,
+      `"${(t.customer_name || '').replace(/"/g, '""')}"`,
+      `"${t.customer_phone || ''}"`,
+      `"${t.access_channel || ''}"`,
+      `"${t.status || ''}"`,
+      `"${t.created_at || ''}"`,
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `noq_queue_report_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="flex h-screen bg-[#f4f5f7] font-sans text-zinc-900 overflow-hidden relative">
       {/* Dark Sidebar Navigation */}
@@ -209,6 +236,13 @@ function AnalyticsContent() {
                 30-Day
               </button>
             </div>
+
+            <button
+              onClick={exportToCSV}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-2xl shadow-sm transition flex items-center gap-2 cursor-pointer"
+            >
+              <span>📥 Export CSV</span>
+            </button>
 
             <button
               onClick={() => window.print()}

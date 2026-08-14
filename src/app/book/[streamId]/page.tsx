@@ -21,6 +21,8 @@ export default function RemoteBookingPage({ params }: { params: { streamId: stri
   const [waitingCount, setWaitingCount] = useState<number>(0);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [bookingMode, setBookingMode] = useState<'LIVE' | 'SLOT'>('LIVE');
+  const [selectedSlot, setSelectedSlot] = useState<string>('10:00 AM');
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   
@@ -143,6 +145,56 @@ export default function RemoteBookingPage({ params }: { params: { streamId: stri
           </div>
         ) : (
           <form onSubmit={handleRemoteBook} className="p-6 space-y-4">
+            {/* Booking Mode Selector */}
+            <div className="grid grid-cols-2 gap-2 p-1 bg-zinc-100 rounded-2xl border border-zinc-200">
+              <button
+                type="button"
+                onClick={() => setBookingMode('LIVE')}
+                className={`py-2.5 rounded-xl text-xs font-bold transition ${
+                  bookingMode === 'LIVE'
+                    ? 'bg-white text-zinc-900 shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-900'
+                }`}
+              >
+                ⚡ Join Live Queue
+              </button>
+              <button
+                type="button"
+                onClick={() => setBookingMode('SLOT')}
+                className={`py-2.5 rounded-xl text-xs font-bold transition ${
+                  bookingMode === 'SLOT'
+                    ? 'bg-white text-zinc-900 shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-900'
+                }`}
+              >
+                📅 Advance Slot
+              </button>
+            </div>
+
+            {bookingMode === 'SLOT' && (
+              <div>
+                <label className="block text-xs font-extrabold uppercase tracking-wider text-zinc-500 mb-1.5">
+                  Select Preferred Time Slot *
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM'].map((slot) => (
+                    <button
+                      key={slot}
+                      type="button"
+                      onClick={() => setSelectedSlot(slot)}
+                      className={`py-2 rounded-xl text-xs font-bold border transition ${
+                        selectedSlot === slot
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-800'
+                          : 'bg-zinc-50 border-zinc-200 text-zinc-600 hover:bg-zinc-100'
+                      }`}
+                    >
+                      {slot}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="block text-xs font-extrabold uppercase tracking-wider text-zinc-500 mb-1.5">
                 Your Full Name *
