@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { notifyNowServing, notifyUpcomingTurn } from '@/lib/notifications';
 import { publishQueueUpdate } from '@/lib/ably';
+import { sendTokenPushNotification } from '@/lib/push';
 
 export async function POST(
   req: NextRequest,
@@ -88,6 +89,15 @@ export async function POST(
 
     // Fire real-time Ably update
     await publishQueueUpdate(streamId, 'TOKEN_CALLED', { serving_token: updatedTokenRes.rows[0] });
+
+    // Fire Lock-Screen Native Web Push Notification
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    sendTokenPushNotification({
+      tokenId: nextToken.id,
+      title: `🔔 YOUR TURN NOW! Token #${nextToken.token_number}`,
+      body: `Hi ${nextToken.customer_name}! Your token is NOW SERVING. Please proceed to the counter immediately.`,
+      url: `${appUrl}/t/${nextToken.id}`,
+    });
 
     // 7. Fire async SMS notifications (non-blocking, after commit)
     if (nextToken.customer_phone) {

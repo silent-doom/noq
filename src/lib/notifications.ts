@@ -1,17 +1,47 @@
 // Environment credentials (optional in dev)
+const httpSmsKey = process.env.HTTPSMS_API_KEY;
+const httpSmsFrom = process.env.HTTPSMS_FROM_NUMBER;
+
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const fromPhone = process.env.TWILIO_PHONE_NUMBER;
 
 /**
- * Send SMS Alert
+ * Send SMS Alert (Supports httpSMS Android Gateway, Twilio, or Dev Mock)
  */
 export async function sendSMS({ to, message }: { to: string; message: string }) {
   if (!to) return;
 
   const formattedTo = to.startsWith('+') ? to : `+91${to.replace(/\D/g, '')}`;
 
-  if (accountSid && authToken && fromPhone) {
+  // 1. httpSMS Android SIM Gateway Priority
+  if (httpSmsKey && httpSmsFrom) {
+    try {
+      const res = await fetch('https://api.httpsms.com/v1/messages/send', {
+        method: 'POST',
+        headers: {
+          'x-api-key': httpSmsKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: httpSmsFrom,
+          to: formattedTo,
+          content: message,
+        }),
+      });
+
+      const json = await res.json();
+      if (res.ok && (json.status === 'success' || json.data)) {
+        console.log(`[HTTPSMS SENT via ${httpSmsFrom}] to ${formattedTo}`);
+      } else {
+        console.error(`[HTTPSMS FAILED] to ${formattedTo}:`, json);
+      }
+    } catch (err) {
+      console.error(`[HTTPSMS ERROR] to ${formattedTo}:`, err);
+    }
+  }
+  // 2. Twilio Gateway Priority
+  else if (accountSid && authToken && fromPhone) {
     try {
       const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
       const body = new URLSearchParams({
@@ -38,7 +68,9 @@ export async function sendSMS({ to, message }: { to: string; message: string }) 
     } catch (err) {
       console.error(`[SMS FAILED] to ${formattedTo}:`, err);
     }
-  } else {
+  }
+  // 3. Dev Mock Priority
+  else {
     console.log(`\n📲 [DEV MOCK SMS to ${formattedTo}]: "${message}"\n`);
   }
 }
