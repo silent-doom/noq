@@ -13,7 +13,7 @@ export async function POST(
     const resolvedParams = await Promise.resolve(params);
     const { tokenId } = resolvedParams;
     const body = await req.json();
-    const { action } = body; // 'APPROVE' or 'REJECT'
+    const { action, reason } = body; // 'APPROVE' or 'REJECT'
 
     if (!action || (action !== 'APPROVE' && action !== 'REJECT')) {
       return NextResponse.json(
@@ -43,8 +43,22 @@ export async function POST(
         [tokenId]
       );
       await client.query('COMMIT');
-      await publishQueueUpdate(origToken.stream_id, 'RESCHEDULE_REJECTED', { tokenId });
-      return NextResponse.json({ success: true, message: 'Reschedule request rejected.' });
+      await publishQueueUpdate(origToken.stream_id, 'RESCHEDULE_REJECTED', { tokenId, reason });
+
+      const rejectMsg = `Hi ${origToken.customer_name}, your reschedule request for ${origToken.reschedule_requested_date || ''} (${origToken.reschedule_requested_slot || ''}) could not be accommodated.${reason ? ` Note: ${reason}` : ''} Please open your digital pass to pick another time slot. - noQ`;
+      if (origToken.customer_phone) {
+        await sendSMS({ to: origToken.customer_phone, message: rejectMsg });
+      }
+
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      sendTokenPushNotification({
+        tokenId: origToken.id,
+        title: `⚠️ Reschedule Request Updated`,
+        body: reason || `Requested slot unavailable. Please select another time slot.`,
+        url: `${appUrl}/t/${origToken.id}`,
+      });
+
+      return NextResponse.json({ success: true, message: 'Reschedule request updated and customer notified.' });
     }
 
     // 2. Action === 'APPROVE': Generate New Token for requested date & slot

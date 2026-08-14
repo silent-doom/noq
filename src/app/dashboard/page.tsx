@@ -365,6 +365,26 @@ function DashboardContent() {
     }
   };
 
+  const handleApproveReschedule = async (tokenId: string, action: 'APPROVE' | 'REJECT', reason?: string) => {
+    try {
+      const res = await fetch(`/api/token/${tokenId}/reschedule/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, reason }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        alert(action === 'APPROVE' ? `Approved! Issued new Token #${json.newToken?.token_number}` : 'Reschedule request updated and customer notified.');
+        fetchQueueData();
+      } else {
+        alert(json.error || 'Action failed');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Network error');
+    }
+  };
+
   return (
     <div className="flex h-screen bg-[#f4f5f7] font-sans text-zinc-900 overflow-hidden relative">
       {/* Dark Left Sidebar */}
@@ -592,6 +612,63 @@ function DashboardContent() {
             >
               Clear Broadcast
             </button>
+          </div>
+        )}
+
+        {/* Pending Reschedule Requests Alert Banner */}
+        {safeTokens.filter((t) => t?.reschedule_status === 'PENDING').length > 0 && (
+          <div className="mx-8 mt-6 bg-amber-50 border-2 border-amber-300 rounded-3xl p-5 shadow-lg">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xl">📥</span>
+              <h3 className="text-sm font-black text-amber-950 uppercase tracking-wide">
+                Pending Future Reschedule Requests ({safeTokens.filter((t) => t?.reschedule_status === 'PENDING').length})
+              </h3>
+            </div>
+            <div className="space-y-2.5">
+              {safeTokens
+                .filter((t) => t?.reschedule_status === 'PENDING')
+                .map((req) => (
+                  <div key={req.id} className="bg-white border border-amber-200 p-4 rounded-2xl flex items-center justify-between shadow-xs gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-sm text-zinc-900">
+                          {req.customer_name || 'Guest'}
+                        </span>
+                        <span className="text-xs font-mono font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md">
+                          Token #{req.token_number}
+                        </span>
+                        {req.customer_phone && (
+                          <span className="text-xs font-mono text-zinc-500">
+                            ({req.customer_phone})
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-zinc-700 font-semibold mt-1">
+                        📅 Requested Slot: <strong className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">{req.reschedule_requested_date} at {req.reschedule_requested_slot}</strong>
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => handleApproveReschedule(req.id, 'APPROVE')}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition cursor-pointer shadow-sm flex items-center gap-1"
+                      >
+                        ✓ APPROVE & ISSUE TOKEN
+                      </button>
+                      <button
+                        onClick={() => {
+                          const note = prompt('Optional note to user (e.g. "Slot unavailable. Please pick a slot between 2 PM - 5 PM"):');
+                          if (note !== null) {
+                            handleApproveReschedule(req.id, 'REJECT', note);
+                          }
+                        }}
+                        className="bg-zinc-200 hover:bg-zinc-300 text-zinc-800 text-xs font-bold px-3 py-2.5 rounded-xl transition cursor-pointer"
+                      >
+                        💬 RECONSIDER / REJECT
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
           </div>
         )}
 
