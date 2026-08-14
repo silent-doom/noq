@@ -463,60 +463,16 @@ export default function TokenPassPage() {
 
         {/* Assigned Token Section */}
         <div className="p-6 text-center">
-          <p className="text-[11px] font-bold text-[#a1a1aa] tracking-wider uppercase">
+          <p className="text-[11px] font-bold text-[#a1a1aa] tracking-widest uppercase">
             YOUR ASSIGNED TOKEN
           </p>
 
-          <div className="text-7xl font-black text-[#111111] tracking-tighter my-6">
+          <div className="text-7xl font-black text-[#111111] tracking-tighter my-4">
             #{tokenData.token_number}
           </div>
 
-          {/* Quick Action Share Buttons */}
-          <div className="flex gap-2 px-4 pb-2">
-            <button
-              type="button"
-              onClick={handleCopyLink}
-              className="flex-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
-            >
-              <span>{copiedLink ? '✓ Copied!' : '📋 Copy Link'}</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleShareWhatsApp}
-              className="flex-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
-            >
-              <span>💬 WhatsApp</span>
-            </button>
-          </div>
-
-          {/* Add to Home Screen PWA Banner */}
-          <div className="px-4 pb-4">
-            {!showPwaPrompt ? (
-              <button
-                type="button"
-                onClick={() => setShowPwaPrompt(true)}
-                className="w-full text-[11px] font-bold text-zinc-400 hover:text-zinc-700 text-center py-1 cursor-pointer flex items-center justify-center gap-1"
-              >
-                <span>📲 Add Pass to Phone Home Screen ▾</span>
-              </button>
-            ) : (
-              <div className="bg-zinc-50 border border-zinc-200 p-3 rounded-2xl text-xs text-zinc-700 space-y-1.5 animate-fade-in text-left">
-                <div className="flex items-center justify-between font-bold text-zinc-900">
-                  <span>📲 Add Pass to Home Screen</span>
-                  <button onClick={() => setShowPwaPrompt(false)} className="text-zinc-400 font-black">✕</button>
-                </div>
-                <p className="text-[11px] text-zinc-600 leading-relaxed">
-                  <strong>iPhone (Safari):</strong> Tap Share <span className="font-bold">⎋</span> ➔ Tap <strong>"Add to Home Screen"</strong>.
-                </p>
-                <p className="text-[11px] text-zinc-600 leading-relaxed">
-                  <strong>Android (Chrome):</strong> Tap 3 dots <span className="font-bold">⋮</span> ➔ Tap <strong>"Add to Home Screen"</strong>.
-                </p>
-              </div>
-            )}
-          </div>
-
           {/* Status Indicators */}
-          <div className="mt-2">
+          <div>
             {isCompleted ? (
               <div className="space-y-4">
                 <div className="bg-[#f4f4f5] text-[#52525b] font-bold text-xs rounded-2xl py-3.5 px-4 uppercase tracking-wider text-center">
@@ -622,51 +578,141 @@ export default function TokenPassPage() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Perforated Boarding Pass Stub Tear Line */}
+        <div className="relative flex items-center justify-center my-1 px-4">
+          <div className="w-full border-t-2 border-dashed border-zinc-200" />
+          <div className="absolute -left-3 w-6 h-6 bg-[#f3f4f6] rounded-full border-r border-zinc-200" />
+          <div className="absolute -right-3 w-6 h-6 bg-[#f3f4f6] rounded-full border-l border-zinc-200" />
+        </div>
+
+        {/* Boarding Pass Ticket Stub / Utilities Section */}
+        <div className="p-5 bg-zinc-50/60 space-y-3">
+          
+          {/* Quick Action Share & App Buttons (Clean Compact Row) */}
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              className="bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 font-bold py-2 px-2.5 rounded-xl text-[11px] flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
+            >
+              <span>{copiedLink ? '✓ Copied' : '📋 Copy'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleShareWhatsApp}
+              className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold py-2 px-2.5 rounded-xl text-[11px] flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
+            >
+              <span>💬 Share</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowPwaPrompt(!showPwaPrompt)}
+              className="bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 font-bold py-2 px-2.5 rounded-xl text-[11px] flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
+            >
+              <span>📱 App</span>
+            </button>
+          </div>
+
+          {/* Add to Home Screen PWA Instructions Box (Expandable) */}
+          {showPwaPrompt && (
+            <div className="bg-white border border-zinc-200 p-3 rounded-2xl text-xs text-zinc-700 space-y-1.5 animate-fade-in text-left shadow-xs">
+              <div className="flex items-center justify-between font-bold text-zinc-900">
+                <span>📲 Add Pass to Home Screen</span>
+                <button onClick={() => setShowPwaPrompt(false)} className="text-zinc-400 font-black">✕</button>
+              </div>
+              <p className="text-[11px] text-zinc-600 leading-relaxed">
+                <strong>iPhone (Safari):</strong> Tap Share <span className="font-bold">⎋</span> ➔ Tap <strong>"Add to Home Screen"</strong>.
+              </p>
+              <p className="text-[11px] text-zinc-600 leading-relaxed">
+                <strong>Android (Chrome):</strong> Tap 3 dots <span className="font-bold">⋮</span> ➔ Tap <strong>"Add to Home Screen"</strong>.
+              </p>
+            </div>
+          )}
+
+          {/* SMS Opt-In Banner */}
+          {!isCompleted && !isCancelled && (
+            <div>
+              {tokenData.sms_opt_in && isValidPhoneNumber(tokenData.customer_phone) ? (
+                <div className="bg-emerald-50/90 border border-emerald-200 p-2.5 rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs">🔔</span>
+                    <span className="text-[11px] font-bold text-emerald-900 font-mono">
+                      SMS Active: {tokenData.customer_phone}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSmsPhoneInput(tokenData.customer_phone || '');
+                      setIsSmsModalOpen(true);
+                    }}
+                    className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 underline cursor-pointer"
+                  >
+                    Edit
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSmsPhoneInput(tokenData.customer_phone || '');
+                    setIsSmsModalOpen(true);
+                  }}
+                  className="w-full bg-white hover:bg-zinc-50 border border-emerald-300 text-emerald-900 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs"
+                >
+                  <span>🔔 Inform Me via SMS When Turn Approaches</span>
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Future Reschedule Request Section */}
           {!isCompleted && !isCancelled && (
-            <div className="mt-4 pt-4 border-t border-zinc-100">
+            <div>
               {tokenData.reschedule_status === 'PENDING' ? (
-                <div className="bg-amber-50 border border-amber-200 p-3 rounded-2xl text-center">
+                <div className="bg-amber-50 border border-amber-200 p-2.5 rounded-xl text-center">
                   <span className="text-[10px] font-bold text-amber-800 uppercase tracking-widest block">Reschedule Status</span>
-                  <p className="text-xs font-bold text-amber-900 mt-0.5">
-                    ⏳ Pending Admin Approval for {tokenData.reschedule_requested_date} ({tokenData.reschedule_requested_slot})
+                  <p className="text-[11px] font-bold text-amber-900 mt-0.5">
+                    ⏳ Pending Approval: {tokenData.reschedule_requested_date} ({tokenData.reschedule_requested_slot})
                   </p>
                 </div>
               ) : tokenData.reschedule_status === 'APPROVED' ? (
-                <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl text-center">
+                <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl text-center">
                   <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-widest block">Reschedule Status</span>
-                  <p className="text-xs font-bold text-emerald-900 mt-0.5">
-                    ✅ Appointment Approved for Future Date! Check SMS for your new pass.
+                  <p className="text-[11px] font-bold text-emerald-900 mt-0.5">
+                    ✅ Appointment Approved for Future Date! Check SMS for new pass.
                   </p>
                 </div>
               ) : tokenData.reschedule_status === 'REJECTED' ? (
-                <div className="bg-amber-50 border border-amber-300 p-4 rounded-2xl text-left space-y-2">
-                  <div className="flex items-center gap-1.5 text-amber-950 font-extrabold text-xs uppercase tracking-wide">
+                <div className="bg-amber-50 border border-amber-300 p-3 rounded-xl text-left space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-amber-950 font-extrabold text-[11px] uppercase tracking-wide">
                     <span>⚠️ Slot Unavailable — Please Reconsider</span>
                   </div>
-                  <p className="text-xs font-semibold text-amber-900 leading-relaxed">
-                    Your requested slot (<strong>{tokenData.reschedule_requested_date} at {tokenData.reschedule_requested_slot}</strong>) could not be approved by the operator. Please pick a different date or time slot below.
+                  <p className="text-[11px] font-medium text-amber-900 leading-relaxed">
+                    Requested slot ({tokenData.reschedule_requested_date} at {tokenData.reschedule_requested_slot}) was not approved. Please pick another slot.
                   </p>
                   <button
                     type="button"
                     onClick={() => setIsRescheduleOpen(true)}
-                    className="w-full mt-1 bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 rounded-xl text-xs uppercase tracking-wider transition cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
+                    className="w-full mt-1 bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 rounded-lg text-xs transition cursor-pointer"
                   >
-                    <span>📅 Pick Another Date or Time Slot</span>
+                    📅 Pick Another Date/Slot
                   </button>
                 </div>
               ) : (
                 <button
                   type="button"
                   onClick={() => setIsRescheduleOpen(true)}
-                  className="w-full bg-zinc-900 hover:bg-black text-white font-bold py-3 rounded-2xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                  className="w-full bg-zinc-900 hover:bg-black text-white font-bold py-2.5 rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
                 >
-                  <span>📅 Request Future Appointment Reschedule</span>
+                  <span>📅 Request Future Reschedule</span>
                 </button>
               )}
             </div>
           )}
+        </div>
 
           {/* Reschedule Modal */}
           {isRescheduleOpen && (
@@ -728,120 +774,12 @@ export default function TokenPassPage() {
             </div>
           )}
 
-          {/* SMS Opt-In Notification Card */}
-          {!isCompleted && !isCancelled && (
-            <div className="mt-3 pt-3 border-t border-zinc-100">
-              {tokenData.sms_opt_in && isValidPhoneNumber(tokenData.customer_phone) ? (
-                <div className="bg-emerald-50/80 border border-emerald-200/80 p-3 rounded-2xl flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">🔔</span>
-                    <div>
-                      <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">SMS Alerts Active</span>
-                      <span className="text-xs font-bold text-emerald-950 font-mono">
-                        {tokenData.customer_phone}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSmsPhoneInput(tokenData.customer_phone || '');
-                      setIsSmsModalOpen(true);
-                    }}
-                    className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 underline cursor-pointer"
-                  >
-                    Edit Number
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSmsPhoneInput(tokenData.customer_phone || '');
-                    setIsSmsModalOpen(true);
-                  }}
-                  className="w-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 font-bold py-3 rounded-2xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
-                >
-                  <span>🔔 Inform Me via SMS When Turn Approaches</span>
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* SMS Opt-In Modal */}
-          {isSmsModalOpen && (
-            <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-              <div className="bg-white rounded-3xl p-6 w-full max-w-md space-y-4 shadow-2xl text-zinc-900">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">📱</span>
-                    <h3 className="text-base font-bold tracking-tight">Enable SMS Turn Alerts</h3>
-                  </div>
-                  <button onClick={() => setIsSmsModalOpen(false)} className="text-zinc-400 hover:text-zinc-600 font-black text-lg">✕</button>
-                </div>
-
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Enter your mobile phone number below. We will send you an SMS text message when your token is called or approaching.
-                </p>
-
-                <form onSubmit={handleSmsOptInSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1">
-                      10-Digit Mobile Phone Number *
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="e.g. +91 98765 43210 or 9876543210"
-                      value={smsPhoneInput}
-                      onChange={(e) => {
-                        setSmsPhoneInput(e.target.value);
-                        setSmsPhoneError(null);
-                      }}
-                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-3 text-sm font-semibold text-zinc-900 focus:outline-none focus:border-emerald-500"
-                    />
-                    {smsPhoneError && (
-                      <p className="text-xs text-red-600 font-semibold mt-1 bg-red-50 p-2 rounded-lg border border-red-100">
-                        ⚠️ {smsPhoneError}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsSmsModalOpen(false)}
-                      className="flex-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={smsOptInSubmitting}
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition shadow-sm"
-                    >
-                      {smsOptInSubmitting ? 'Enabling...' : 'Enable SMS Alerts'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
           {/* Overrun Delay Alert */}
           {tokenData.delay_status === 'DELAYED' && !isServing && !isCompleted && !isCancelled && (
             <div className="mt-3 p-3 bg-amber-50 border border-amber-200/60 rounded-2xl text-amber-900 text-xs text-left font-medium">
               ⚠️ Session is running slightly over time (+{tokenData.delay_mins}m).
             </div>
           )}
-        </div>
-
-        {/* Ticket Tear Line & Notches */}
-        <div className="relative bg-white pt-5 pb-6 flex items-center justify-center">
-          <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[#f3f4f6] rounded-full"></div>
-          <div className="w-full border-t-2 border-dashed border-[#e4e4e7] mx-5"></div>
-          <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[#f3f4f6] rounded-full"></div>
-        </div>
 
         {/* Bottom Footer Bar */}
         <div className="bg-[#0b0b0b] px-6 py-4 flex items-center justify-between text-xs font-medium text-[#888888]">
