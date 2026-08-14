@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { getDomainTerminology } from '@/lib/domain';
 
 interface Token {
   id: string;
@@ -60,6 +61,8 @@ function WaitlistContent() {
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
+  const [streamCategory, setStreamCategory] = useState<string>('');
+
   // Fetch queue data
   const fetchQueueData = useCallback(async () => {
     if (!streamId) return;
@@ -68,7 +71,10 @@ function WaitlistContent() {
       const data = await res.json();
       if (data.success) {
         setTokens(Array.isArray(data.tokens) ? data.tokens : []);
-        setBusinessName(data.stream?.business_name || 'Clinic Queue');
+        setBusinessName(data.stream?.business_name || 'Business Venue');
+        if (data.stream?.category) {
+          setStreamCategory(data.stream.category);
+        }
       }
     } catch (err) {
       console.error('Failed to load waitlist data:', err);
@@ -128,7 +134,7 @@ function WaitlistContent() {
   };
 
   const skippedTokens = tokens.filter((t) => t.status === 'SKIPPED');
-  const waitingCount = tokens.filter((t) => t.status === 'WAITING').length;
+  const terms = getDomainTerminology(streamCategory);
 
   return (
     <div className="flex h-screen bg-[#f8f9fa] font-sans text-zinc-900 overflow-hidden">
@@ -145,23 +151,26 @@ function WaitlistContent() {
           <nav className="space-y-1.5">
             <Link
               href={streamId ? `/dashboard?streamId=${streamId}` : '/dashboard'}
-              className="w-full text-zinc-400 hover:text-white hover:bg-zinc-900 font-medium text-sm px-4 py-3 rounded-2xl flex items-center justify-between transition"
+              className="w-full text-zinc-400 hover:text-white hover:bg-zinc-900 font-medium text-sm px-4 py-3 rounded-2xl flex items-center gap-3 transition"
             >
-              <span>Main Queue</span>
-              {waitingCount > 0 && (
-                <span className="bg-zinc-800 text-zinc-300 text-[11px] font-bold px-2 py-0.5 rounded-full">
-                  {waitingCount}
-                </span>
-              )}
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+              <span>Dashboard</span>
             </Link>
 
             <Link
               href={streamId ? `/dashboard/waitlist?streamId=${streamId}` : '/dashboard/waitlist'}
-              className="w-full bg-emerald-500 text-white font-semibold text-sm px-4 py-3 rounded-2xl flex items-center justify-between transition shadow-lg shadow-emerald-500/20"
+              className="w-full bg-amber-500 text-black font-semibold text-sm px-4 py-3 rounded-2xl flex items-center justify-between transition shadow-lg shadow-amber-500/20"
             >
-              <span>Skipped Waitlist</span>
+              <div className="flex items-center gap-3">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <span>Waitlist</span>
+              </div>
               {skippedTokens.length > 0 && (
-                <span className="bg-white/20 text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
+                <span className="bg-black/20 text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
                   {skippedTokens.length}
                 </span>
               )}
@@ -171,22 +180,29 @@ function WaitlistContent() {
               href={streamId ? `/dashboard/analytics?streamId=${streamId}` : '/dashboard/analytics'}
               className="w-full text-zinc-400 hover:text-white hover:bg-zinc-900 font-medium text-sm px-4 py-3 rounded-2xl flex items-center gap-3 transition"
             >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
               <span>Analytics</span>
             </Link>
 
             <Link
               href={streamId ? `/display/${streamId}` : '/display'}
               target="_blank"
-              className="w-full text-zinc-400 hover:text-white hover:bg-zinc-900 font-medium text-sm px-4 py-3 rounded-2xl flex items-center gap-2 transition"
+              rel="noopener noreferrer"
+              className="w-full text-zinc-400 hover:text-white hover:bg-zinc-900 font-medium text-sm px-4 py-3 rounded-2xl flex items-center gap-3 transition"
             >
-              <span>Live TV View ↗</span>
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              <span>TV Display ↗</span>
             </Link>
           </nav>
         </div>
 
         {businessName && (
-          <div className="bg-zinc-900 p-3.5 rounded-2xl border border-zinc-800/80">
-            <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Active Location</p>
+          <div className="bg-zinc-900 p-3.5 rounded-2xl border border-zinc-800">
+            <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Business Venue</p>
             <p className="text-xs font-semibold text-zinc-200 mt-0.5 truncate">{businessName}</p>
           </div>
         )}
@@ -198,9 +214,9 @@ function WaitlistContent() {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-2xl font-bold text-zinc-900">Skipped Guests Waitlist</h1>
+              <h1 className="text-2xl font-bold text-zinc-900">Skipped {terms.guestTermPlural} Waitlist</h1>
               <p className="text-xs text-zinc-500 mt-1">
-                Patients who were away when called. Re-inserting places them <strong>2 spots behind the currently serving token</strong> to preserve queue integrity.
+                {terms.guestTermPlural} who were away when called. Re-inserting places them <strong>2 spots behind the currently serving token</strong> to preserve queue integrity.
               </p>
             </div>
             <div className="flex items-center gap-3">

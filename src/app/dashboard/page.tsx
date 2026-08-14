@@ -448,13 +448,32 @@ function DashboardContent() {
                 onChange={(e) => setActiveCounter(e.target.value)}
                 className="bg-transparent font-bold text-emerald-400 focus:outline-none cursor-pointer"
               >
-                <option value="Counter 1" className="bg-zinc-900 text-white">Counter 1</option>
-                <option value="Counter 2" className="bg-zinc-900 text-white">Counter 2</option>
-                <option value="Counter 3" className="bg-zinc-900 text-white">Counter 3</option>
-                <option value="Desk A" className="bg-zinc-900 text-white">Desk A</option>
-                <option value="Desk B" className="bg-zinc-900 text-white">Desk B</option>
-                <option value="Doctor Room 1" className="bg-zinc-900 text-white">Doctor Room 1</option>
-                <option value="Doctor Room 2" className="bg-zinc-900 text-white">Doctor Room 2</option>
+                {terms.category === 'MEDICAL_OPD' ? (
+                  <>
+                    <option value="Doctor Room 1" className="bg-zinc-900 text-white">Doctor Room 1</option>
+                    <option value="Doctor Room 2" className="bg-zinc-900 text-white">Doctor Room 2</option>
+                    <option value="Consultation Room A" className="bg-zinc-900 text-white">Consultation Room A</option>
+                  </>
+                ) : terms.category === 'SALON' ? (
+                  <>
+                    <option value="Stylist Chair 1" className="bg-zinc-900 text-white">Stylist Chair 1</option>
+                    <option value="Stylist Chair 2" className="bg-zinc-900 text-white">Stylist Chair 2</option>
+                    <option value="Station A" className="bg-zinc-900 text-white">Station A</option>
+                  </>
+                ) : terms.category === 'RESTAURANT' ? (
+                  <>
+                    <option value="Host Station" className="bg-zinc-900 text-white">Host Station</option>
+                    <option value="Main Counter" className="bg-zinc-900 text-white">Main Counter</option>
+                    <option value="Express Pickup" className="bg-zinc-900 text-white">Express Pickup</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="Counter 1" className="bg-zinc-900 text-white">Counter 1</option>
+                    <option value="Counter 2" className="bg-zinc-900 text-white">Counter 2</option>
+                    <option value="Desk A" className="bg-zinc-900 text-white">Desk A</option>
+                    <option value="Desk B" className="bg-zinc-900 text-white">Desk B</option>
+                  </>
+                )}
               </select>
             </div>
 
