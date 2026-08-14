@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { generateDomainStations } from '@/lib/domain';
 
 export async function POST(req: NextRequest) {
   const client = await db.connect();
   try {
     const body = await req.json();
-    const { name, category, phone, baseServiceTimeMins, maxDailyCapacity, adminPasscode } = body;
+    const { name, category, phone, baseServiceTimeMins, maxDailyCapacity, adminPasscode, stations, stationCounts } = body;
 
     if (!name?.trim()) {
       return NextResponse.json(
@@ -31,12 +32,17 @@ export async function POST(req: NextRequest) {
       defaultStreamName = 'Service Stations Queue';
     }
 
+    const computedStations = Array.isArray(stations) && stations.length > 0
+      ? stations
+      : generateDomainStations(businessCategory, stationCounts);
+
     const paceMins = Number(baseServiceTimeMins) > 0 ? Number(baseServiceTimeMins) : 15;
     const capacity = Number(maxDailyCapacity) > 0 ? Number(maxDailyCapacity) : 100;
     const phoneVal = phone?.trim() || 'N/A';
     const qrSlug = name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Math.floor(1000 + Math.random() * 9000);
 
     await client.query('BEGIN');
+    await client.query(`ALTER TABLE queue_streams ADD COLUMN IF NOT EXISTS stations JSONB;`);
 
     // 1. Insert Business
     const bRes = await client.query(
@@ -48,12 +54,12 @@ export async function POST(req: NextRequest) {
 
     const newBusiness = bRes.rows[0];
 
-    // 3. Create initial Queue Stream
+    // 3. Create initial Queue Stream with stations
     const sRes = await client.query(
-      `INSERT INTO queue_streams (business_id, stream_name, is_active, status, pace_per_patient_mins, current_effective_time_mins)
-       VALUES ($1, $2, true, 'ACTIVE', $3, $4)
+      `INSERT INTO queue_streams (business_id, stream_name, is_active, status, pace_per_patient_mins, current_effective_time_mins, stations)
+       VALUES ($1, $2, true, 'ACTIVE', $3, $4, $5)
        RETURNING *`,
-      [newBusiness.id, defaultStreamName, paceMins, paceMins]
+      [newBusiness.id, defaultStreamName, paceMins, paceMins, JSON.stringify(computedStations)]
     );
 
     const newStream = sRes.rows[0];

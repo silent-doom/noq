@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Ably from 'ably';
 import { AccessChannelBadge } from '@/components/AccessChannelBadge';
-import { getDomainTerminology, formatWaitTime } from '@/lib/domain';
+import { getDomainTerminology, formatWaitTime, generateDomainStations } from '@/lib/domain';
 
 interface Token {
   id: string;
@@ -18,15 +18,15 @@ interface Token {
 }
 
 interface StreamInfo {
-  stream_id: string;
+  id: string;
   business_name: string;
-  stream_name: string;
-  status: string;
   category?: string;
+  stream_name: string;
   broadcast_message?: string;
-  pace_per_patient_mins?: number;
-  current_effective_time_mins?: number;
   current_serving_token: number;
+  current_effective_time_mins: number;
+  pace_per_patient_mins?: number;
+  stations?: string[];
 }
 
 function DashboardContent() {
@@ -440,7 +440,7 @@ function DashboardContent() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Multi-Counter Active Station Selector */}
+            {/* Multi-Counter / Station Selector */}
             <div className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 rounded-full px-3 py-1 text-xs text-white">
               <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">STATION:</span>
               <select
@@ -448,32 +448,14 @@ function DashboardContent() {
                 onChange={(e) => setActiveCounter(e.target.value)}
                 className="bg-transparent font-bold text-emerald-400 focus:outline-none cursor-pointer"
               >
-                {terms.category === 'MEDICAL_OPD' ? (
-                  <>
-                    <option value="Doctor Room 1" className="bg-zinc-900 text-white">Doctor Room 1</option>
-                    <option value="Doctor Room 2" className="bg-zinc-900 text-white">Doctor Room 2</option>
-                    <option value="Consultation Room A" className="bg-zinc-900 text-white">Consultation Room A</option>
-                  </>
-                ) : terms.category === 'SALON' ? (
-                  <>
-                    <option value="Stylist Chair 1" className="bg-zinc-900 text-white">Stylist Chair 1</option>
-                    <option value="Stylist Chair 2" className="bg-zinc-900 text-white">Stylist Chair 2</option>
-                    <option value="Station A" className="bg-zinc-900 text-white">Station A</option>
-                  </>
-                ) : terms.category === 'RESTAURANT' ? (
-                  <>
-                    <option value="Host Station" className="bg-zinc-900 text-white">Host Station</option>
-                    <option value="Main Counter" className="bg-zinc-900 text-white">Main Counter</option>
-                    <option value="Express Pickup" className="bg-zinc-900 text-white">Express Pickup</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="Counter 1" className="bg-zinc-900 text-white">Counter 1</option>
-                    <option value="Counter 2" className="bg-zinc-900 text-white">Counter 2</option>
-                    <option value="Desk A" className="bg-zinc-900 text-white">Desk A</option>
-                    <option value="Desk B" className="bg-zinc-900 text-white">Desk B</option>
-                  </>
-                )}
+                {(Array.isArray(streamInfo?.stations) && streamInfo.stations.length > 0
+                  ? streamInfo.stations
+                  : generateDomainStations(streamInfo?.category)
+                ).map((st) => (
+                  <option key={st} value={st} className="bg-zinc-900 text-white">
+                    {st}
+                  </option>
+                ))}
               </select>
             </div>
 

@@ -18,6 +18,9 @@ export default function LandingPage() {
   // Active Domain Preview Tab
   const [activeTab, setActiveTab] = useState<'clinic' | 'restaurant' | 'salon' | 'general'>('clinic');
 
+  const [countA, setCountA] = useState<number>(2);
+  const [countB, setCountB] = useState<number>(1);
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bizName.trim() || loading) return;
@@ -34,6 +37,15 @@ export default function LandingPage() {
           adminPasscode,
           baseServiceTimeMins: basePace,
           maxDailyCapacity: capacity,
+          stationCounts: {
+            consultationRooms: countA,
+            stylingChairs: countA,
+            hostTables: countA,
+            counters: countA,
+            examBeds: countB,
+            washBasins: countB,
+            expressCounters: countB,
+          },
         }),
       });
 
@@ -322,6 +334,81 @@ export default function LandingPage() {
                   <option value="salon">Salon / Spa (Clients & Stylists)</option>
                   <option value="general">General Retail / Bank (Customers & Counters)</option>
                 </select>
+              </div>
+
+              {/* Domain Physical Layout Steppers */}
+              <div className="bg-zinc-900/90 border border-zinc-800 p-4 rounded-2xl space-y-3">
+                <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
+                  Physical Layout & Station Setup
+                </p>
+
+                {category === 'clinic' ? (
+                  <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-zinc-300">
+                    <div>
+                      <span className="block text-[11px] text-zinc-400 mb-1">Doctor Rooms</span>
+                      <div className="flex items-center gap-2 bg-zinc-950 p-1.5 rounded-xl border border-zinc-800">
+                        <button type="button" onClick={() => setCountA(Math.max(1, countA - 1))} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">-</button>
+                        <span className="flex-1 text-center font-mono font-bold text-white">{countA}</span>
+                        <button type="button" onClick={() => setCountA(countA + 1)} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">+</button>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[11px] text-zinc-400 mb-1">Exam Beds / Rooms</span>
+                      <div className="flex items-center gap-2 bg-zinc-950 p-1.5 rounded-xl border border-zinc-800">
+                        <button type="button" onClick={() => setCountB(Math.max(0, countB - 1))} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">-</button>
+                        <span className="flex-1 text-center font-mono font-bold text-white">{countB}</span>
+                        <button type="button" onClick={() => setCountB(countB + 1)} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">+</button>
+                      </div>
+                    </div>
+                  </div>
+                ) : category === 'salon' ? (
+                  <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-zinc-300">
+                    <div>
+                      <span className="block text-[11px] text-zinc-400 mb-1">Stylist Chairs</span>
+                      <div className="flex items-center gap-2 bg-zinc-950 p-1.5 rounded-xl border border-zinc-800">
+                        <button type="button" onClick={() => setCountA(Math.max(1, countA - 1))} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">-</button>
+                        <span className="flex-1 text-center font-mono font-bold text-white">{countA}</span>
+                        <button type="button" onClick={() => setCountA(countA + 1)} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">+</button>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[11px] text-zinc-400 mb-1">Wash Stations</span>
+                      <div className="flex items-center gap-2 bg-zinc-950 p-1.5 rounded-xl border border-zinc-800">
+                        <button type="button" onClick={() => setCountB(Math.max(0, countB - 1))} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">-</button>
+                        <span className="flex-1 text-center font-mono font-bold text-white">{countB}</span>
+                        <button type="button" onClick={() => setCountB(countB + 1)} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">+</button>
+                      </div>
+                    </div>
+                  </div>
+                ) : category === 'restaurant' ? (
+                  <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-zinc-300">
+                    <div>
+                      <span className="block text-[11px] text-zinc-400 mb-1">Host Stations</span>
+                      <div className="flex items-center gap-2 bg-zinc-950 p-1.5 rounded-xl border border-zinc-800">
+                        <button type="button" onClick={() => setCountA(Math.max(1, countA - 1))} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">-</button>
+                        <span className="flex-1 text-center font-mono font-bold text-white">{countA}</span>
+                        <button type="button" onClick={() => setCountA(countA + 1)} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">+</button>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[11px] text-zinc-400 mb-1">Express Counters</span>
+                      <div className="flex items-center gap-2 bg-zinc-950 p-1.5 rounded-xl border border-zinc-800">
+                        <button type="button" onClick={() => setCountB(Math.max(0, countB - 1))} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">-</button>
+                        <span className="flex-1 text-center font-mono font-bold text-white">{countB}</span>
+                        <button type="button" onClick={() => setCountB(countB + 1)} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">+</button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <span className="block text-[11px] text-zinc-400 mb-1">Service Counters</span>
+                    <div className="flex items-center gap-2 bg-zinc-950 p-1.5 rounded-xl border border-zinc-800">
+                      <button type="button" onClick={() => setCountA(Math.max(1, countA - 1))} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">-</button>
+                      <span className="flex-1 text-center font-mono font-bold text-white">{countA}</span>
+                      <button type="button" onClick={() => setCountA(countA + 1)} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">+</button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
