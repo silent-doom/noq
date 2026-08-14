@@ -22,14 +22,6 @@ export async function POST(
 
     await client.query('BEGIN');
 
-    // Ensure reschedule columns exist
-    await client.query(`
-      ALTER TABLE tokens 
-      ADD COLUMN IF NOT EXISTS reschedule_requested_date VARCHAR(30),
-      ADD COLUMN IF NOT EXISTS reschedule_requested_slot VARCHAR(30),
-      ADD COLUMN IF NOT EXISTS reschedule_status VARCHAR(20);
-    `);
-
     // Lock and update token
     const tokenRes = await client.query(
       `UPDATE tokens 

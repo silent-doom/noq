@@ -640,6 +640,22 @@ export default function TokenPassPage() {
                     ✅ Appointment Approved for Future Date! Check SMS for your new pass.
                   </p>
                 </div>
+              ) : tokenData.reschedule_status === 'REJECTED' ? (
+                <div className="bg-amber-50 border border-amber-300 p-4 rounded-2xl text-left space-y-2">
+                  <div className="flex items-center gap-1.5 text-amber-950 font-extrabold text-xs uppercase tracking-wide">
+                    <span>⚠️ Slot Unavailable — Please Reconsider</span>
+                  </div>
+                  <p className="text-xs font-semibold text-amber-900 leading-relaxed">
+                    Your requested slot (<strong>{tokenData.reschedule_requested_date} at {tokenData.reschedule_requested_slot}</strong>) could not be approved by the operator. Please pick a different date or time slot below.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setIsRescheduleOpen(true)}
+                    className="w-full mt-1 bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 rounded-xl text-xs uppercase tracking-wider transition cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
+                  >
+                    <span>📅 Pick Another Date or Time Slot</span>
+                  </button>
+                </div>
               ) : (
                 <button
                   type="button"
