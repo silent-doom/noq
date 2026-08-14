@@ -15,8 +15,8 @@ function PosterContent() {
   useEffect(() => {
     if (!streamId) return;
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
-    const targetUrl = `${appUrl}/book/${streamId}`;
+    const appUrl = (typeof window !== 'undefined' && window.location.origin) ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
+    const targetUrl = `${appUrl}/scan/${streamId}`;
     setQrUrl(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(targetUrl)}`);
 
     fetch(`/api/queue/stream/${streamId}`)
