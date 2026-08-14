@@ -124,6 +124,12 @@ export async function GET(
         delay_status: delayStatus,
         delay_mins: delayMins,
         waitlist_position: waitlistPosition,
+        reschedule_requested_date: token.reschedule_requested_date || null,
+        reschedule_requested_slot: token.reschedule_requested_slot || null,
+        reschedule_status: token.reschedule_status || null,
+        sms_opt_in: Boolean(token.sms_opt_in),
+        opening_time: token.opening_time || null,
+        closing_time: token.closing_time || null,
       },
     });
   } catch (error: any) {
