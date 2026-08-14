@@ -10,21 +10,6 @@ export async function GET(
     const resolvedParams = await params;
     const { tokenId } = resolvedParams;
 
-    // Ensure columns exist on tokens and queue_streams tables
-    await client.query(`
-      ALTER TABLE tokens 
-      ADD COLUMN IF NOT EXISTS reschedule_requested_date VARCHAR(30),
-      ADD COLUMN IF NOT EXISTS reschedule_requested_slot VARCHAR(30),
-      ADD COLUMN IF NOT EXISTS reschedule_status VARCHAR(20),
-      ADD COLUMN IF NOT EXISTS sms_opt_in BOOLEAN DEFAULT FALSE;
-
-      ALTER TABLE queue_streams 
-      ADD COLUMN IF NOT EXISTS stations JSONB,
-      ADD COLUMN IF NOT EXISTS operating_days JSONB,
-      ADD COLUMN IF NOT EXISTS opening_time VARCHAR(10),
-      ADD COLUMN IF NOT EXISTS closing_time VARCHAR(10);
-    `);
-
     const tokenRes = await client.query(
       `SELECT 
         t.id,
@@ -161,9 +146,6 @@ export async function PATCH(
     const { status, fair_priority, customerPhone, smsOptIn } = body;
 
     await client.query('BEGIN');
-    await client.query(`
-      ALTER TABLE tokens ADD COLUMN IF NOT EXISTS sms_opt_in BOOLEAN DEFAULT FALSE;
-    `);
 
     // Handle SMS opt-in / phone number update
     if ((customerPhone || typeof smsOptIn === 'boolean') && !status) {

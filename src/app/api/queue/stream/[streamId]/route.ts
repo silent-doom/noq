@@ -12,20 +12,6 @@ export async function GET(
     const resolvedParams = await Promise.resolve(params);
     const { streamId } = resolvedParams;
 
-    // Ensure columns exist on database tables
-    await client.query(`
-      ALTER TABLE queue_streams 
-      ADD COLUMN IF NOT EXISTS stations JSONB,
-      ADD COLUMN IF NOT EXISTS operating_days JSONB,
-      ADD COLUMN IF NOT EXISTS opening_time VARCHAR(10),
-      ADD COLUMN IF NOT EXISTS closing_time VARCHAR(10);
-
-      ALTER TABLE tokens 
-      ADD COLUMN IF NOT EXISTS reschedule_requested_date VARCHAR(30),
-      ADD COLUMN IF NOT EXISTS reschedule_requested_slot VARCHAR(30),
-      ADD COLUMN IF NOT EXISTS reschedule_status VARCHAR(20);
-    `);
-
     // Fetch stream with parent business name and category
     const streamRes = await client.query(
       `SELECT qs.*, b.name AS business_name, b.category 
