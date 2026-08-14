@@ -111,3 +111,31 @@ export function generateDomainStations(category?: string, stationCounts?: Record
   for (let i = 1; i <= counters; i++) stations.push(`Counter ${i}`);
   return stations;
 }
+
+export function generateAvailableTimeSlots(
+  openingTime: string = '09:00',
+  closingTime: string = '20:00',
+  stepMins: number = 30
+): string[] {
+  const slots: string[] = [];
+  try {
+    const [openH, openM] = openingTime.split(':').map(Number);
+    const [closeH, closeM] = closingTime.split(':').map(Number);
+
+    let current = (openH || 9) * 60 + (openM || 0);
+    const end = (closeH || 20) * 60 + (closeM || 0);
+
+    while (current + stepMins <= end) {
+      const h = Math.floor(current / 60);
+      const m = current % 60;
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const displayH = h % 12 === 0 ? 12 : h % 12;
+      const displayM = m < 10 ? `0${m}` : `${m}`;
+      slots.push(`${displayH}:${displayM} ${ampm}`);
+      current += stepMins;
+    }
+  } catch (e) {
+    return ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM'];
+  }
+  return slots.length > 0 ? slots : ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM'];
+}

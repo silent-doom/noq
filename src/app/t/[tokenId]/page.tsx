@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Ably from 'ably';
-import { getDomainTerminology, formatWaitTime } from '@/lib/domain';
+import { getDomainTerminology, formatWaitTime, generateAvailableTimeSlots } from '@/lib/domain';
 
 interface TokenData {
   id: string;
@@ -22,6 +22,11 @@ interface TokenData {
   delay_status: 'ON_TIME' | 'DELAYED';
   delay_mins: number;
   waitlist_position?: number;
+  reschedule_requested_date?: string;
+  reschedule_requested_slot?: string;
+  reschedule_status?: string;
+  opening_time?: string;
+  closing_time?: string;
 }
 
 export default function TokenPassPage() {
@@ -41,6 +46,43 @@ export default function TokenPassPage() {
   const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(false);
   const [feedbackSubmitting, setFeedbackSubmitting] = useState<boolean>(false);
   const [audioEnabled, setAudioEnabled] = useState<boolean>(false);
+
+  // Reschedule State
+  const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState<string>(
+    new Date(Date.now() + 86400000).toISOString().slice(0, 10)
+  );
+  const [rescheduleSlot, setRescheduleSlot] = useState<string>('10:00 AM');
+  const [rescheduleSubmitting, setRescheduleSubmitting] = useState(false);
+
+  const handleRescheduleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (rescheduleSubmitting) return;
+    setRescheduleSubmitting(true);
+    try {
+      const res = await fetch(`/api/token/${tokenId}/reschedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestedDate: rescheduleDate,
+          requestedSlot: rescheduleSlot,
+        }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        alert('Reschedule request submitted successfully! Pending admin approval.');
+        setIsRescheduleOpen(false);
+        fetchTokenStatus();
+      } else {
+        alert(json.error || 'Failed to submit reschedule request.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error.');
+    } finally {
+      setRescheduleSubmitting(false);
+    }
+  };
 
   // Synthesize Web Audio Chime (Ding-Dong double tone)
   const playServingChime = () => {
@@ -473,6 +515,95 @@ export default function TokenPassPage() {
               </div>
             )}
           </div>
+
+          {/* Future Reschedule Request Section */}
+          {!isCompleted && !isCancelled && (
+            <div className="mt-4 pt-4 border-t border-zinc-100">
+              {tokenData.reschedule_status === 'PENDING' ? (
+                <div className="bg-amber-50 border border-amber-200 p-3 rounded-2xl text-center">
+                  <span className="text-[10px] font-bold text-amber-800 uppercase tracking-widest block">Reschedule Status</span>
+                  <p className="text-xs font-bold text-amber-900 mt-0.5">
+                    ⏳ Pending Admin Approval for {tokenData.reschedule_requested_date} ({tokenData.reschedule_requested_slot})
+                  </p>
+                </div>
+              ) : tokenData.reschedule_status === 'APPROVED' ? (
+                <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl text-center">
+                  <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-widest block">Reschedule Status</span>
+                  <p className="text-xs font-bold text-emerald-900 mt-0.5">
+                    ✅ Appointment Approved for Future Date! Check SMS for your new pass.
+                  </p>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsRescheduleOpen(true)}
+                  className="w-full bg-zinc-900 hover:bg-black text-white font-bold py-3 rounded-2xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                >
+                  <span>📅 Request Future Appointment Reschedule</span>
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Reschedule Modal */}
+          {isRescheduleOpen && (
+            <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+              <div className="bg-white rounded-3xl p-6 w-full max-w-md space-y-4 shadow-2xl text-zinc-900">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-bold tracking-tight">Request Future Reschedule</h3>
+                  <button onClick={() => setIsRescheduleOpen(false)} className="text-zinc-400 hover:text-zinc-600 font-black text-lg">✕</button>
+                </div>
+
+                <p className="text-xs text-zinc-500">
+                  Can't make it right now? Pick a date and time slot within operating hours. The admin will review and issue your new pass.
+                </p>
+
+                <form onSubmit={handleRescheduleSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1">Target Date</label>
+                    <input
+                      type="date"
+                      required
+                      min={new Date().toISOString().slice(0, 10)}
+                      value={rescheduleDate}
+                      onChange={(e) => setRescheduleDate(e.target.value)}
+                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-3 text-xs font-semibold text-zinc-900 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1">Target Time Slot</label>
+                    <select
+                      value={rescheduleSlot}
+                      onChange={(e) => setRescheduleSlot(e.target.value)}
+                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-3 text-xs font-semibold text-zinc-900 focus:outline-none focus:border-emerald-500"
+                    >
+                      {generateAvailableTimeSlots(tokenData.opening_time, tokenData.closing_time).map((slot) => (
+                        <option key={slot} value={slot}>{slot}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsRescheduleOpen(false)}
+                      className="flex-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={rescheduleSubmitting}
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition"
+                    >
+                      {rescheduleSubmitting ? 'Submitting...' : 'Submit Request'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
 
           {/* Overrun Delay Alert */}
           {tokenData.delay_status === 'DELAYED' && !isServing && !isCompleted && !isCancelled && (

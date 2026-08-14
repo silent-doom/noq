@@ -20,11 +20,17 @@ export async function GET(
         t.stream_id,
         t.access_channel,
         t.created_at,
+        t.reschedule_requested_date,
+        t.reschedule_requested_slot,
+        t.reschedule_status,
         s.current_serving_token,
         s.current_effective_time_mins,
         s.pace_per_patient_mins,
         s.active_token_started_at,
         s.broadcast_message,
+        s.opening_time,
+        s.closing_time,
+        s.operating_days,
         b.name AS business_name,
         b.category
        FROM tokens t

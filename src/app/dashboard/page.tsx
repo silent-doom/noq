@@ -15,6 +15,9 @@ interface Token {
   status: 'WAITING' | 'SERVING' | 'COMPLETED' | 'CANCELLED' | 'SKIPPED';
   access_channel?: string;
   created_at?: string;
+  reschedule_requested_date?: string;
+  reschedule_requested_slot?: string;
+  reschedule_status?: string;
 }
 
 interface StreamInfo {
