@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090a0f"/>
+      <stop offset="100%" stop-color="#12151e"/>
+    </linearGradient>
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <!-- Background Card -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)"/>
+  <rect width="504" height="504" x="4" y="4" rx="124" fill="none" stroke="#10b981" stroke-opacity="0.3" stroke-width="8"/>
+  
+  <!-- Logo Emblem: Glowing Check Circle & Letter N -->
+  <g filter="url(#glow)">
+    <!-- Outer Arc -->
+    <path d="M 256 100 A 156 156 0 1 0 412 256" fill="none" stroke="url(#emeraldGrad)" stroke-width="48" stroke-linecap="round"/>
+    <!-- Checkmark inside Q -->
+    <path d="M 196 256 L 244 304 L 372 176" fill="none" stroke="#34d399" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Live Pulse Dot -->
+    <circle cx="396" cy="116" r="28" fill="#34d399"/>
+  </g>
+</svg>
