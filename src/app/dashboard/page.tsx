@@ -343,6 +343,28 @@ function DashboardContent() {
       t?.token_number?.toString().includes(searchQuery)
   );
 
+  const handleExtendPace = async () => {
+    if (!streamId || actionLoading) return;
+    setActionLoading(true);
+    try {
+      const currentPace = streamInfo?.current_effective_time_mins || 15;
+      const newPace = currentPace + 5;
+      const res = await fetch(`/api/queue/stream/${streamId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pace_per_patient_mins: newPace, current_effective_time_mins: newPace }),
+      });
+      if (res.ok) {
+        alert(`⏱️ Added +5 mins extra service time! Dynamic ETAs updated.`);
+        fetchQueueData();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-[#f4f5f7] font-sans text-zinc-900 overflow-hidden relative">
       {/* Dark Left Sidebar */}
@@ -628,12 +650,21 @@ function DashboardContent() {
                 </button>
 
                 <button
+                  onClick={handleExtendPace}
+                  disabled={actionLoading}
+                  className="py-3 px-3.5 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-xs font-bold text-amber-400 rounded-xl transition border border-zinc-800 cursor-pointer"
+                  title="Add +5 mins extra service duration"
+                >
+                  ⏱️ +5m
+                </button>
+
+                <button
                   onClick={() =>
                     currentServingTokenObj &&
                     handleWaitlist(currentServingTokenObj.id)
                   }
                   disabled={!currentServingTokenObj || actionLoading}
-                  className="py-3 px-5 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-xs font-semibold text-zinc-400 rounded-xl transition border border-zinc-800 cursor-pointer"
+                  className="py-3 px-4 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-xs font-semibold text-zinc-400 rounded-xl transition border border-zinc-800 cursor-pointer"
                 >
                   Skip
                 </button>

@@ -120,34 +120,62 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
     (t) => t.status === 'WAITING' || t.status === 'SKIPPED'
   );
 
+  const [userInteracted, setUserInteracted] = useState<boolean>(false);
+
+  const unlockAudio = () => {
+    setUserInteracted(true);
+    setTtsEnabled(true);
+    try {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const testUtterance = new SpeechSynthesisUtterance('');
+        window.speechSynthesis.speak(testUtterance);
+      }
+    } catch (e) {}
+  };
+
   return (
-    <div className="min-h-screen bg-[#07080a] text-white p-8 flex flex-col font-sans select-none overflow-hidden">
-      
-      {/* TOP HEADER */}
-      <header className="flex items-center justify-between pb-6 border-b border-zinc-900">
-        <div className="flex items-center gap-4">
-          <span className="text-3xl font-black tracking-tight text-white">noQ</span>
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 text-xs font-bold tracking-widest uppercase">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            LIVE QUEUE DISPLAY
+    <div
+      onClick={() => !userInteracted && unlockAudio()}
+      className="min-h-screen bg-[#090a0f] text-white p-8 font-sans flex flex-col justify-between overflow-hidden relative selection:bg-emerald-500/30"
+    >
+      {/* AUDIO UNMUTE OVERLAY BANNER */}
+      {!userInteracted && (
+        <div
+          onClick={unlockAudio}
+          className="bg-emerald-500 hover:bg-emerald-400 text-black py-3 px-6 rounded-2xl flex items-center justify-between text-xs font-black tracking-wider uppercase cursor-pointer shadow-lg animate-bounce mb-4"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-base">🔊</span>
+            <span>TV VOICE ANNOUNCEMENTS MUTED — TAP ANYWHERE TO UNMUTE AUDIO</span>
           </div>
+          <span className="bg-black text-white px-3 py-1 rounded-xl text-[10px] font-extrabold">ENABLE AUDIO</span>
+        </div>
+      )}
+
+      {/* HEADER */}
+      <header className="flex items-center justify-between border-b border-zinc-800/80 pb-6">
+        <div className="flex items-center gap-3">
+          <span className="text-3xl font-black text-white tracking-tight">noQ</span>
+          <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+            LOUNGE TV DISPLAY
+          </span>
         </div>
 
         <div className="flex items-center gap-4">
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
+              unlockAudio();
               setTtsEnabled(!ttsEnabled);
-              if (!ttsEnabled && currentServingToken) {
-                speakAnnouncement(currentServingToken.token_number, servingCounter);
-              }
             }}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3.5 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
               ttsEnabled
                 ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40'
                 : 'bg-zinc-900 text-zinc-500 border border-zinc-800'
             }`}
           >
-            <span>{ttsEnabled ? '🔊 VOICE ANNOUNCEMENT ON' : '🔇 VOICE MUTED'}</span>
+            <span>{ttsEnabled ? '🔊 VOICE ANNOUNCEMENTS ON' : '🔇 VOICE MUTED'}</span>
           </button>
 
           <div className="text-right">

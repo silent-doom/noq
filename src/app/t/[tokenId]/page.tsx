@@ -56,6 +56,25 @@ export default function TokenPassPage() {
   const [rescheduleSlot, setRescheduleSlot] = useState<string>('10:00 AM');
   const [rescheduleSubmitting, setRescheduleSubmitting] = useState(false);
 
+  // Share & PWA State
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [showPwaPrompt, setShowPwaPrompt] = useState(false);
+
+  const handleCopyLink = () => {
+    if (typeof window !== 'undefined') {
+      navigator.clipboard.writeText(window.location.href);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    }
+  };
+
+  const handleShareWhatsApp = () => {
+    if (typeof window !== 'undefined') {
+      const text = encodeURIComponent(`Track my live queue pass at ${tokenData?.business_name}: ${window.location.href}`);
+      window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+    }
+  };
+
   // SMS Opt-In State
   const [isSmsModalOpen, setIsSmsModalOpen] = useState(false);
   const [smsPhoneInput, setSmsPhoneInput] = useState('');
@@ -450,6 +469,50 @@ export default function TokenPassPage() {
 
           <div className="text-7xl font-black text-[#111111] tracking-tighter my-6">
             #{tokenData.token_number}
+          </div>
+
+          {/* Quick Action Share Buttons */}
+          <div className="flex gap-2 px-4 pb-2">
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              className="flex-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+            >
+              <span>{copiedLink ? '✓ Copied!' : '📋 Copy Link'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleShareWhatsApp}
+              className="flex-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+            >
+              <span>💬 WhatsApp</span>
+            </button>
+          </div>
+
+          {/* Add to Home Screen PWA Banner */}
+          <div className="px-4 pb-4">
+            {!showPwaPrompt ? (
+              <button
+                type="button"
+                onClick={() => setShowPwaPrompt(true)}
+                className="w-full text-[11px] font-bold text-zinc-400 hover:text-zinc-700 text-center py-1 cursor-pointer flex items-center justify-center gap-1"
+              >
+                <span>📲 Add Pass to Phone Home Screen ▾</span>
+              </button>
+            ) : (
+              <div className="bg-zinc-50 border border-zinc-200 p-3 rounded-2xl text-xs text-zinc-700 space-y-1.5 animate-fade-in text-left">
+                <div className="flex items-center justify-between font-bold text-zinc-900">
+                  <span>📲 Add Pass to Home Screen</span>
+                  <button onClick={() => setShowPwaPrompt(false)} className="text-zinc-400 font-black">✕</button>
+                </div>
+                <p className="text-[11px] text-zinc-600 leading-relaxed">
+                  <strong>iPhone (Safari):</strong> Tap Share <span className="font-bold">⎋</span> ➔ Tap <strong>"Add to Home Screen"</strong>.
+                </p>
+                <p className="text-[11px] text-zinc-600 leading-relaxed">
+                  <strong>Android (Chrome):</strong> Tap 3 dots <span className="font-bold">⋮</span> ➔ Tap <strong>"Add to Home Screen"</strong>.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Status Indicators */}
