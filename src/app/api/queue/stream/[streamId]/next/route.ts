@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { notifyNowServing, notifyUpcomingTurn } from '@/lib/notifications';
 import { publishQueueUpdate } from '@/lib/ably';
 import { sendTokenPushNotification } from '@/lib/push';
+import { isValidPhoneNumber } from '@/lib/domain';
 
 export async function POST(
   req: NextRequest,
@@ -112,14 +113,14 @@ export async function POST(
       url: `${appUrl}/t/${nextToken.id}`,
     });
 
-    // 7. Fire async SMS notifications (non-blocking, after commit)
-    if (nextToken.customer_phone) {
+    // 7. Fire async SMS notifications (non-blocking, only if customer opted in with valid phone)
+    if (nextToken.sms_opt_in && isValidPhoneNumber(nextToken.customer_phone)) {
       notifyNowServing(nextToken.customer_name, nextToken.customer_phone, nextToken.token_number);
     }
 
     if (upcomingTokenRes.rows.length > 0) {
       const upcoming = upcomingTokenRes.rows[0];
-      if (upcoming.customer_phone) {
+      if (upcoming.sms_opt_in && isValidPhoneNumber(upcoming.customer_phone)) {
         notifyUpcomingTurn(upcoming.customer_name, upcoming.customer_phone, upcoming.token_number, 2);
       }
     }

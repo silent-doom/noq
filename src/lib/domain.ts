@@ -139,3 +139,22 @@ export function generateAvailableTimeSlots(
   }
   return slots.length > 0 ? slots : ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM'];
 }
+
+export function isValidPhoneNumber(phone?: string): boolean {
+  if (!phone) return false;
+  const digitsOnly = phone.replace(/\D/g, '');
+  return digitsOnly.length >= 10 && digitsOnly.length <= 15;
+}
+
+export function formatPhoneNumberE164(phone: string, defaultCountryCode: string = '+91'): string {
+  if (!phone) return '';
+  const trimmed = phone.trim();
+  if (trimmed.startsWith('+')) {
+    return '+' + trimmed.replace(/\D/g, '');
+  }
+  const digitsOnly = trimmed.replace(/\D/g, '');
+  if (digitsOnly.length === 10) {
+    return `${defaultCountryCode}${digitsOnly}`;
+  }
+  return `+${digitsOnly}`;
+}

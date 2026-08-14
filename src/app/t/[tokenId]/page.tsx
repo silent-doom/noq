@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Ably from 'ably';
-import { getDomainTerminology, formatWaitTime, generateAvailableTimeSlots } from '@/lib/domain';
+import { getDomainTerminology, formatWaitTime, generateAvailableTimeSlots, isValidPhoneNumber, formatPhoneNumberE164 } from '@/lib/domain';
 
 interface TokenData {
   id: string;
   token_number: number;
   customer_name: string;
   customer_phone?: string;
+  sms_opt_in?: boolean;
   status: string;
   stream_id: string;
   business_name: string;
@@ -54,6 +55,49 @@ export default function TokenPassPage() {
   );
   const [rescheduleSlot, setRescheduleSlot] = useState<string>('10:00 AM');
   const [rescheduleSubmitting, setRescheduleSubmitting] = useState(false);
+
+  // SMS Opt-In State
+  const [isSmsModalOpen, setIsSmsModalOpen] = useState(false);
+  const [smsPhoneInput, setSmsPhoneInput] = useState('');
+  const [smsPhoneError, setSmsPhoneError] = useState<string | null>(null);
+  const [smsOptInSubmitting, setSmsOptInSubmitting] = useState(false);
+
+  const handleSmsOptInSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSmsPhoneError(null);
+
+    const formatted = formatPhoneNumberE164(smsPhoneInput);
+    if (!isValidPhoneNumber(formatted)) {
+      setSmsPhoneError('Please enter a valid 10 to 15-digit mobile phone number.');
+      return;
+    }
+
+    setSmsOptInSubmitting(true);
+    try {
+      const res = await fetch(`/api/token/${tokenId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerPhone: formatted,
+          smsOptIn: true,
+        }),
+      });
+
+      const json = await res.json();
+      if (res.ok && json.success) {
+        alert(`✅ SMS Turn Alerts Enabled for ${formatted}!`);
+        setIsSmsModalOpen(false);
+        fetchTokenStatus();
+      } else {
+        setSmsPhoneError(json.error || 'Failed to enable SMS alerts.');
+      }
+    } catch (err) {
+      console.error(err);
+      setSmsPhoneError('Network error. Please try again.');
+    } finally {
+      setSmsOptInSubmitting(false);
+    }
+  };
 
   const handleRescheduleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -598,6 +642,106 @@ export default function TokenPassPage() {
                       className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition"
                     >
                       {rescheduleSubmitting ? 'Submitting...' : 'Submit Request'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* SMS Opt-In Notification Card */}
+          {!isCompleted && !isCancelled && (
+            <div className="mt-3 pt-3 border-t border-zinc-100">
+              {tokenData.sms_opt_in && isValidPhoneNumber(tokenData.customer_phone) ? (
+                <div className="bg-emerald-50/80 border border-emerald-200/80 p-3 rounded-2xl flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">🔔</span>
+                    <div>
+                      <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">SMS Alerts Active</span>
+                      <span className="text-xs font-bold text-emerald-950 font-mono">
+                        {tokenData.customer_phone}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSmsPhoneInput(tokenData.customer_phone || '');
+                      setIsSmsModalOpen(true);
+                    }}
+                    className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 underline cursor-pointer"
+                  >
+                    Edit Number
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSmsPhoneInput(tokenData.customer_phone || '');
+                    setIsSmsModalOpen(true);
+                  }}
+                  className="w-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 font-bold py-3 rounded-2xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                >
+                  <span>🔔 Inform Me via SMS When Turn Approaches</span>
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* SMS Opt-In Modal */}
+          {isSmsModalOpen && (
+            <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+              <div className="bg-white rounded-3xl p-6 w-full max-w-md space-y-4 shadow-2xl text-zinc-900">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">📱</span>
+                    <h3 className="text-base font-bold tracking-tight">Enable SMS Turn Alerts</h3>
+                  </div>
+                  <button onClick={() => setIsSmsModalOpen(false)} className="text-zinc-400 hover:text-zinc-600 font-black text-lg">✕</button>
+                </div>
+
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Enter your mobile phone number below. We will send you an SMS text message when your token is called or approaching.
+                </p>
+
+                <form onSubmit={handleSmsOptInSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1">
+                      10-Digit Mobile Phone Number *
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="e.g. +91 98765 43210 or 9876543210"
+                      value={smsPhoneInput}
+                      onChange={(e) => {
+                        setSmsPhoneInput(e.target.value);
+                        setSmsPhoneError(null);
+                      }}
+                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-3 text-sm font-semibold text-zinc-900 focus:outline-none focus:border-emerald-500"
+                    />
+                    {smsPhoneError && (
+                      <p className="text-xs text-red-600 font-semibold mt-1 bg-red-50 p-2 rounded-lg border border-red-100">
+                        ⚠️ {smsPhoneError}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsSmsModalOpen(false)}
+                      className="flex-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={smsOptInSubmitting}
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition shadow-sm"
+                    >
+                      {smsOptInSubmitting ? 'Enabling...' : 'Enable SMS Alerts'}
                     </button>
                   </div>
                 </form>

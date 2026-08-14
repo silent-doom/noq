@@ -15,7 +15,8 @@ export async function GET(
       ALTER TABLE tokens 
       ADD COLUMN IF NOT EXISTS reschedule_requested_date VARCHAR(30),
       ADD COLUMN IF NOT EXISTS reschedule_requested_slot VARCHAR(30),
-      ADD COLUMN IF NOT EXISTS reschedule_status VARCHAR(20);
+      ADD COLUMN IF NOT EXISTS reschedule_status VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS sms_opt_in BOOLEAN DEFAULT FALSE;
 
       ALTER TABLE queue_streams 
       ADD COLUMN IF NOT EXISTS stations JSONB,
@@ -37,6 +38,7 @@ export async function GET(
         t.reschedule_requested_date,
         t.reschedule_requested_slot,
         t.reschedule_status,
+        t.sms_opt_in,
         s.current_serving_token,
         s.current_effective_time_mins,
         s.pace_per_patient_mins,
@@ -156,9 +158,27 @@ export async function PATCH(
     const resolvedParams = await params;
     const { tokenId } = resolvedParams;
     const body = await req.json();
-    const { status, fair_priority } = body;
+    const { status, fair_priority, customerPhone, smsOptIn } = body;
 
     await client.query('BEGIN');
+    await client.query(`
+      ALTER TABLE tokens ADD COLUMN IF NOT EXISTS sms_opt_in BOOLEAN DEFAULT FALSE;
+    `);
+
+    // Handle SMS opt-in / phone number update
+    if ((customerPhone || typeof smsOptIn === 'boolean') && !status) {
+      const optRes = await client.query(
+        `UPDATE tokens 
+         SET customer_phone = COALESCE($1, customer_phone),
+             sms_opt_in = COALESCE($2, sms_opt_in),
+             updated_at = NOW()
+         WHERE id = $3
+         RETURNING *`,
+        [customerPhone?.trim() || null, typeof smsOptIn === 'boolean' ? smsOptIn : true, tokenId]
+      );
+      await client.query('COMMIT');
+      return NextResponse.json({ success: true, data: optRes.rows[0], token: optRes.rows[0] });
+    }
 
     const tokenRes = await client.query(`SELECT * FROM tokens WHERE id = $1 FOR UPDATE`, [tokenId]);
 
