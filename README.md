@@ -1,28 +1,32 @@
 # noQ — Intelligent Multi-Domain Virtual Queue Engine
 
-> **noQ** is an enterprise-grade virtual queue management platform that replaces physical waiting lines with live digital passes, native lock-screen Web Push alerts, Android SIM SMS dispatch, Ably real-time Pub/Sub, TV voice announcements, and dynamic domain adaptation across Clinics, Restaurants, Salons, and Retail.
+> **noQ** is an enterprise-grade virtual queue management platform that replaces physical waiting lines with live digital passes, native lock-screen Web Push alerts, Android SIM SMS dispatch, Ably real-time Pub/Sub, multi-branch clinic linkage & transfers, TV voice announcements, and dynamic domain adaptation across Clinics, Restaurants, Salons, and Retail.
 
 ---
 
 ## ⚡ Key Features
 
-- **📱 Zero-App Lock-Screen Digital Pass**: Customers scan on-site QR codes or book remotely to track live queue positions, spots ahead, and dynamic ETAs in real-time.
+- **📱 Zero-App Lock-Screen Digital Pass**: Customers scan on-site QR codes or book remotely to track live queue positions, spots ahead, dynamic ETAs, and assigned room/station in real-time (`/t/[tokenId]`).
+- **🏥 Multi-Branch Clinic Linkage & Patient Transfer**: Link separately onboarded clinics of the same doctor/business (e.g. Mumbai & Navi Mumbai) using secure stream IDs and PINs. Switch active branch queues in 1 tap and transfer patients seamlessly across clinics with automatic live pass and SMS updates.
+- **⚡ Parallel Multi-Doctor & Multi-Station Queueing**: Supports concurrent consultations across multiple rooms/tables in parallel without cross-cancelling active sessions.
+- **🔒 Security & PII Protection**: Automatic customer phone number and PII masking on public APIs (`+91 •••••• 4512`) and cryptographic session token verification for operator controls.
+- **🎛️ Tactile NumberSlider Pickers**: Interactive, smooth gradient drag sliders with quick-select preset pills and tactile stepper buttons for onboarding and pace configuration.
+- **👓 Accessibility & Screen-Reader Optimization**: Complete `aria-live` queue announcements, semantic roles, High Contrast theme, and Large Typography modes.
 - **📲 httpSMS Android SIM Cellular Gateway**: Dispatches real SMS text messages directly from an Android phone SIM card at local plan rates.
 - **⚡ Ably Real-Time Pub/Sub Synchronization**: Zero-polling, sub-millisecond state updates across Operator Dashboards, Customer Passes, and TV Screens.
 - **🔔 Native Web Push Notifications (VAPID Service Worker)**: Sends OS lock-screen push alerts to iOS (Safari 16.4+) and Android devices when a customer's turn is called.
-- **🔊 Text-to-Speech (TTS) Voice Announcements**: Web Speech API audio announcements on Lounge TV Displays (*"Attention please. Token #15 proceed to Counter 1"*).
+- **🔊 Text-to-Speech (TTS) Voice Announcements**: Web Speech API audio announcements on Lounge TV Displays (*"Attention please. Token #15 proceed to Doctor Room 2"*).
 - **🏢 Physical Layout & Station Customization**: Configures physical rooms, beds, chairs, and counters during onboarding and extrapolates them to the Operator Dashboard.
 - **🖨️ Printable QR Code Poster Generator**: Generates print-ready A4 venue posters (`/dashboard/poster`) with high-resolution venue QR codes.
 - **📅 Slot-Based Advance Booking**: Supports both *"⚡ Join Live Queue"* and *"📅 Advance Time Slot"* booking (`10:00 AM`, `10:30 AM`, `11:00 AM`, etc.).
 - **📥 Operations Analytics & CSV Data Export**: Downloads structured CSV queue reports, peak traffic hourly heatmaps, customer feedback scores, and channel breakdowns.
-- **🔒 Admin Security PIN Protection**: Password-protected operator terminals (`123456`) and secure verification API (`/api/admin/verify`).
 - **🏷️ Dynamic Domain Terminology Adapter**: Automatically adapts UI vocabulary based on business category:
   - **Clinics & Healthcare**: Patients, Doctor / Specialist, Consultation Pace, OPD Queue, Doctor Rooms, Exam Beds.
   - **Restaurants & Hotels**: Diners / Guests, Table / Server, Table Turn Pace, Dining Waiting List, Host Desks.
   - **Salons & Spas**: Clients, Stylist / Specialist, Service Duration, Styling Queue, Stylist Chairs, Wash Stations.
   - **Retail & Banking**: Customers, Service Counter, Service Pace, Main Queue, Service Counters.
 - **📢 Real-Time Broadcast Tickers**: Push live delay alerts or announcements across all connected customer passes and displays.
-- **📺 Lounge TV Display Board**: Full-screen TV display (`/display/[streamId]`) showing active serving tokens, station banners, and upcoming waitlists.
+- **📺 Lounge TV Display Board**: Full-screen TV display (`/display/[streamId]`) showing active serving tokens in a Multi-Station grid, station banners, and upcoming waitlists.
 
 ---
 
@@ -94,33 +98,44 @@ noq/
 │   └── sw.js                            # Background Web Push Service Worker
 ├── src/
 │   ├── app/
-│   │   ├── page.tsx                     # SaaS Landing Page & Station Setup Modal
-│   │   ├── dashboard/                   # Operator Terminal & Multi-Counter Controls
+│   │   ├── page.tsx                     # SaaS Landing Page, Onboarding & NumberSliders
+│   │   ├── dashboard/                   # Operator Terminal, Multi-Branch & Stations
 │   │   │   ├── analytics/               # CSV Export & Peak Traffic Heatmaps
 │   │   │   ├── poster/                  # Printable Venue QR Code Poster View
-│   │   │   └── waitlist/                # Skipped Guests Re-insertion Queue
-│   │   ├── display/[streamId]/          # Lounge TV Display Screen with Voice TTS
-│   │   ├── scan/[streamId]/             # On-Site QR Check-In Entry Page
-│   │   ├── book/[streamId]/             # Remote Queueing & Slot Booking Page
-│   │   ├── t/[tokenId]/                 # Customer Pass, Web Push & Audio Chime
-│   │   └── api/                         # API Endpoints (Push, SMS, Queue, Tokens, Analytics)
-│   ├── components/                      # UI Badges, Serving Headers, & Terminology Badges
-│   └── lib/                             # DB Pool, Redis Client, Ably, httpSMS, WebPush, Domain Adapter
-├── .env.example                         # Environment Variables Template
-└── README.md                            # Documentation
+│   │   │   └── waitlist/                # Smart Waitlist & Skipped Guest Recall
+│   │   ├── display/[streamId]/          # Lounge TV Screen with Voice TTS & Station Grid
+│   │   ├── book/[streamId]/             # Remote Customer Booking & Time Slots
+│   │   ├── scan/[streamId]/             # On-Site QR Landing & Digital Pass Issuer
+│   │   ├── t/[tokenId]/                 # Live Mobile Customer Pass & Feedback
+│   │   └── api/
+│   │       ├── admin/verify/            # PIN Verification & Session Token Generator
+│   │       ├── branch/link/             # Multi-Clinic Networking API
+│   │       ├── branch/transfer/         # Cross-Branch Patient Transfer API
+│   │       ├── business/register/       # Business Onboarding & Station Generator
+│   │       ├── queue/stream/            # Live Queue State & PII Masking
+│   │       ├── queue/next/              # Scoped Parallel Next Token Calling
+│   │       ├── token/[tokenId]/         # Token Live Pass, Status & Feedback
+│   │       └── push/subscribe/          # Web Push VAPID Subscription
+│   ├── components/
+│   │   ├── AccessChannelBadge.tsx       # Channel Origin Badges
+│   │   └── NumberSlider.tsx             # Tactile Gradient Drag Number Slider
+│   └── lib/
+│       ├── ably.ts                      # Ably Pub/Sub Real-Time Engine
+│       ├── db.ts                        # PostgreSQL Connection Pool
+│       ├── domain.ts                    # Dynamic Domain Lexicon, PII Masking & Auth
+│       ├── httpsms.ts                   # httpSMS Android Gateway Client
+│       └── push.ts                      # Web Push VAPID Payload Dispatcher
 ```
 
 ---
 
-## 🌐 Deploying to Vercel
+## 🔒 Security & Privacy
 
-1. Push your repository to **GitHub**.
-2. Connect your repository to **[Vercel](https://vercel.com)**.
-3. Configure Environment Variables (`DATABASE_URL`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `NEXT_PUBLIC_ABLY_SUBSCRIBE_KEY`, `HTTPSMS_API_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `NEXT_PUBLIC_APP_URL`).
-4. Click **Deploy**.
+- **Masked PII**: Public endpoints automatically redact customer phone numbers to prevent scraping.
+- **Admin Session Token**: Verified PIN authentication issues an HMAC-signed session token for privileged operations.
+- **Branch Security**: Inter-clinic linking requires destination admin PIN verification.
 
 ---
 
 ## 📄 License
-
-This project is licensed under the MIT License.
+MIT © noQ Virtual Queue Systems

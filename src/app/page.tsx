@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { NumberSlider } from '@/components/NumberSlider';
 
 export default function LandingPage() {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
@@ -15,11 +16,23 @@ export default function LandingPage() {
   const [capacity, setCapacity] = useState(100);
   const [loading, setLoading] = useState(false);
 
+  // Working Hours & Queue Structure State
+  const [openingTime, setOpeningTime] = useState('09:00');
+  const [closingTime, setClosingTime] = useState('20:00');
+  const [operatingDays, setOperatingDays] = useState<string[]>(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']);
+  const [queueStructure, setQueueStructure] = useState<'UNIFIED_PARALLEL' | 'DEDICATED_STREAMS'>('UNIFIED_PARALLEL');
+
   // Active Domain Preview Tab
   const [activeTab, setActiveTab] = useState<'clinic' | 'restaurant' | 'salon' | 'general'>('clinic');
 
   const [countA, setCountA] = useState<number>(2);
   const [countB, setCountB] = useState<number>(1);
+
+  const toggleDay = (day: string) => {
+    setOperatingDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +50,10 @@ export default function LandingPage() {
           adminPasscode,
           baseServiceTimeMins: basePace,
           maxDailyCapacity: capacity,
+          openingTime,
+          closingTime,
+          operatingDays,
+          queueStructure,
           stationCounts: {
             consultationRooms: countA,
             stylingChairs: countA,
@@ -336,79 +353,168 @@ export default function LandingPage() {
                 </select>
               </div>
 
-              {/* Domain Physical Layout Steppers */}
-              <div className="bg-zinc-900/90 border border-zinc-800 p-4 rounded-2xl space-y-3">
-                <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
+              {/* Domain Physical Layout Sliders */}
+              <div className="space-y-3">
+                <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest px-1">
                   Physical Layout & Station Setup
                 </p>
 
                 {category === 'clinic' ? (
-                  <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-zinc-300">
-                    <div>
-                      <span className="block text-[11px] text-zinc-400 mb-1">Doctor Rooms</span>
-                      <div className="flex items-center gap-2 bg-zinc-950 p-1.5 rounded-xl border border-zinc-800">
-                        <button type="button" onClick={() => setCountA(Math.max(1, countA - 1))} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">-</button>
-                        <span className="flex-1 text-center font-mono font-bold text-white">{countA}</span>
-                        <button type="button" onClick={() => setCountA(countA + 1)} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">+</button>
-                      </div>
-                    </div>
-                    <div>
-                      <span className="block text-[11px] text-zinc-400 mb-1">Exam Beds / Rooms</span>
-                      <div className="flex items-center gap-2 bg-zinc-950 p-1.5 rounded-xl border border-zinc-800">
-                        <button type="button" onClick={() => setCountB(Math.max(0, countB - 1))} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">-</button>
-                        <span className="flex-1 text-center font-mono font-bold text-white">{countB}</span>
-                        <button type="button" onClick={() => setCountB(countB + 1)} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">+</button>
-                      </div>
-                    </div>
+                  <div className="space-y-3">
+                    <NumberSlider
+                      label="Doctor Consultation Rooms"
+                      description="Active consulting rooms / inspection cabins"
+                      value={countA}
+                      min={1}
+                      max={10}
+                      unit="Rooms"
+                      presets={[1, 2, 3, 4, 6]}
+                      onChange={setCountA}
+                      accentColor="emerald"
+                    />
+                    <NumberSlider
+                      label="Exam Beds / Observation Units"
+                      description="Preliminary vitals & recovery stations"
+                      value={countB}
+                      min={0}
+                      max={10}
+                      unit="Beds"
+                      presets={[0, 1, 2, 4]}
+                      onChange={setCountB}
+                      accentColor="sky"
+                    />
                   </div>
                 ) : category === 'salon' ? (
-                  <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-zinc-300">
-                    <div>
-                      <span className="block text-[11px] text-zinc-400 mb-1">Stylist Chairs</span>
-                      <div className="flex items-center gap-2 bg-zinc-950 p-1.5 rounded-xl border border-zinc-800">
-                        <button type="button" onClick={() => setCountA(Math.max(1, countA - 1))} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">-</button>
-                        <span className="flex-1 text-center font-mono font-bold text-white">{countA}</span>
-                        <button type="button" onClick={() => setCountA(countA + 1)} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">+</button>
-                      </div>
-                    </div>
-                    <div>
-                      <span className="block text-[11px] text-zinc-400 mb-1">Wash Stations</span>
-                      <div className="flex items-center gap-2 bg-zinc-950 p-1.5 rounded-xl border border-zinc-800">
-                        <button type="button" onClick={() => setCountB(Math.max(0, countB - 1))} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">-</button>
-                        <span className="flex-1 text-center font-mono font-bold text-white">{countB}</span>
-                        <button type="button" onClick={() => setCountB(countB + 1)} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">+</button>
-                      </div>
-                    </div>
+                  <div className="space-y-3">
+                    <NumberSlider
+                      label="Stylist Chairs & Stations"
+                      value={countA}
+                      min={1}
+                      max={12}
+                      unit="Chairs"
+                      presets={[2, 3, 5, 8]}
+                      onChange={setCountA}
+                      accentColor="emerald"
+                    />
+                    <NumberSlider
+                      label="Wash Basins / Treatment Beds"
+                      value={countB}
+                      min={0}
+                      max={6}
+                      unit="Basins"
+                      presets={[1, 2, 3]}
+                      onChange={setCountB}
+                      accentColor="sky"
+                    />
                   </div>
                 ) : category === 'restaurant' ? (
-                  <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-zinc-300">
-                    <div>
-                      <span className="block text-[11px] text-zinc-400 mb-1">Host Stations</span>
-                      <div className="flex items-center gap-2 bg-zinc-950 p-1.5 rounded-xl border border-zinc-800">
-                        <button type="button" onClick={() => setCountA(Math.max(1, countA - 1))} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">-</button>
-                        <span className="flex-1 text-center font-mono font-bold text-white">{countA}</span>
-                        <button type="button" onClick={() => setCountA(countA + 1)} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">+</button>
-                      </div>
-                    </div>
-                    <div>
-                      <span className="block text-[11px] text-zinc-400 mb-1">Express Counters</span>
-                      <div className="flex items-center gap-2 bg-zinc-950 p-1.5 rounded-xl border border-zinc-800">
-                        <button type="button" onClick={() => setCountB(Math.max(0, countB - 1))} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">-</button>
-                        <span className="flex-1 text-center font-mono font-bold text-white">{countB}</span>
-                        <button type="button" onClick={() => setCountB(countB + 1)} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">+</button>
-                      </div>
-                    </div>
+                  <div className="space-y-3">
+                    <NumberSlider
+                      label="Host Desks & Seating Sections"
+                      value={countA}
+                      min={1}
+                      max={15}
+                      unit="Desks"
+                      presets={[2, 4, 6, 10]}
+                      onChange={setCountA}
+                      accentColor="emerald"
+                    />
+                    <NumberSlider
+                      label="Express Takeaway / Bar Counters"
+                      value={countB}
+                      min={0}
+                      max={6}
+                      unit="Counters"
+                      presets={[0, 1, 2]}
+                      onChange={setCountB}
+                      accentColor="amber"
+                    />
                   </div>
                 ) : (
-                  <div>
-                    <span className="block text-[11px] text-zinc-400 mb-1">Service Counters</span>
-                    <div className="flex items-center gap-2 bg-zinc-950 p-1.5 rounded-xl border border-zinc-800">
-                      <button type="button" onClick={() => setCountA(Math.max(1, countA - 1))} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">-</button>
-                      <span className="flex-1 text-center font-mono font-bold text-white">{countA}</span>
-                      <button type="button" onClick={() => setCountA(countA + 1)} className="px-2 py-0.5 bg-zinc-800 text-white rounded font-black cursor-pointer">+</button>
-                    </div>
-                  </div>
+                  <NumberSlider
+                    label="Active Service Counters"
+                    value={countA}
+                    min={1}
+                    max={15}
+                    unit="Counters"
+                    presets={[2, 3, 5, 8]}
+                    onChange={setCountA}
+                    accentColor="emerald"
+                  />
                 )}
+              </div>
+
+              {/* Fixed Working Hours Setup */}
+              <div className="bg-zinc-900/90 border border-zinc-800 p-4 rounded-2xl space-y-3">
+                <div className="flex justify-between items-center">
+                  <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
+                    Fixed Working Hours & Schedule
+                  </p>
+                  <span className="text-[10px] text-zinc-400 font-mono">24-Hour Format</span>
+                </div>
+
+                <div>
+                  <span className="block text-[11px] font-medium text-zinc-400 mb-1.5">Operating / Working Days</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => {
+                      const isSelected = operatingDays.includes(day);
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => toggleDay(day)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                            isSelected
+                              ? 'bg-emerald-500 text-black shadow-xs'
+                              : 'bg-zinc-950 text-zinc-500 border border-zinc-800 hover:text-white'
+                          }`}
+                        >
+                          {day}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="block text-[11px] font-medium text-zinc-400 mb-1">Opening Time</label>
+                    <input
+                      type="time"
+                      value={openingTime}
+                      onChange={(e) => setOpeningTime(e.target.value)}
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-zinc-400 mb-1">Closing Time</label>
+                    <input
+                      type="time"
+                      value={closingTime}
+                      onChange={(e) => setClosingTime(e.target.value)}
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Queue Structure Selection */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
+                  Queue Structure & Flow *
+                </label>
+                <select
+                  value={queueStructure}
+                  onChange={(e: any) => setQueueStructure(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 text-white"
+                >
+                  <option value="UNIFIED_PARALLEL">
+                    ⚡ Parallel Unified Queue (Single line, available rooms/tables call next in parallel)
+                  </option>
+                  <option value="DEDICATED_STREAMS">
+                    🩺 Dedicated Provider Queues (Separate queue per doctor/specialist)
+                  </option>
+                </select>
               </div>
 
               <div>
@@ -439,33 +545,33 @@ export default function LandingPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
-                    Est Pace (Mins)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="120"
-                    value={basePace}
-                    onChange={(e) => setBasePace(Number(e.target.value))}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 text-white"
-                  />
-                </div>
+              {/* Service Pace and Capacity Tactile Sliders */}
+              <div className="space-y-3">
+                <NumberSlider
+                  label="Estimated Service Pace"
+                  description="Average consultation / service duration"
+                  value={basePace}
+                  min={2}
+                  max={120}
+                  step={1}
+                  unit="Min"
+                  presets={[5, 10, 15, 20, 30, 45]}
+                  onChange={setBasePace}
+                  accentColor="emerald"
+                />
 
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
-                    Daily Capacity
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={capacity}
-                    onChange={(e) => setCapacity(Number(e.target.value))}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 text-white"
-                  />
-                </div>
+                <NumberSlider
+                  label="Maximum Daily Guest Capacity"
+                  description="Automatic queue cutoff limit"
+                  value={capacity}
+                  min={10}
+                  max={500}
+                  step={5}
+                  unit="Guests"
+                  presets={[25, 50, 100, 200, 300]}
+                  onChange={setCapacity}
+                  accentColor="amber"
+                />
               </div>
 
               <button

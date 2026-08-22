@@ -24,6 +24,11 @@ export async function POST(
 
     await client.query('BEGIN');
 
+    await client.query(`
+      ALTER TABLE tokens 
+      ADD COLUMN IF NOT EXISTS assigned_station VARCHAR(100);
+    `);
+
     // 1. Lock the stream row to serialise concurrent "Call Next" taps
     const streamCheck = await client.query(
       `SELECT id FROM queue_streams WHERE id = $1 FOR UPDATE`,
@@ -35,12 +40,12 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Stream not found' }, { status: 404 });
     }
 
-    // 2. Mark current SERVING tokens as COMPLETED (with timestamps)
+    // 2. Mark previous SERVING token for THIS specific station as COMPLETED
     await client.query(
       `UPDATE tokens 
        SET status = 'COMPLETED', completed_serving_at = NOW(), updated_at = NOW() 
-       WHERE stream_id = $1 AND status = 'SERVING'`,
-      [streamId]
+       WHERE stream_id = $1 AND status = 'SERVING' AND (assigned_station = $2 OR assigned_station IS NULL)`,
+      [streamId, counterName]
     );
 
     // 3. Fetch the next WAITING token (canonical order: token_number ASC)
@@ -54,32 +59,40 @@ export async function POST(
     );
 
     if (nextTokenRes.rows.length === 0) {
-      // Queue is now empty — clear stream state
-      await client.query(
-        `UPDATE queue_streams 
-         SET current_serving_token = NULL, active_token_started_at = NULL, updated_at = NOW() 
-         WHERE id = $1`,
+      // Queue is now empty — clear stream state if no other station is serving
+      const remainingServing = await client.query(
+        `SELECT COUNT(*) FROM tokens WHERE stream_id = $1 AND status = 'SERVING'`,
         [streamId]
       );
 
+      if (Number(remainingServing.rows[0].count) === 0) {
+        await client.query(
+          `UPDATE queue_streams 
+           SET current_serving_token = NULL, active_token_started_at = NULL, updated_at = NOW() 
+           WHERE id = $1`,
+          [streamId]
+        );
+      }
+
       await client.query('COMMIT');
-      await publishQueueUpdate(streamId, 'TOKEN_CALLED', { serving_token: null });
+      await publishQueueUpdate(streamId, 'TOKEN_CALLED', { serving_token: null, counter_name: counterName });
       return NextResponse.json({ success: true, message: 'Queue is now empty', serving_token: null });
     }
 
     const nextToken = nextTokenRes.rows[0];
 
-    // 4. Set new token to SERVING
+    // 4. Set new token to SERVING with assigned_station
     const updatedTokenRes = await client.query(
       `UPDATE tokens 
-       SET status = 'SERVING', started_serving_at = NOW(), updated_at = NOW() 
+       SET status = 'SERVING', assigned_station = $2, started_serving_at = NOW(), updated_at = NOW() 
        WHERE id = $1 
        RETURNING *`,
-      [nextToken.id]
+      [nextToken.id, counterName]
     );
 
     const servingTokenPayload = {
       ...updatedTokenRes.rows[0],
+      assigned_station: counterName,
       counter_name: counterName,
     };
 

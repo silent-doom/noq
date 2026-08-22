@@ -12,6 +12,7 @@ interface TokenData {
   customer_phone?: string;
   sms_opt_in?: boolean;
   status: string;
+  assigned_station?: string;
   stream_id: string;
   business_name: string;
   category?: string;
@@ -462,7 +463,12 @@ export default function TokenPassPage() {
         </div>
 
         {/* Assigned Token Section */}
-        <div className="p-6 text-center">
+        <div
+          role="region"
+          aria-label="Queue Position and Status"
+          aria-live="polite"
+          className="p-6 text-center"
+        >
           <p className="text-[11px] font-bold text-[#a1a1aa] tracking-widest uppercase">
             YOUR ASSIGNED TOKEN
           </p>
@@ -536,7 +542,7 @@ export default function TokenPassPage() {
               </div>
             ) : isServing ? (
               <div className="bg-emerald-500 text-white font-bold text-xs rounded-2xl py-3.5 px-4 uppercase tracking-wider text-center shadow-sm animate-pulse">
-                NOW SERVING — PLEASE ENTER
+                NOW SERVING — PROCEED TO {tokenData.assigned_station ? tokenData.assigned_station.toUpperCase() : 'YOUR ASSIGNED ROOM / TABLE'}
               </div>
             ) : isSkipped ? (
               <div className="space-y-3">

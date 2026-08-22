@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Ably from 'ably';
 import { AccessChannelBadge } from '@/components/AccessChannelBadge';
+import { NumberSlider } from '@/components/NumberSlider';
 import { getDomainTerminology, formatWaitTime, generateDomainStations } from '@/lib/domain';
 
 interface Token {
@@ -13,6 +14,7 @@ interface Token {
   customer_name?: string;
   customer_phone?: string;
   status: 'WAITING' | 'SERVING' | 'COMPLETED' | 'CANCELLED' | 'SKIPPED';
+  assigned_station?: string;
   access_channel?: string;
   created_at?: string;
   reschedule_requested_date?: string;
@@ -30,6 +32,18 @@ interface StreamInfo {
   current_effective_time_mins: number;
   pace_per_patient_mins?: number;
   stations?: string[];
+  opening_time?: string;
+  closing_time?: string;
+  operating_days?: string[];
+  queue_structure?: string;
+}
+
+interface LinkedBranch {
+  stream_id: string;
+  business_name: string;
+  stream_name: string;
+  category?: string;
+  phone?: string;
 }
 
 function DashboardContent() {
@@ -48,6 +62,24 @@ function DashboardContent() {
   const [pinInput, setPinInput] = useState<string>('');
   const [pinError, setPinError] = useState<string | null>(null);
 
+  // Multi-Branch Network State
+  const [linkedBranches, setLinkedBranches] = useState<LinkedBranch[]>([]);
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState<boolean>(false);
+  const [linkTargetStreamId, setLinkTargetStreamId] = useState<string>('');
+  const [linkTargetPasscode, setLinkTargetPasscode] = useState<string>('');
+  const [linkLoading, setLinkLoading] = useState<boolean>(false);
+
+  // Patient Transfer State
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState<boolean>(false);
+  const [transferToken, setTransferToken] = useState<Token | null>(null);
+  const [transferTargetStreamId, setTransferTargetStreamId] = useState<string>('');
+  const [transferLoading, setTransferLoading] = useState<boolean>(false);
+
+  // Accessibility State
+  const [isA11yOpen, setIsA11yOpen] = useState<boolean>(false);
+  const [a11yHighContrast, setA11yHighContrast] = useState<boolean>(false);
+  const [a11yLargeText, setA11yLargeText] = useState<boolean>(false);
+
   // Modal States
   const [isWalkInOpen, setIsWalkInOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
@@ -55,6 +87,10 @@ function DashboardContent() {
   const [walkInPhone, setWalkInPhone] = useState<string>('');
   const [customPace, setCustomPace] = useState<number>(15);
   const [broadcastMsg, setBroadcastMsg] = useState<string>('');
+  const [editOpenTime, setEditOpenTime] = useState<string>('09:00');
+  const [editCloseTime, setEditCloseTime] = useState<string>('20:00');
+  const [editOpDays, setEditOpDays] = useState<string[]>(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']);
+  const [editQueueStruct, setEditQueueStruct] = useState<string>('UNIFIED_PARALLEL');
 
   const terms = getDomainTerminology(streamInfo?.category);
 
@@ -82,6 +118,9 @@ function DashboardContent() {
       if (res.ok && json.success) {
         setIsAuthenticated(true);
         sessionStorage.setItem(`noq_auth_${streamId}`, 'true');
+        if (json.sessionToken) {
+          sessionStorage.setItem(`noq_token_${streamId}`, json.sessionToken);
+        }
         setPinError(null);
         setPinInput('');
       } else {
@@ -121,7 +160,14 @@ function DashboardContent() {
     if (!streamId) return;
 
     try {
+      const adminToken = typeof window !== 'undefined' ? sessionStorage.getItem(`noq_token_${streamId}`) : null;
+      const headers: Record<string, string> = {};
+      if (adminToken) {
+        headers['x-admin-token'] = adminToken;
+      }
+
       const res = await fetch(`/api/queue/stream/${streamId}`, {
+        headers,
         cache: 'no-store',
       });
 
@@ -141,6 +187,10 @@ function DashboardContent() {
           if (data.stream.broadcast_message !== undefined) {
             setBroadcastMsg(data.stream.broadcast_message || '');
           }
+          if (data.stream.opening_time) setEditOpenTime(data.stream.opening_time);
+          if (data.stream.closing_time) setEditCloseTime(data.stream.closing_time);
+          if (Array.isArray(data.stream.operating_days)) setEditOpDays(data.stream.operating_days);
+          if (data.stream.queue_structure) setEditQueueStruct(data.stream.queue_structure);
         }
       }
     } catch (error) {
@@ -149,6 +199,91 @@ function DashboardContent() {
       setLoading(false);
     }
   }, [streamId]);
+
+  // Fetch Linked Branches
+  const fetchLinkedBranches = useCallback(async () => {
+    if (!streamId) return;
+    try {
+      const res = await fetch(`/api/branch/link?streamId=${streamId}`);
+      const json = await res.json();
+      if (res.ok && json.success && Array.isArray(json.branches)) {
+        setLinkedBranches(json.branches);
+      }
+    } catch (err) {
+      console.error('Failed to fetch linked branches:', err);
+    }
+  }, [streamId]);
+
+  useEffect(() => {
+    fetchLinkedBranches();
+  }, [fetchLinkedBranches]);
+
+  const handleLinkBranch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!streamId || !linkTargetStreamId.trim() || !linkTargetPasscode.trim()) return;
+
+    setLinkLoading(true);
+    try {
+      const res = await fetch('/api/branch/link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sourceStreamId: streamId,
+          targetStreamId: linkTargetStreamId.trim(),
+          targetPasscode: linkTargetPasscode.trim(),
+        }),
+      });
+
+      const json = await res.json();
+      if (res.ok && json.success) {
+        alert(`✅ ${json.message}`);
+        setLinkTargetStreamId('');
+        setLinkTargetPasscode('');
+        setIsLinkModalOpen(false);
+        fetchLinkedBranches();
+      } else {
+        alert(json.error || 'Failed to link clinic branch.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error while linking branch.');
+    } finally {
+      setLinkLoading(false);
+    }
+  };
+
+  const handleTransferPatient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!transferToken || !transferTargetStreamId) return;
+
+    setTransferLoading(true);
+    try {
+      const res = await fetch('/api/branch/transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tokenId: transferToken.id,
+          targetStreamId: transferTargetStreamId,
+        }),
+      });
+
+      const json = await res.json();
+      if (res.ok && json.success) {
+        alert(`✅ ${json.message}`);
+        setIsTransferModalOpen(false);
+        setTransferToken(null);
+        setTransferTargetStreamId('');
+        fetchQueueData();
+      } else {
+        alert(json.error || 'Failed to transfer patient.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error during patient transfer.');
+    } finally {
+      setTransferLoading(false);
+    }
+  };
 
   // 3. Real-time updates via Ably Pub/Sub & 10s fallback polling
   useEffect(() => {
@@ -315,6 +450,10 @@ function DashboardContent() {
         body: JSON.stringify({
           pace_per_patient_mins: Number(customPace),
           broadcast_message: broadcastMsg,
+          opening_time: editOpenTime,
+          closing_time: editCloseTime,
+          operating_days: editOpDays,
+          queue_structure: editQueueStruct,
         }),
       });
       setIsSettingsOpen(false);
@@ -474,7 +613,7 @@ function DashboardContent() {
 
       {/* Main Screen Panel */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="px-8 py-5 flex items-center justify-between border-b border-zinc-200/60 bg-white/50 backdrop-blur-sm sticky top-0 z-10">
+        <header className="px-8 py-4 flex items-center justify-between border-b border-zinc-200/60 bg-white/70 backdrop-blur-md sticky top-0 z-10">
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-zinc-900">
               {streamInfo?.business_name || 'Business Venue'}
@@ -482,6 +621,39 @@ function DashboardContent() {
             <span className="text-xs bg-zinc-100 text-zinc-600 font-semibold px-3 py-1 rounded-full border border-zinc-200">
               {streamInfo?.stream_name || terms.queueTitle}
             </span>
+
+            {/* Linked Branch Switcher */}
+            {linkedBranches.length > 0 ? (
+              <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1 text-xs text-emerald-950 font-bold">
+                <span className="text-[10px] text-emerald-700 uppercase tracking-wider">BRANCH:</span>
+                <select
+                  value={streamId || ''}
+                  onChange={(e) => {
+                    const newId = e.target.value;
+                    if (newId && newId !== streamId) {
+                      window.location.href = `/dashboard?streamId=${newId}`;
+                    }
+                  }}
+                  className="bg-transparent text-emerald-900 font-bold focus:outline-none cursor-pointer"
+                >
+                  <option value={streamId || ''}>📍 {streamInfo?.business_name || 'Current'} (Active)</option>
+                  {linkedBranches.map((b) => (
+                    <option key={b.stream_id} value={b.stream_id}>
+                      ➔ {b.business_name} ({b.stream_name})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsLinkModalOpen(true)}
+                className="text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1 rounded-full transition flex items-center gap-1 cursor-pointer"
+                title="Connect another clinic/branch of this doctor"
+              >
+                <span>+ Link Branch</span>
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -513,9 +685,19 @@ function DashboardContent() {
                 placeholder={`Search ${terms.guestTerm.toLowerCase()} or token...`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-64 pl-10 pr-4 py-2 bg-white border border-zinc-200 rounded-full text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition shadow-sm"
+                className="w-56 pl-9 pr-3 py-1.5 bg-white border border-zinc-200 rounded-full text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition shadow-xs"
               />
             </div>
+
+            {/* Accessibility Button */}
+            <button
+              onClick={() => setIsA11yOpen(true)}
+              className="px-2.5 py-1.5 rounded-full bg-white border border-zinc-200 text-xs font-bold text-zinc-700 hover:bg-zinc-50 shadow-2xs transition cursor-pointer flex items-center gap-1"
+              title="Accessibility Settings (Contrast, Text Size)"
+              aria-label="Accessibility Options"
+            >
+              <span>👓 A11y</span>
+            </button>
 
             {/* Lock / Unlock Status Indicator */}
             <button
@@ -523,7 +705,10 @@ function DashboardContent() {
                 if (isAuthenticated) {
                   if (confirm('Lock Admin Terminal session?')) {
                     setIsAuthenticated(false);
-                    if (streamId) sessionStorage.removeItem(`noq_auth_${streamId}`);
+                    if (streamId) {
+                      sessionStorage.removeItem(`noq_auth_${streamId}`);
+                      sessionStorage.removeItem(`noq_token_${streamId}`);
+                    }
                   }
                 }
               }}
@@ -539,7 +724,7 @@ function DashboardContent() {
             {/* Settings Gear Icon Modal Toggle */}
             <button
               onClick={() => setIsSettingsOpen(true)}
-              className="w-9 h-9 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-600 hover:bg-zinc-50 shadow-sm transition cursor-pointer"
+              className="w-9 h-9 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-600 hover:bg-zinc-50 shadow-xs transition cursor-pointer"
               title="Queue Settings & Broadcast"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -840,6 +1025,20 @@ function DashboardContent() {
                           >
                             Waitlist
                           </button>
+                          {linkedBranches.length > 0 && (
+                            <button
+                              onClick={() => {
+                                setTransferToken(token);
+                                setTransferTargetStreamId(linkedBranches[0]?.stream_id || '');
+                                setIsTransferModalOpen(true);
+                              }}
+                              disabled={actionLoading}
+                              className="border border-sky-500/40 text-sky-600 bg-sky-50/60 hover:bg-sky-100/80 text-xs font-bold px-3 py-1.5 rounded-full transition cursor-pointer flex items-center gap-1"
+                              title="Transfer patient to another linked branch"
+                            >
+                              <span>🔄 Transfer</span>
+                            </button>
+                          )}
                           <button
                             onClick={() => handleUpdateStatus(token.id, 'CANCELLED')}
                             disabled={actionLoading}
@@ -924,9 +1123,9 @@ function DashboardContent() {
       {/* QUEUE SETTINGS & BROADCAST MODAL */}
       {isSettingsOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-zinc-100">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-zinc-100 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-5">
-              <h3 className="text-lg font-bold text-zinc-900">Queue Settings & Live Broadcast</h3>
+              <h3 className="text-lg font-bold text-zinc-900">Queue Settings & Network</h3>
               <button
                 onClick={() => setIsSettingsOpen(false)}
                 className="text-zinc-400 hover:text-zinc-600 text-sm font-bold"
@@ -935,19 +1134,132 @@ function DashboardContent() {
               </button>
             </div>
             <form onSubmit={handleSaveSettings} className="space-y-4">
+              {/* Consultation Pace Tactile NumberSlider */}
+              <NumberSlider
+                label={terms.paceTerm}
+                description="Average time allocated per session"
+                value={customPace}
+                min={2}
+                max={120}
+                unit="Min"
+                presets={[5, 10, 15, 20, 30, 45]}
+                onChange={setCustomPace}
+                accentColor="emerald"
+              />
+
+              {/* Multi-Branch Clinic Network Manager */}
+              <div className="bg-zinc-50 border border-zinc-200 p-4 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm">🏥</span>
+                    <p className="text-[11px] font-bold text-zinc-800 uppercase tracking-wider">
+                      Multi-Branch Clinic Network ({linkedBranches.length})
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSettingsOpen(false);
+                      setIsLinkModalOpen(true);
+                    }}
+                    className="text-xs font-bold text-emerald-700 hover:text-emerald-900 underline cursor-pointer"
+                  >
+                    + Link Branch
+                  </button>
+                </div>
+
+                {linkedBranches.length === 0 ? (
+                  <p className="text-xs text-zinc-500">
+                    No other clinic branches connected. Connect other clinics (e.g., Mumbai, Navi Mumbai) to seamlessly transfer patients and switch terminals.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {linkedBranches.map((b) => (
+                      <div key={b.stream_id} className="bg-white border border-zinc-200 px-3 py-2 rounded-xl flex items-center justify-between text-xs">
+                        <div>
+                          <span className="font-bold text-zinc-900 block">{b.business_name}</span>
+                          <span className="text-[10px] text-zinc-500 font-mono">{b.stream_name}</span>
+                        </div>
+                        <Link
+                          href={`/dashboard?streamId=${b.stream_id}`}
+                          className="px-2.5 py-1 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 rounded-lg font-bold text-[11px]"
+                        >
+                          Switch ➔
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Working Hours & Schedule Settings */}
+              <div className="bg-zinc-50 border border-zinc-200 p-4 rounded-2xl space-y-3">
+                <p className="text-[11px] font-bold text-zinc-700 uppercase tracking-wider">
+                  Fixed Working Hours & Days
+                </p>
+
+                <div>
+                  <span className="block text-[11px] font-medium text-zinc-500 mb-1.5">Operating Days</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => {
+                      const isSelected = editOpDays.includes(day);
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() =>
+                            setEditOpDays((prev) =>
+                              prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+                            )
+                          }
+                          className={`px-2 py-0.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                            isSelected
+                              ? 'bg-emerald-600 text-white shadow-2xs'
+                              : 'bg-white text-zinc-500 border border-zinc-200 hover:text-zinc-900'
+                          }`}
+                        >
+                          {day}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="block text-[11px] font-medium text-zinc-600 mb-1">Opening Time</label>
+                    <input
+                      type="time"
+                      value={editOpenTime}
+                      onChange={(e) => setEditOpenTime(e.target.value)}
+                      className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-zinc-600 mb-1">Closing Time</label>
+                    <input
+                      type="time"
+                      value={editCloseTime}
+                      onChange={(e) => setEditCloseTime(e.target.value)}
+                      className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Queue Flow / Structure */}
               <div>
                 <label className="block text-xs font-semibold text-zinc-600 mb-1">
-                  {terms.paceTerm}
+                  Queue Structure
                 </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="120"
-                  required
-                  value={customPace}
-                  onChange={(e) => setCustomPace(Number(e.target.value))}
-                  className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-                />
+                <select
+                  value={editQueueStruct}
+                  onChange={(e) => setEditQueueStruct(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-medium text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                >
+                  <option value="UNIFIED_PARALLEL">⚡ Parallel Unified Queue (Single line, parallel multi-doctor calling)</option>
+                  <option value="DEDICATED_STREAMS">🩺 Dedicated Provider Queues (Separate queue per doctor/specialist)</option>
+                </select>
               </div>
 
               <div>
@@ -983,6 +1295,206 @@ function DashboardContent() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* LINK ANOTHER CLINIC / BRANCH MODAL */}
+      {isLinkModalOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-zinc-100 space-y-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-base font-bold text-zinc-900">Link Another Clinic Branch</h3>
+                <p className="text-xs text-zinc-500 mt-0.5">Connect two clinics of the same doctor.</p>
+              </div>
+              <button
+                onClick={() => setIsLinkModalOpen(false)}
+                className="text-zinc-400 hover:text-zinc-600 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl text-xs text-emerald-950 space-y-1">
+              <span className="font-bold block">📍 Your Current Clinic Stream ID:</span>
+              <span className="font-mono text-[11px] bg-white px-2 py-0.5 rounded border border-emerald-300 block select-all">
+                {streamId}
+              </span>
+              <span className="text-[10px] text-emerald-800">
+                Share this ID with your other branch terminal to connect.
+              </span>
+            </div>
+
+            <form onSubmit={handleLinkBranch} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600 mb-1">
+                  Target Branch Stream ID *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Paste destination Stream ID (UUID)"
+                  value={linkTargetStreamId}
+                  onChange={(e) => setLinkTargetStreamId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600 mb-1">
+                  Target Branch Admin PIN *
+                </label>
+                <input
+                  type="password"
+                  required
+                  maxLength={10}
+                  placeholder="Enter target branch PIN (e.g. 123456)"
+                  value={linkTargetPasscode}
+                  onChange={(e) => setLinkTargetPasscode(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsLinkModalOpen(false)}
+                  className="flex-1 py-2.5 border border-zinc-200 text-zinc-600 text-xs font-bold rounded-xl hover:bg-zinc-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={linkLoading}
+                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition"
+                >
+                  {linkLoading ? 'Connecting...' : 'Link Branch ➔'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* PATIENT TRANSFER MODAL */}
+      {isTransferModalOpen && transferToken && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-zinc-100 space-y-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-base font-bold text-zinc-900">Transfer Patient to Branch</h3>
+                <p className="text-xs text-zinc-500 mt-0.5">Move token seamlessly with live pass & SMS update.</p>
+              </div>
+              <button
+                onClick={() => setIsTransferModalOpen(false)}
+                className="text-zinc-400 hover:text-zinc-600 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-zinc-50 border border-zinc-200 p-3 rounded-2xl text-xs">
+              <span className="text-zinc-500 block text-[10px] uppercase font-bold">Selected Patient</span>
+              <p className="font-extrabold text-sm text-zinc-900 mt-0.5">
+                Token #{transferToken.token_number} — {transferToken.customer_name || 'Guest'}
+              </p>
+            </div>
+
+            <form onSubmit={handleTransferPatient} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-600 mb-1.5">
+                  Select Destination Clinic / Branch *
+                </label>
+                <select
+                  value={transferTargetStreamId}
+                  onChange={(e) => setTransferTargetStreamId(e.target.value)}
+                  className="w-full px-3.5 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer"
+                >
+                  {linkedBranches.map((b) => (
+                    <option key={b.stream_id} value={b.stream_id}>
+                      🏥 {b.business_name} ({b.stream_name})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <p className="text-[11px] text-zinc-500 leading-relaxed">
+                ℹ️ The patient will automatically receive a Web Push & SMS notification with their new token pass for the destination clinic.
+              </p>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsTransferModalOpen(false)}
+                  className="flex-1 py-2.5 border border-zinc-200 text-zinc-600 text-xs font-bold rounded-xl hover:bg-zinc-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={transferLoading}
+                  className="flex-1 py-2.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl transition shadow-xs"
+                >
+                  {transferLoading ? 'Transferring...' : 'Transfer Patient ➔'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ACCESSIBILITY MODAL */}
+      {isA11yOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-zinc-100 space-y-4 text-zinc-900">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">👓</span>
+                <h3 className="text-base font-bold">Accessibility Options</h3>
+              </div>
+              <button
+                onClick={() => setIsA11yOpen(false)}
+                className="text-zinc-400 hover:text-zinc-600 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 pt-1">
+              <label className="flex items-center justify-between p-3 bg-zinc-50 border border-zinc-200 rounded-2xl cursor-pointer">
+                <div>
+                  <span className="text-xs font-bold block text-zinc-800">High Contrast Theme</span>
+                  <span className="text-[10px] text-zinc-500">Enhanced visual borders & contrast</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={a11yHighContrast}
+                  onChange={(e) => setA11yHighContrast(e.target.checked)}
+                  className="w-4 h-4 text-emerald-600 rounded cursor-pointer"
+                />
+              </label>
+
+              <label className="flex items-center justify-between p-3 bg-zinc-50 border border-zinc-200 rounded-2xl cursor-pointer">
+                <div>
+                  <span className="text-xs font-bold block text-zinc-800">Large Typography Mode</span>
+                  <span className="text-[10px] text-zinc-500">Scale text for improved readability</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={a11yLargeText}
+                  onChange={(e) => setA11yLargeText(e.target.checked)}
+                  className="w-4 h-4 text-emerald-600 rounded cursor-pointer"
+                />
+              </label>
+            </div>
+
+            <button
+              onClick={() => setIsA11yOpen(false)}
+              className="w-full bg-zinc-900 text-white font-bold py-2.5 rounded-xl text-xs"
+            >
+              Done
+            </button>
           </div>
         </div>
       )}

@@ -158,3 +158,46 @@ export function formatPhoneNumberE164(phone: string, defaultCountryCode: string 
   }
   return `+${digitsOnly}`;
 }
+
+export function maskPhoneNumber(phone?: string): string {
+  if (!phone) return '';
+  const clean = phone.trim();
+  if (clean.length < 6) return '••••••';
+  const last4 = clean.slice(-4);
+  const prefix = clean.startsWith('+') ? clean.slice(0, 3) : '';
+  return `${prefix} •••••• ${last4}`.trim();
+}
+
+export function maskCustomerName(name?: string): string {
+  if (!name) return 'Guest';
+  const parts = name.trim().split(' ');
+  if (parts.length === 1) {
+    const first = parts[0];
+    return first.length > 2 ? `${first[0]}***${first[first.length - 1]}` : first;
+  }
+  return `${parts[0]} ${parts[1][0]}.`;
+}
+
+export function generateAdminSessionToken(streamId: string, passcode: string): string {
+  const secret = process.env.ADMIN_JWT_SECRET || 'noq-secret-key-2026';
+  const payload = `${streamId}:${passcode}:${Date.now()}`;
+  return Buffer.from(`${payload}:${secret}`).toString('base64url');
+}
+
+export function verifyAdminSessionToken(token?: string | null, streamId?: string): boolean {
+  if (!token) return false;
+  try {
+    const decoded = Buffer.from(token, 'base64url').toString('utf-8');
+    const parts = decoded.split(':');
+    if (parts.length < 4) return false;
+    const [tStreamId, , timestamp] = parts;
+    const tokenTime = Number(timestamp);
+    // Token valid for 7 days
+    const isExpired = Date.now() - tokenTime > 7 * 24 * 60 * 60 * 1000;
+    if (isExpired) return false;
+    if (streamId && tStreamId !== streamId) return false;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}

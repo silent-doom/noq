@@ -9,6 +9,7 @@ interface Token {
   token_number: number;
   customer_name?: string;
   status: 'WAITING' | 'SERVING' | 'COMPLETED' | 'CANCELLED' | 'SKIPPED';
+  assigned_station?: string;
   access_channel?: string;
 }
 
@@ -89,7 +90,7 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
         fetchDisplayData();
         if (msg?.name === 'TOKEN_CALLED' && msg?.data?.serving_token && ttsEnabled) {
           const st = msg.data.serving_token;
-          const counter = st.counter_name || 'Counter 1';
+          const counter = st.assigned_station || st.counter_name || 'Counter 1';
           setServingCounter(counter);
           speakAnnouncement(st.token_number, counter);
         }
@@ -112,8 +113,9 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
 
   const terms = getDomainTerminology(streamInfo?.category);
 
-  // Active serving token
-  const currentServingToken = tokens.find((t) => t.status === 'SERVING');
+  // Active serving tokens (support parallel multi-doctor/station serving)
+  const servingTokens = tokens.filter((t) => t.status === 'SERVING');
+  const currentServingToken = servingTokens[0];
 
   // Include both WAITING and SKIPPED tokens in the queue view
   const queueTokens = tokens.filter(
@@ -200,37 +202,70 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
       {/* MAIN DISPLAY CONTENT */}
       <main className="grid grid-cols-12 gap-8 flex-1 mt-6 items-stretch">
         
-        {/* LEFT COLUMN: NOW SERVING HERO BOX */}
-        <div className="col-span-7 bg-[#0d0e12] border-2 border-emerald-500/60 rounded-[2.5rem] p-12 flex flex-col items-center justify-center text-center relative shadow-[0_0_60px_rgba(16,185,129,0.08)]">
+        {/* LEFT COLUMN: NOW SERVING HERO BOX (MULTI-STATION SUPPORT) */}
+        <div
+          role="region"
+          aria-label="Now Serving Section"
+          aria-live="assertive"
+          className="col-span-7 bg-[#0d0e12] border-2 border-emerald-500/60 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center relative shadow-[0_0_60px_rgba(16,185,129,0.08)]"
+        >
           
           <span className="text-sm font-bold text-emerald-400 tracking-widest uppercase mb-4">
-            {currentServingToken && currentServingToken.token_number > 0
-              ? 'NOW SERVING / CURRENT TURN'
+            {servingTokens.length > 0
+              ? `NOW SERVING (${servingTokens.length} ACTIVE STATION${servingTokens.length > 1 ? 'S' : ''})`
               : 'COUNTER AT REST'}
           </span>
 
-          {/* Displays token number or "--" if none active */}
-          <div className="text-[11rem] leading-none font-black text-white tracking-tighter my-2">
-            {currentServingToken && currentServingToken.token_number > 0
-              ? `#${currentServingToken.token_number}`
-              : '--'}
-          </div>
-
-          <div className="text-2xl font-medium text-zinc-300 tracking-wide mt-2">
-            {currentServingToken && currentServingToken.token_number > 0
-              ? currentServingToken.customer_name
-              : terms.atRestStatus}
-          </div>
-
-          {currentServingToken && (
-            <div className="mt-6 px-6 py-2 bg-emerald-500 text-black font-extrabold text-lg rounded-full tracking-wider uppercase shadow-lg shadow-emerald-500/20 animate-pulse">
-              ➔ PROCEED TO {servingCounter.toUpperCase()}
+          {servingTokens.length === 0 ? (
+            <div className="my-auto space-y-4">
+              <div className="text-7xl font-black text-zinc-700">--</div>
+              <div className="text-xl font-medium text-zinc-400">{terms.atRestStatus}</div>
+            </div>
+          ) : servingTokens.length === 1 ? (
+            <div className="my-auto flex flex-col items-center">
+              <div className="text-[10rem] leading-none font-black text-white tracking-tighter my-1">
+                #{servingTokens[0].token_number}
+              </div>
+              <div className="text-2xl font-medium text-zinc-300 tracking-wide mt-2">
+                {servingTokens[0].customer_name || `Anonymous ${terms.guestTerm}`}
+              </div>
+              <div className="mt-6 px-6 py-2.5 bg-emerald-500 text-black font-extrabold text-lg rounded-full tracking-wider uppercase shadow-lg shadow-emerald-500/20 animate-pulse">
+                ➔ PROCEED TO {(servingTokens[0].assigned_station || servingCounter).toUpperCase()}
+              </div>
+            </div>
+          ) : (
+            /* Parallel Multi-Station Active Grid */
+            <div className="w-full grid grid-cols-2 gap-4 my-auto">
+              {servingTokens.map((st) => (
+                <div
+                  key={st.id}
+                  className="bg-zinc-950/80 border border-emerald-500/40 rounded-3xl p-6 flex flex-col items-center justify-center text-center shadow-lg"
+                >
+                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                    {st.assigned_station || 'Station'}
+                  </span>
+                  <div className="text-5xl font-black text-white tracking-tight my-2">
+                    #{st.token_number}
+                  </div>
+                  <div className="text-xs font-semibold text-zinc-300 truncate max-w-full">
+                    {st.customer_name || `Anonymous ${terms.guestTerm}`}
+                  </div>
+                  <div className="mt-3 px-3 py-1 bg-emerald-500 text-black font-bold text-xs rounded-full uppercase tracking-wider">
+                    PROCEED NOW ➔
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
 
         {/* RIGHT COLUMN: UP NEXT & WAITLIST */}
-        <div className="col-span-5 bg-[#0d0e12] border border-zinc-800/80 rounded-[2.5rem] p-8 flex flex-col">
+        <div
+          role="region"
+          aria-label="Upcoming Queue Waitlist"
+          aria-live="polite"
+          className="col-span-5 bg-[#0d0e12] border border-zinc-800/80 rounded-[2.5rem] p-8 flex flex-col"
+        >
           
           <div className="flex items-center justify-between pb-5 border-b border-zinc-800/80">
             <span className="text-xs font-bold text-zinc-400 tracking-wider uppercase">

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { publishQueueUpdate } from '@/lib/ably';
+import { verifyAdminSessionToken, maskPhoneNumber } from '@/lib/domain';
 
 export async function GET(
   req: NextRequest,
@@ -11,6 +12,9 @@ export async function GET(
     // Safe params resolution for Next.js 14 & Next.js 15
     const resolvedParams = await Promise.resolve(params);
     const { streamId } = resolvedParams;
+
+    const authHeader = req.headers.get('x-admin-token') || req.headers.get('authorization')?.replace('Bearer ', '');
+    const isAdmin = verifyAdminSessionToken(authHeader, streamId);
 
     // Fetch stream with parent business name and category
     const streamRes = await client.query(
@@ -36,10 +40,16 @@ export async function GET(
       [streamId]
     );
 
+    const safeTokens = tokensRes.rows.map((tok: any) => ({
+      ...tok,
+      customer_phone: isAdmin ? tok.customer_phone : (tok.customer_phone ? maskPhoneNumber(tok.customer_phone) : null),
+    }));
+
     return NextResponse.json({
       success: true,
       stream: streamRes.rows[0],
-      tokens: tokensRes.rows,
+      tokens: safeTokens,
+      isAdmin,
     });
   } catch (error: any) {
     console.error('Error fetching stream:', error);
@@ -62,45 +72,70 @@ export async function PATCH(
     const { streamId } = resolvedParams;
     const body = await req.json();
 
-    const { broadcast_message } = body;
+    const { broadcast_message, opening_time, closing_time, operating_days, queue_structure, stations } = body;
     const rawPace =
       body.pace_per_patient_mins ??
       body.pace ??
       body.current_effective_time_mins;
-    const paceVal = rawPace !== undefined ? Number(rawPace) : null;
+    const paceVal = rawPace !== undefined && rawPace !== null && !isNaN(Number(rawPace)) ? Number(rawPace) : null;
 
-    let updateRes;
+    const setClauses: string[] = [];
+    const paramsArray: any[] = [];
 
-    if (broadcast_message !== undefined && paceVal !== null && !isNaN(paceVal) && paceVal > 0) {
-      updateRes = await client.query(
-        `UPDATE queue_streams 
-         SET broadcast_message = $1, pace_per_patient_mins = $2, current_effective_time_mins = $3, updated_at = NOW() 
-         WHERE id = $4 
-         RETURNING *`,
-        [broadcast_message?.trim() || null, paceVal, paceVal, streamId]
-      );
-    } else if (broadcast_message !== undefined) {
-      updateRes = await client.query(
-        `UPDATE queue_streams 
-         SET broadcast_message = $1, updated_at = NOW() 
-         WHERE id = $2 
-         RETURNING *`,
-        [broadcast_message?.trim() || null, streamId]
-      );
-    } else if (paceVal !== null && !isNaN(paceVal) && paceVal > 0) {
-      updateRes = await client.query(
-        `UPDATE queue_streams 
-         SET pace_per_patient_mins = $1, current_effective_time_mins = $2, updated_at = NOW() 
-         WHERE id = $3 
-         RETURNING *`,
-        [paceVal, paceVal, streamId]
-      );
-    } else {
+    if (broadcast_message !== undefined) {
+      paramsArray.push(broadcast_message?.trim() || null);
+      setClauses.push(`broadcast_message = $${paramsArray.length}`);
+    }
+
+    if (paceVal !== null && paceVal > 0) {
+      paramsArray.push(paceVal);
+      setClauses.push(`pace_per_patient_mins = $${paramsArray.length}`);
+      paramsArray.push(paceVal);
+      setClauses.push(`current_effective_time_mins = $${paramsArray.length}`);
+    }
+
+    if (opening_time) {
+      paramsArray.push(opening_time.trim());
+      setClauses.push(`opening_time = $${paramsArray.length}`);
+    }
+
+    if (closing_time) {
+      paramsArray.push(closing_time.trim());
+      setClauses.push(`closing_time = $${paramsArray.length}`);
+    }
+
+    if (operating_days && Array.isArray(operating_days)) {
+      paramsArray.push(JSON.stringify(operating_days));
+      setClauses.push(`operating_days = $${paramsArray.length}`);
+    }
+
+    if (queue_structure) {
+      paramsArray.push(queue_structure);
+      setClauses.push(`queue_structure = $${paramsArray.length}`);
+    }
+
+    if (stations && Array.isArray(stations)) {
+      paramsArray.push(JSON.stringify(stations));
+      setClauses.push(`stations = $${paramsArray.length}`);
+    }
+
+    if (setClauses.length === 0) {
       return NextResponse.json(
         { success: false, error: 'No valid parameters provided to update stream' },
         { status: 400 }
       );
     }
+
+    setClauses.push(`updated_at = NOW()`);
+    paramsArray.push(streamId);
+
+    const updateRes = await client.query(
+      `UPDATE queue_streams 
+       SET ${setClauses.join(', ')} 
+       WHERE id = $${paramsArray.length} 
+       RETURNING *`,
+      paramsArray
+    );
 
     if (updateRes.rows.length === 0) {
       return NextResponse.json(

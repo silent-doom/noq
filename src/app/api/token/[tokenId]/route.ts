@@ -10,6 +10,11 @@ export async function GET(
     const resolvedParams = await params;
     const { tokenId } = resolvedParams;
 
+    await client.query(`
+      ALTER TABLE tokens 
+      ADD COLUMN IF NOT EXISTS assigned_station VARCHAR(100);
+    `);
+
     const tokenRes = await client.query(
       `SELECT 
         t.id,
@@ -17,6 +22,7 @@ export async function GET(
         t.customer_name,
         t.customer_phone,
         t.status,
+        t.assigned_station,
         t.stream_id,
         t.access_channel,
         t.created_at,
@@ -110,6 +116,7 @@ export async function GET(
         customer_name: token.customer_name,
         customer_phone: token.customer_phone,
         status: token.status,
+        assigned_station: token.assigned_station || null,
         access_channel: token.access_channel || 'WALK_IN',
         stream_id: token.stream_id,
         business_name: token.business_name || 'Clinic Queue',
@@ -247,8 +254,14 @@ export async function PATCH(
     }
 
     // --- 2. REGULAR STATUS UPDATE (SERVING, SKIPPED, COMPLETED, CANCELLED) ---
+    const assignedStationVal = body.assigned_station || body.counter_name || null;
     let query = `UPDATE tokens SET status = $1, updated_at = NOW()`;
     const paramsArray: any[] = [status];
+
+    if (assignedStationVal) {
+      paramsArray.push(assignedStationVal);
+      query += `, assigned_station = $${paramsArray.length}`;
+    }
 
     if (status === 'SERVING') {
       query += `, started_serving_at = NOW()`;
@@ -256,8 +269,8 @@ export async function PATCH(
       query += `, completed_serving_at = NOW()`;
     }
 
-    query += ` WHERE id = $2 RETURNING *`;
     paramsArray.push(tokenId);
+    query += ` WHERE id = $${paramsArray.length} RETURNING *`;
 
     const updateRes = await client.query(query, paramsArray);
     const updatedToken = updateRes.rows[0];

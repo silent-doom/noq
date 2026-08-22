@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   const client = await db.connect();
   try {
     const body = await req.json();
-    const { name, category, phone, baseServiceTimeMins, maxDailyCapacity, adminPasscode, stations, stationCounts, operatingDays, openingTime, closingTime } = body;
+    const { name, category, phone, baseServiceTimeMins, maxDailyCapacity, adminPasscode, stations, stationCounts, operatingDays, openingTime, closingTime, queueStructure } = body;
 
     if (!name?.trim()) {
       return NextResponse.json(
@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
     const opDays = Array.isArray(operatingDays) && operatingDays.length > 0 ? operatingDays : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const openVal = openingTime?.trim() || '09:00';
     const closeVal = closingTime?.trim() || '20:00';
+    const qStruct = queueStructure === 'DEDICATED_STREAMS' ? 'DEDICATED_STREAMS' : 'UNIFIED_PARALLEL';
 
     const rawCat = (category || '').toLowerCase().trim();
     let businessCategory = 'RETAIL';
@@ -50,7 +51,8 @@ export async function POST(req: NextRequest) {
       ADD COLUMN IF NOT EXISTS stations JSONB,
       ADD COLUMN IF NOT EXISTS operating_days JSONB,
       ADD COLUMN IF NOT EXISTS opening_time VARCHAR(10),
-      ADD COLUMN IF NOT EXISTS closing_time VARCHAR(10);
+      ADD COLUMN IF NOT EXISTS closing_time VARCHAR(10),
+      ADD COLUMN IF NOT EXISTS queue_structure VARCHAR(50);
     `);
 
     // 1. Insert Business
@@ -63,12 +65,12 @@ export async function POST(req: NextRequest) {
 
     const newBusiness = bRes.rows[0];
 
-    // 3. Create initial Queue Stream with stations & operating hours
+    // 3. Create initial Queue Stream with stations, operating hours & queue_structure
     const sRes = await client.query(
-      `INSERT INTO queue_streams (business_id, stream_name, is_active, status, pace_per_patient_mins, current_effective_time_mins, stations, operating_days, opening_time, closing_time)
-       VALUES ($1, $2, true, 'ACTIVE', $3, $4, $5, $6, $7, $8)
+      `INSERT INTO queue_streams (business_id, stream_name, is_active, status, pace_per_patient_mins, current_effective_time_mins, stations, operating_days, opening_time, closing_time, queue_structure)
+       VALUES ($1, $2, true, 'ACTIVE', $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [newBusiness.id, defaultStreamName, paceMins, paceMins, JSON.stringify(computedStations), JSON.stringify(opDays), openVal, closeVal]
+      [newBusiness.id, defaultStreamName, paceMins, paceMins, JSON.stringify(computedStations), JSON.stringify(opDays), openVal, closeVal, qStruct]
     );
 
     const newStream = sRes.rows[0];

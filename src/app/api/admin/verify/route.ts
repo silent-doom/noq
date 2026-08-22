@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { generateAdminSessionToken } from '@/lib/domain';
 
 export async function POST(req: NextRequest) {
   const client = await db.connect();
@@ -39,10 +40,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const sessionToken = generateAdminSessionToken(streamId, passcode.trim());
+
     return NextResponse.json({
       success: true,
       message: 'Authenticated successfully',
       businessName: res.rows[0].business_name,
+      sessionToken,
     });
   } catch (error: any) {
     console.error('Admin Auth Verification Error:', error);
