@@ -20,9 +20,13 @@ export async function POST(
       );
     }
 
-    // Lookup token
+    // Lookup token and its associated stream / business google maps link
     const tokenRes = await client.query(
-      `SELECT stream_id FROM tokens WHERE id = $1`,
+      `SELECT t.stream_id, COALESCE(s.google_maps_url, b.google_maps_url) AS google_maps_url
+       FROM tokens t
+       JOIN queue_streams s ON t.stream_id = s.id
+       LEFT JOIN businesses b ON s.business_id = b.id
+       WHERE t.id = $1`,
       [tokenId]
     );
 
@@ -34,6 +38,7 @@ export async function POST(
     }
 
     const streamId = tokenRes.rows[0].stream_id;
+    const googleMapsUrl = tokenRes.rows[0].google_maps_url || null;
 
     // Check if feedback already submitted for this token
     const existingRes = await client.query(
@@ -56,7 +61,11 @@ export async function POST(
       );
     }
 
-    return NextResponse.json({ success: true, message: 'Thank you for your feedback!' });
+    return NextResponse.json({
+      success: true,
+      message: 'Thank you for your feedback!',
+      googleMapsUrl,
+    });
   } catch (error: any) {
     console.error('Error submitting feedback:', error);
     return NextResponse.json(

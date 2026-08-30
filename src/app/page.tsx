@@ -11,6 +11,7 @@ export default function LandingPage() {
   const [bizName, setBizName] = useState('');
   const [category, setCategory] = useState('clinic');
   const [phone, setPhone] = useState('');
+  const [googleMapsUrl, setGoogleMapsUrl] = useState('');
   const [adminPasscode, setAdminPasscode] = useState('123456');
   const [basePace, setBasePace] = useState(15);
   const [capacity, setCapacity] = useState(100);
@@ -47,6 +48,7 @@ export default function LandingPage() {
           name: bizName,
           category,
           phone,
+          googleMapsUrl: googleMapsUrl.trim(),
           adminPasscode,
           baseServiceTimeMins: basePace,
           maxDailyCapacity: capacity,
@@ -528,6 +530,25 @@ export default function LandingPage() {
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 text-white"
                 />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400">
+                    Google Maps / Review Link
+                  </label>
+                  <span className="text-[10px] text-emerald-400 font-semibold">Optional</span>
+                </div>
+                <input
+                  type="url"
+                  placeholder="e.g. https://maps.app.goo.gl/... or https://g.page/r/..."
+                  value={googleMapsUrl}
+                  onChange={(e) => setGoogleMapsUrl(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 text-white placeholder-zinc-600"
+                />
+                <p className="text-[11px] text-zinc-400 mt-1">
+                  🌟 After service, customers will be redirected to leave a 5-star review on your Google Maps page.
+                </p>
               </div>
 
               <div>

@@ -72,7 +72,13 @@ export async function PATCH(
     const { streamId } = resolvedParams;
     const body = await req.json();
 
+    await client.query(`
+      ALTER TABLE queue_streams ADD COLUMN IF NOT EXISTS google_maps_url TEXT;
+      ALTER TABLE businesses ADD COLUMN IF NOT EXISTS google_maps_url TEXT;
+    `);
+
     const { broadcast_message, opening_time, closing_time, operating_days, queue_structure, stations } = body;
+    const googleMapsUrl = body.google_maps_url ?? body.googleMapsUrl;
     const rawPace =
       body.pace_per_patient_mins ??
       body.pace ??
@@ -85,6 +91,11 @@ export async function PATCH(
     if (broadcast_message !== undefined) {
       paramsArray.push(broadcast_message?.trim() || null);
       setClauses.push(`broadcast_message = $${paramsArray.length}`);
+    }
+
+    if (googleMapsUrl !== undefined) {
+      paramsArray.push(googleMapsUrl?.trim() || null);
+      setClauses.push(`google_maps_url = $${paramsArray.length}`);
     }
 
     if (paceVal !== null && paceVal > 0) {

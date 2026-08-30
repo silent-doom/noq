@@ -29,6 +29,7 @@ interface TokenData {
   reschedule_status?: string;
   opening_time?: string;
   closing_time?: string;
+  google_maps_url?: string | null;
 }
 
 export default function TokenPassPage() {
@@ -47,6 +48,7 @@ export default function TokenPassPage() {
   const [comment, setComment] = useState<string>('');
   const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(false);
   const [feedbackSubmitting, setFeedbackSubmitting] = useState<boolean>(false);
+  const [returnedMapsUrl, setReturnedMapsUrl] = useState<string | null>(null);
   const [audioEnabled, setAudioEnabled] = useState<boolean>(false);
 
   // Reschedule State
@@ -355,10 +357,22 @@ export default function TokenPassPage() {
         body: JSON.stringify({ rating, comment }),
       });
 
-      if (res.ok) {
+      const json = await res.json();
+
+      if (res.ok && json.success) {
         setFeedbackSubmitted(true);
+        const mapsUrl = json.googleMapsUrl || tokenData?.google_maps_url;
+        if (mapsUrl) {
+          setReturnedMapsUrl(mapsUrl);
+          // Directly open in a new tab upon customer submission
+          try {
+            window.open(mapsUrl, '_blank', 'noopener,noreferrer');
+          } catch (e) {
+            // Popup blocker fallback handled by UI button
+          }
+        }
       } else {
-        alert('Could not save feedback. Please try again.');
+        alert(json.error || 'Could not save feedback. Please try again.');
       }
     } catch (err) {
       console.error('Error submitting feedback:', err);
@@ -486,18 +500,42 @@ export default function TokenPassPage() {
                 </div>
 
                 {/* POST-SERVICE RATING & FEEDBACK FORM */}
-                <div className="bg-emerald-50/80 border border-emerald-200/80 rounded-2xl p-5 text-left">
+                <div className="bg-emerald-50/80 border border-emerald-200/80 rounded-2xl p-5 text-left shadow-2xs">
                   {feedbackSubmitted ? (
-                    <div className="text-center py-2">
-                      <div className="text-2xl mb-1">⭐</div>
-                      <p className="text-sm font-bold text-emerald-900">Thank you for your rating!</p>
-                      <p className="text-xs text-emerald-700 mt-1">Your feedback helps improve our service.</p>
+                    <div className="text-center py-2 space-y-2.5">
+                      <div className="text-3xl animate-bounce">🌟</div>
+                      <div>
+                        <p className="text-sm font-extrabold text-emerald-950">Thank you for your rating!</p>
+                        <p className="text-xs text-emerald-800 mt-1 leading-relaxed">
+                          Your feedback helps us provide an exceptional experience.
+                        </p>
+                      </div>
+
+                      {(returnedMapsUrl || tokenData.google_maps_url) && (
+                        <div className="pt-2">
+                          <a
+                            href={returnedMapsUrl || tokenData.google_maps_url || '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl text-xs uppercase tracking-wider transition shadow-sm cursor-pointer"
+                          >
+                            <span>⭐ Share Review on Google Maps ↗</span>
+                          </a>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <form onSubmit={handleFeedbackSubmit} className="space-y-3">
-                      <p className="text-xs font-bold text-emerald-950 text-center uppercase tracking-wider">
-                        Rate Your Experience
-                      </p>
+                      <div className="text-center">
+                        <p className="text-xs font-bold text-emerald-950 uppercase tracking-wider">
+                          Rate Your Experience
+                        </p>
+                        {tokenData.google_maps_url && (
+                          <p className="text-[11px] text-emerald-700 mt-0.5 font-medium">
+                            Help others by leaving a quick review
+                          </p>
+                        )}
+                      </div>
                       
                       {/* Star Rating Widget */}
                       <div className="flex justify-center gap-2 py-1">
@@ -528,9 +566,9 @@ export default function TokenPassPage() {
                       <button
                         type="submit"
                         disabled={rating < 1 || feedbackSubmitting}
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-xs uppercase tracking-wider transition"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-xs uppercase tracking-wider transition cursor-pointer shadow-2xs"
                       >
-                        {feedbackSubmitting ? 'Submitting...' : 'Submit Feedback'}
+                        {feedbackSubmitting ? 'Submitting...' : tokenData.google_maps_url ? 'Submit & Review on Google Maps ↗' : 'Submit Feedback'}
                       </button>
                     </form>
                   )}

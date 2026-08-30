@@ -38,6 +38,7 @@ export async function GET(
         s.opening_time,
         s.closing_time,
         s.operating_days,
+        COALESCE(s.google_maps_url, b.google_maps_url) AS google_maps_url,
         b.name AS business_name,
         b.category
        FROM tokens t
@@ -137,6 +138,7 @@ export async function GET(
         sms_opt_in: Boolean(token.sms_opt_in),
         opening_time: token.opening_time || null,
         closing_time: token.closing_time || null,
+        google_maps_url: token.google_maps_url || null,
       },
     });
   } catch (error: any) {

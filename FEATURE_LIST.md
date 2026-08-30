@@ -103,8 +103,10 @@ Instead of forcing patients, diners, or customers to stand in line or sit in cra
   - `Cancel Token` button allows guests who need to leave early to surrender their ticket with 1 click, freeing up queue space for others.
 - **Self-Serve Reschedule Request**:
   - Customers who cannot make it can pick a preferred future date and time slot (`10:00 AM`, `02:30 PM`, etc.) directly from their pass.
-- **5-Star CSAT Customer Satisfaction Rating**:
+- **5-Star CSAT Customer Satisfaction Rating & Google Maps Review Redirection**:
   - Upon session completion, an interactive 5-star rating widget appears with optional text review for instant service feedback.
+  - **Automated Google Maps Redirection**: If the business added their Google Maps Review URL (configured easily at onboarding or in dashboard settings), customers who submit their rating are automatically redirected to the business's official Google Maps review profile to leave a public 5-star review.
+  - A prominent *"⭐ Share Review on Google Maps ↗"* action card remains accessible so customers can post their review anytime.
 - **Location & Google Maps Integration**:
   - Quick button to view venue address and get driving directions in Google Maps or Apple Maps.
 

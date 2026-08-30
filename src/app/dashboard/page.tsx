@@ -91,6 +91,7 @@ function DashboardContent() {
   const [editCloseTime, setEditCloseTime] = useState<string>('20:00');
   const [editOpDays, setEditOpDays] = useState<string[]>(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']);
   const [editQueueStruct, setEditQueueStruct] = useState<string>('UNIFIED_PARALLEL');
+  const [editGoogleMapsUrl, setEditGoogleMapsUrl] = useState<string>('');
 
   const terms = getDomainTerminology(streamInfo?.category);
 
@@ -191,6 +192,7 @@ function DashboardContent() {
           if (data.stream.closing_time) setEditCloseTime(data.stream.closing_time);
           if (Array.isArray(data.stream.operating_days)) setEditOpDays(data.stream.operating_days);
           if (data.stream.queue_structure) setEditQueueStruct(data.stream.queue_structure);
+          if (data.stream.google_maps_url !== undefined) setEditGoogleMapsUrl(data.stream.google_maps_url || '');
         }
       }
     } catch (error) {
@@ -454,6 +456,7 @@ function DashboardContent() {
           closing_time: editCloseTime,
           operating_days: editOpDays,
           queue_structure: editQueueStruct,
+          google_maps_url: editGoogleMapsUrl.trim(),
         }),
       });
       setIsSettingsOpen(false);
@@ -1260,6 +1263,25 @@ function DashboardContent() {
                   <option value="UNIFIED_PARALLEL">⚡ Parallel Unified Queue (Single line, parallel multi-doctor calling)</option>
                   <option value="DEDICATED_STREAMS">🩺 Dedicated Provider Queues (Separate queue per doctor/specialist)</option>
                 </select>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-zinc-700">
+                    ⭐ Google Maps Review / Profile Link
+                  </label>
+                  <span className="text-[10px] text-emerald-600 font-bold">Optional</span>
+                </div>
+                <input
+                  type="url"
+                  placeholder="e.g. https://maps.app.goo.gl/... or https://g.page/r/..."
+                  value={editGoogleMapsUrl}
+                  onChange={(e) => setEditGoogleMapsUrl(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                />
+                <p className="text-[10px] text-zinc-400 mt-1">
+                  After service completion, customers who submit 5-star ratings will be automatically redirected to your Google Maps review page.
+                </p>
               </div>
 
               <div>
