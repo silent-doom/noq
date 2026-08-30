@@ -1353,7 +1353,7 @@ function DashboardContent() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-zinc-100 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-5">
-              <h3 className="text-lg font-bold text-zinc-900">Queue Settings & Network</h3>
+              <h3 className="text-lg font-bold text-zinc-900">Queue Settings</h3>
               <button
                 onClick={() => setIsSettingsOpen(false)}
                 className="text-zinc-400 hover:text-zinc-600 text-sm font-bold"
@@ -1375,50 +1375,6 @@ function DashboardContent() {
                 accentColor="emerald"
               />
 
-              {/* Multi-Branch Clinic Network Manager */}
-              <div className="bg-zinc-50 border border-zinc-200 p-4 rounded-2xl space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm">🏥</span>
-                    <p className="text-[11px] font-bold text-zinc-800 uppercase tracking-wider">
-                      Multi-Branch Clinic Network ({linkedBranches.length})
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsSettingsOpen(false);
-                      setIsLinkModalOpen(true);
-                    }}
-                    className="text-xs font-bold text-emerald-700 hover:text-emerald-900 underline cursor-pointer"
-                  >
-                    + Link Branch
-                  </button>
-                </div>
-
-                {linkedBranches.length === 0 ? (
-                  <p className="text-xs text-zinc-500">
-                    No other clinic branches connected. Connect other clinics (e.g., Mumbai, Navi Mumbai) to seamlessly transfer patients and switch terminals.
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {linkedBranches.map((b) => (
-                      <div key={b.stream_id} className="bg-white border border-zinc-200 px-3 py-2 rounded-xl flex items-center justify-between text-xs">
-                        <div>
-                          <span className="font-bold text-zinc-900 block">{b.business_name}</span>
-                          <span className="text-[10px] text-zinc-500 font-mono">{b.stream_name}</span>
-                        </div>
-                        <Link
-                          href={`/dashboard?streamId=${b.stream_id}`}
-                          className="px-2.5 py-1 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 rounded-lg font-bold text-[11px]"
-                        >
-                          Switch ➔
-                        </Link>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
 
               {/* Working Hours & Schedule Settings */}
               <div className="bg-zinc-50 border border-zinc-200 p-4 rounded-2xl space-y-3">
@@ -1450,27 +1406,6 @@ function DashboardContent() {
                         </button>
                       );
                     })}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 pt-1">
-                  <div>
-                    <label className="block text-[11px] font-medium text-zinc-600 mb-1">Opening Time</label>
-                    <input
-                      type="time"
-                      value={editOpenTime}
-                      onChange={(e) => setEditOpenTime(e.target.value)}
-                      className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-zinc-600 mb-1">Closing Time</label>
-                    <input
-                      type="time"
-                      value={editCloseTime}
-                      onChange={(e) => setEditCloseTime(e.target.value)}
-                      className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-                    />
                   </div>
                 </div>
               </div>
