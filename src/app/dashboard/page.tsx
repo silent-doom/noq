@@ -1026,131 +1026,197 @@ function DashboardContent() {
         )}
 
         {/* Layout Grid */}
-        <div className="p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-8 max-w-7xl">
-          {/* Left Column */}
-          <div className="lg:col-span-5 space-y-4 sm:space-y-6">
-            <div className="bg-black text-white rounded-[2rem] p-5 sm:p-7 flex flex-col items-center text-center relative shadow-xl">
-              <div className="w-full flex items-center justify-between">
-                <span className={`inline-flex items-center gap-1.5 ${currentServingTokenObj ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-zinc-800 text-zinc-400 border-zinc-700'} border text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${currentServingTokenObj ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-500'}`} />
-                  {currentServingTokenObj ? 'SERVING NOW' : 'COUNTER AT REST'}
+        <div className="p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-8 max-w-7xl w-full">
+
+          {/* ─── LEFT COLUMN: Control Panel ─── */}
+          <div className="lg:col-span-5 space-y-4">
+
+            {/* Current Token Card */}
+            <div className="bg-black text-white rounded-3xl shadow-xl overflow-hidden">
+
+              {/* Mobile: horizontal strip layout */}
+              <div className="flex lg:hidden items-center gap-4 p-4">
+                {/* Token number big */}
+                <div className="w-20 h-20 bg-zinc-900 rounded-2xl flex flex-col items-center justify-center shrink-0 border border-zinc-800">
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">NOW</span>
+                  <span className="text-3xl font-black text-white leading-none mt-0.5">
+                    {currentServingTokenObj?.token_number ? `#${currentServingTokenObj.token_number}` : '--'}
+                  </span>
+                </div>
+
+                {/* Name + status + actions */}
+                <div className="flex-1 min-w-0 space-y-2.5">
+                  <div>
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${currentServingTokenObj ? 'bg-emerald-500/20 text-emerald-400' : 'bg-zinc-800 text-zinc-500'}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${currentServingTokenObj ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-600'}`} />
+                      {currentServingTokenObj ? 'SERVING NOW' : 'AT REST'}
+                    </span>
+                    <p className="text-sm font-semibold text-zinc-200 mt-1 truncate">
+                      {currentServingTokenObj?.customer_name || terms.atRestStatus}
+                    </p>
+                  </div>
+
+                  {/* Action buttons row — horizontal on mobile */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleNextToken}
+                      disabled={actionLoading || allWaitingTokens.length === 0}
+                      className="flex-1 bg-emerald-500 hover:bg-emerald-600 disabled:bg-zinc-800 disabled:text-zinc-600 text-white text-[11px] font-bold py-2.5 rounded-xl transition cursor-pointer"
+                    >
+                      {actionLoading ? '...' : `CALL NEXT`}
+                    </button>
+                    <button
+                      onClick={() => currentServingTokenObj && handleUpdateStatus(currentServingTokenObj.id, 'COMPLETED')}
+                      disabled={!currentServingTokenObj || actionLoading}
+                      className="px-3 py-2.5 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-[11px] font-semibold text-emerald-400 rounded-xl border border-zinc-800 cursor-pointer"
+                    >
+                      ✓ Done
+                    </button>
+                    <button
+                      onClick={handleExtendPace}
+                      disabled={actionLoading}
+                      className="px-3 py-2.5 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-[11px] font-bold text-amber-400 rounded-xl border border-zinc-800 cursor-pointer"
+                      title="+5 mins"
+                    >
+                      +5m
+                    </button>
+                    <button
+                      onClick={() => currentServingTokenObj && handleWaitlist(currentServingTokenObj.id)}
+                      disabled={!currentServingTokenObj || actionLoading}
+                      className="px-3 py-2.5 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-[11px] font-semibold text-zinc-400 rounded-xl border border-zinc-800 cursor-pointer"
+                    >
+                      Skip
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Desktop: original centred layout */}
+              <div className="hidden lg:flex flex-col items-center text-center p-7">
+                <div className="w-full flex items-center justify-between">
+                  <span className={`inline-flex items-center gap-1.5 ${currentServingTokenObj ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-zinc-800 text-zinc-400 border-zinc-700'} border text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${currentServingTokenObj ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-500'}`} />
+                    {currentServingTokenObj ? 'SERVING NOW' : 'COUNTER AT REST'}
+                  </span>
+                </div>
+
+                <span className="text-[11px] font-bold text-zinc-400 tracking-widest uppercase mt-6">
+                  CURRENT TOKEN
                 </span>
-              </div>
 
-              <span className="text-[11px] font-bold text-zinc-400 tracking-widest uppercase mt-6">
-                CURRENT TOKEN
-              </span>
+                <div className="text-7xl font-black text-white tracking-tight my-2">
+                  {currentServingTokenObj && currentServingTokenObj.token_number > 0
+                    ? `#${currentServingTokenObj.token_number}`
+                    : '--'}
+                </div>
 
-              {/* Displays token number or "--" if none serving / marked done */}
-              <div className="text-7xl font-black text-white tracking-tight my-2">
-                {currentServingTokenObj && currentServingTokenObj.token_number > 0
-                  ? `#${currentServingTokenObj.token_number}`
-                  : '--'}
-              </div>
-
-              {/* Customer Name or "Service Counter at Rest — Ready for Next Guest" */}
-              <div className="text-zinc-300 font-medium text-sm mb-6 max-w-xs leading-relaxed">
-                {currentServingTokenObj && currentServingTokenObj.token_number > 0
-                  ? currentServingTokenObj.customer_name
-                  : terms.atRestStatus}
-              </div>
-
-              {/* CALL NEXT GUEST Button */}
-              <button
-                onClick={handleNextToken}
-                disabled={actionLoading || allWaitingTokens.length === 0}
-                className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20 cursor-pointer"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                <span>{actionLoading ? 'Updating...' : `CALL NEXT ${terms.guestTerm.toUpperCase()}`}</span>
-              </button>
-
-              <div className="mt-3 w-full flex gap-2">
-                <button
-                  onClick={() =>
-                    currentServingTokenObj &&
-                    handleUpdateStatus(currentServingTokenObj.id, 'COMPLETED')
-                  }
-                  disabled={!currentServingTokenObj || actionLoading}
-                  className="flex-1 py-3 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-xs font-semibold text-emerald-400 rounded-xl transition border border-zinc-800 cursor-pointer"
-                >
-                  Mark Done
-                </button>
+                <div className="text-zinc-300 font-medium text-sm mb-6 max-w-xs leading-relaxed">
+                  {currentServingTokenObj && currentServingTokenObj.token_number > 0
+                    ? currentServingTokenObj.customer_name
+                    : terms.atRestStatus}
+                </div>
 
                 <button
-                  onClick={handleExtendPace}
-                  disabled={actionLoading}
-                  className="py-3 px-3.5 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-xs font-bold text-amber-400 rounded-xl transition border border-zinc-800 cursor-pointer"
-                  title="Add +5 mins extra service duration"
+                  onClick={handleNextToken}
+                  disabled={actionLoading || allWaitingTokens.length === 0}
+                  className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20 cursor-pointer"
                 >
-                  ⏱️ +5m
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span>{actionLoading ? 'Updating...' : `CALL NEXT ${terms.guestTerm.toUpperCase()}`}</span>
                 </button>
 
-                <button
-                  onClick={() =>
-                    currentServingTokenObj &&
-                    handleWaitlist(currentServingTokenObj.id)
-                  }
-                  disabled={!currentServingTokenObj || actionLoading}
-                  className="py-3 px-4 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-xs font-semibold text-zinc-400 rounded-xl transition border border-zinc-800 cursor-pointer"
-                >
-                  Skip
-                </button>
+                <div className="mt-3 w-full flex gap-2">
+                  <button
+                    onClick={() => currentServingTokenObj && handleUpdateStatus(currentServingTokenObj.id, 'COMPLETED')}
+                    disabled={!currentServingTokenObj || actionLoading}
+                    className="flex-1 py-3 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-xs font-semibold text-emerald-400 rounded-xl transition border border-zinc-800 cursor-pointer"
+                  >
+                    Mark Done
+                  </button>
+                  <button
+                    onClick={handleExtendPace}
+                    disabled={actionLoading}
+                    className="py-3 px-3.5 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-xs font-bold text-amber-400 rounded-xl transition border border-zinc-800 cursor-pointer"
+                    title="Add +5 mins extra service duration"
+                  >
+                    ⏱️ +5m
+                  </button>
+                  <button
+                    onClick={() => currentServingTokenObj && handleWaitlist(currentServingTokenObj.id)}
+                    disabled={!currentServingTokenObj || actionLoading}
+                    className="py-3 px-4 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-xs font-semibold text-zinc-400 rounded-xl transition border border-zinc-800 cursor-pointer"
+                  >
+                    Skip
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Metrics Card */}
-            <div className="bg-white border border-zinc-200/80 rounded-[2rem] p-6 grid grid-cols-2 gap-4 shadow-sm">
+            <div className="bg-white border border-zinc-200/80 rounded-3xl p-5 sm:p-6 grid grid-cols-3 gap-3 shadow-sm">
               <div>
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                  IN LINE
-                </span>
-                <div className="text-3xl font-black text-zinc-900 mt-1">
-                  {allWaitingTokens.length}
-                </div>
-                <div className="text-xs text-zinc-400 mt-0.5 font-medium">waiting {terms.guestTermPlural.toLowerCase()}</div>
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">IN LINE</span>
+                <div className="text-2xl sm:text-3xl font-black text-zinc-900 mt-1">{allWaitingTokens.length}</div>
+                <div className="text-[11px] text-zinc-400 mt-0.5 font-medium">waiting</div>
               </div>
-
               <div>
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                  PACE
-                </span>
-                <div className="text-3xl font-black text-zinc-900 mt-1">
-                  ~{paceMins}m
-                </div>
-                <div className="text-xs text-zinc-400 mt-0.5 font-medium">per token</div>
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">PACE</span>
+                <div className="text-2xl sm:text-3xl font-black text-zinc-900 mt-1">~{paceMins}m</div>
+                <div className="text-[11px] text-zinc-400 mt-0.5 font-medium">per token</div>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">STATION</span>
+                <div className="text-xs sm:text-sm font-bold text-emerald-600 mt-1 leading-tight truncate">{activeCounter}</div>
+                <div className="text-[11px] text-zinc-400 mt-0.5 font-medium">active</div>
               </div>
             </div>
           </div>
 
-          {/* Right Column */}
+          {/* ─── RIGHT COLUMN: Waiting List ─── */}
           <div className="lg:col-span-7">
-            <div className="bg-white border border-zinc-200/80 rounded-[2rem] p-7 shadow-sm min-h-[480px] flex flex-col">
-              <div className="flex items-center justify-between pb-6">
+            <div className="bg-white border border-zinc-200/80 rounded-3xl p-4 sm:p-6 shadow-sm min-h-[300px] lg:min-h-[480px] flex flex-col">
+
+              {/* Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-zinc-100">
                 <div>
-                  <h2 className="text-lg font-bold text-zinc-900">Waiting List</h2>
-                  <p className="text-xs text-zinc-400 mt-0.5 font-medium">
+                  <h2 className="text-base sm:text-lg font-bold text-zinc-900">Waiting List</h2>
+                  <p className="text-[11px] text-zinc-400 mt-0.5 font-medium hidden sm:block">
                     Manage upcoming {terms.guestTermPlural.toLowerCase()} in real-time.
                   </p>
                 </div>
-
-                <span className="bg-zinc-100 text-zinc-600 text-xs font-bold px-3 py-1 rounded-full border border-zinc-200">
-                  {allWaitingTokens.length} Pending
-                </span>
+                {/* Mobile: search inline */}
+                <div className="flex items-center gap-2">
+                  <div className="relative sm:hidden">
+                    <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-28 pl-7 pr-2 py-1.5 bg-zinc-50 border border-zinc-200 rounded-full text-[11px] text-zinc-800 placeholder-zinc-400 focus:outline-none"
+                    />
+                  </div>
+                  <span className="bg-zinc-100 text-zinc-600 text-xs font-bold px-3 py-1 rounded-full border border-zinc-200 shrink-0">
+                    {allWaitingTokens.length} Pending
+                  </span>
+                </div>
               </div>
 
               {loading ? (
-                <div className="flex-1 flex items-center justify-center text-zinc-400 text-xs font-medium">
+                <div className="flex-1 flex items-center justify-center text-zinc-400 text-xs font-medium mt-8">
                   Loading list...
                 </div>
               ) : displayedWaitingTokens.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center text-zinc-400 text-xs font-medium">
-                  {searchQuery ? `No matching ${terms.guestTermPlural.toLowerCase()} found.` : `No upcoming ${terms.guestTermPlural.toLowerCase()} waiting in line.`}
+                <div className="flex-1 flex flex-col items-center justify-center text-zinc-400 text-xs font-medium mt-8 gap-2">
+                  <span className="text-3xl">🟢</span>
+                  <span>{searchQuery ? `No matching ${terms.guestTermPlural.toLowerCase()} found.` : `Queue is clear — no ${terms.guestTermPlural.toLowerCase()} waiting.`}</span>
                 </div>
               ) : (
-                <div className="space-y-3 flex-1 overflow-y-auto pr-1">
+                <div className="space-y-2.5 flex-1 overflow-y-auto mt-4 pr-1">
                   {displayedWaitingTokens.map((token) => {
                     const globalIndex = allWaitingTokens.findIndex((t) => t.id === token.id);
                     const spotsAheadCount = (globalIndex >= 0 ? globalIndex : 0) + (currentServingTokenObj ? 1 : 0);
@@ -1159,39 +1225,40 @@ function DashboardContent() {
                     return (
                       <div
                         key={token.id || token.token_number}
-                        className="flex items-center justify-between p-4 rounded-2xl border border-zinc-100 bg-zinc-50/50 hover:bg-zinc-50 transition"
+                        className="p-3 sm:p-4 rounded-2xl border border-zinc-100 bg-zinc-50/50 hover:bg-zinc-50 transition"
                       >
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-black text-white rounded-xl flex items-center justify-center font-black text-base shadow-sm">
+                        {/* Top row: token badge + name + wait */}
+                        <div className="flex items-center gap-3 mb-2.5">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-black text-white rounded-xl flex items-center justify-center font-black text-sm shrink-0 shadow-sm">
                             #{token.token_number}
                           </div>
-
-                          <div>
-                            <p className="font-bold text-zinc-900 text-sm">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-zinc-900 text-sm truncate">
                               {token.customer_name || `Anonymous ${terms.guestTerm}`}
                             </p>
-                            <div className="text-xs text-zinc-400 flex items-center gap-2 mt-0.5">
+                            <div className="text-[11px] text-zinc-400 flex items-center gap-1.5 mt-0.5 flex-wrap">
                               <AccessChannelBadge channel={token.access_channel} />
                               <span>•</span>
-                              <span>Est. Wait ~{formatWaitTime(estWaitMins)}</span>
+                              <span>~{formatWaitTime(estWaitMins)} wait</span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        {/* Bottom row: action pills */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <button
                             onClick={() => handleUpdateStatus(token.id, 'SERVING')}
                             disabled={actionLoading}
-                            className="border border-emerald-500/40 text-emerald-600 bg-emerald-50/60 hover:bg-emerald-100/80 text-xs font-bold px-3 py-1.5 rounded-full transition cursor-pointer"
+                            className="flex-1 sm:flex-none border border-emerald-500/40 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 text-[11px] font-bold px-3 py-1.5 rounded-xl transition cursor-pointer"
                           >
-                            Call
+                            📣 Call
                           </button>
                           <button
                             onClick={() => handleWaitlist(token.id)}
                             disabled={actionLoading}
-                            className="border border-amber-500/40 text-amber-600 bg-amber-50/60 hover:bg-amber-100/80 text-xs font-bold px-3 py-1.5 rounded-full transition cursor-pointer"
+                            className="flex-1 sm:flex-none border border-amber-500/40 text-amber-700 bg-amber-50 hover:bg-amber-100 text-[11px] font-bold px-3 py-1.5 rounded-xl transition cursor-pointer"
                           >
-                            Waitlist
+                            ⏭ Skip
                           </button>
                           {linkedBranches.length > 0 && (
                             <button
@@ -1201,18 +1268,18 @@ function DashboardContent() {
                                 setIsTransferModalOpen(true);
                               }}
                               disabled={actionLoading}
-                              className="border border-sky-500/40 text-sky-600 bg-sky-50/60 hover:bg-sky-100/80 text-xs font-bold px-3 py-1.5 rounded-full transition cursor-pointer flex items-center gap-1"
-                              title="Transfer patient to another linked branch"
+                              className="border border-sky-500/40 text-sky-700 bg-sky-50 hover:bg-sky-100 text-[11px] font-bold px-3 py-1.5 rounded-xl transition cursor-pointer"
+                              title="Transfer to another branch"
                             >
-                              <span>🔄 Transfer</span>
+                              🔄
                             </button>
                           )}
                           <button
                             onClick={() => handleUpdateStatus(token.id, 'CANCELLED')}
                             disabled={actionLoading}
-                            className="text-zinc-400 hover:text-red-600 text-xs font-medium px-2 py-1.5 transition cursor-pointer"
+                            className="ml-auto text-zinc-400 hover:text-red-500 text-[11px] font-medium px-2 py-1.5 transition cursor-pointer"
                           >
-                            Remove
+                            ✕
                           </button>
                         </div>
                       </div>
