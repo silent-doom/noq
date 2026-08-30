@@ -1094,20 +1094,21 @@ function DashboardContent() {
             </div>
 
             {/* Metrics Card */}
-            <div className="bg-white border border-zinc-200/80 rounded-3xl p-5 sm:p-6 grid grid-cols-3 gap-3 shadow-sm">
+            <div className="bg-white border border-zinc-200/80 rounded-[2rem] p-5 lg:p-6 grid grid-cols-3 lg:grid-cols-2 gap-3 lg:gap-4 shadow-sm">
               <div>
                 <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">IN LINE</span>
-                <div className="text-2xl sm:text-3xl font-black text-zinc-900 mt-1">{allWaitingTokens.length}</div>
-                <div className="text-[11px] text-zinc-400 mt-0.5 font-medium">waiting</div>
+                <div className="text-2xl lg:text-3xl font-black text-zinc-900 mt-1">{allWaitingTokens.length}</div>
+                <div className="text-xs text-zinc-400 mt-0.5 font-medium">waiting {terms.guestTermPlural.toLowerCase()}</div>
               </div>
               <div>
                 <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">PACE</span>
-                <div className="text-2xl sm:text-3xl font-black text-zinc-900 mt-1">~{paceMins}m</div>
-                <div className="text-[11px] text-zinc-400 mt-0.5 font-medium">per token</div>
+                <div className="text-2xl lg:text-3xl font-black text-zinc-900 mt-1">~{paceMins}m</div>
+                <div className="text-xs text-zinc-400 mt-0.5 font-medium">per token</div>
               </div>
-              <div>
+              {/* Station — only on mobile since desktop has it in the header */}
+              <div className="lg:hidden">
                 <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">STATION</span>
-                <div className="text-xs sm:text-sm font-bold text-emerald-600 mt-1 leading-tight truncate">{activeCounter}</div>
+                <div className="text-xs font-bold text-emerald-600 mt-1 leading-tight truncate">{activeCounter}</div>
                 <div className="text-[11px] text-zinc-400 mt-0.5 font-medium">active</div>
               </div>
             </div>
@@ -1115,19 +1116,19 @@ function DashboardContent() {
 
           {/* ─── RIGHT COLUMN: Waiting List ─── */}
           <div className="lg:col-span-7">
-            <div className="bg-white border border-zinc-200/80 rounded-3xl p-4 sm:p-6 shadow-sm min-h-[300px] lg:min-h-[480px] flex flex-col">
+            <div className="bg-white border border-zinc-200/80 rounded-[2rem] p-4 lg:p-7 shadow-sm min-h-[300px] lg:min-h-[480px] flex flex-col">
 
-              {/* Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-zinc-100">
+              {/* Header — desktop: original no-divider style; mobile: with inline search */}
+              <div className="flex items-center justify-between lg:pb-6 pb-4 lg:border-b-0 border-b border-zinc-100">
                 <div>
-                  <h2 className="text-base sm:text-lg font-bold text-zinc-900">Waiting List</h2>
-                  <p className="text-[11px] text-zinc-400 mt-0.5 font-medium hidden sm:block">
+                  <h2 className="text-base lg:text-lg font-bold text-zinc-900">Waiting List</h2>
+                  <p className="text-xs text-zinc-400 mt-0.5 font-medium hidden lg:block">
                     Manage upcoming {terms.guestTermPlural.toLowerCase()} in real-time.
                   </p>
                 </div>
-                {/* Mobile: search inline */}
                 <div className="flex items-center gap-2">
-                  <div className="relative sm:hidden">
+                  {/* Inline search — mobile only */}
+                  <div className="relative lg:hidden">
                     <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
@@ -1146,81 +1147,134 @@ function DashboardContent() {
               </div>
 
               {loading ? (
-                <div className="flex-1 flex items-center justify-center text-zinc-400 text-xs font-medium mt-8">
+                <div className="flex-1 flex items-center justify-center text-zinc-400 text-xs font-medium">
                   Loading list...
                 </div>
               ) : displayedWaitingTokens.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-zinc-400 text-xs font-medium mt-8 gap-2">
-                  <span className="text-3xl">🟢</span>
-                  <span>{searchQuery ? `No matching ${terms.guestTermPlural.toLowerCase()} found.` : `Queue is clear — no ${terms.guestTermPlural.toLowerCase()} waiting.`}</span>
+                <div className="flex-1 flex items-center justify-center text-zinc-400 text-xs font-medium">
+                  {searchQuery ? `No matching ${terms.guestTermPlural.toLowerCase()} found.` : `No upcoming ${terms.guestTermPlural.toLowerCase()} waiting in line.`}
                 </div>
               ) : (
-                <div className="space-y-2.5 flex-1 overflow-y-auto mt-4 pr-1">
+                <div className="space-y-3 flex-1 overflow-y-auto pr-1">
                   {displayedWaitingTokens.map((token) => {
                     const globalIndex = allWaitingTokens.findIndex((t) => t.id === token.id);
                     const spotsAheadCount = (globalIndex >= 0 ? globalIndex : 0) + (currentServingTokenObj ? 1 : 0);
                     const estWaitMins = spotsAheadCount * paceMins;
 
                     return (
-                      <div
-                        key={token.id || token.token_number}
-                        className="p-3 sm:p-4 rounded-2xl border border-zinc-100 bg-zinc-50/50 hover:bg-zinc-50 transition"
-                      >
-                        {/* Top row: token badge + name + wait */}
-                        <div className="flex items-center gap-3 mb-2.5">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-black text-white rounded-xl flex items-center justify-center font-black text-sm shrink-0 shadow-sm">
-                            #{token.token_number}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-zinc-900 text-sm truncate">
-                              {token.customer_name || `Anonymous ${terms.guestTerm}`}
-                            </p>
-                            <div className="text-[11px] text-zinc-400 flex items-center gap-1.5 mt-0.5 flex-wrap">
-                              <AccessChannelBadge channel={token.access_channel} />
-                              <span>•</span>
-                              <span>~{formatWaitTime(estWaitMins)} wait</span>
+                      <div key={token.id || token.token_number}>
+
+                        {/* DESKTOP: original single-row layout */}
+                        <div className="hidden lg:flex items-center justify-between p-4 rounded-2xl border border-zinc-100 bg-zinc-50/50 hover:bg-zinc-50 transition">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-black text-white rounded-xl flex items-center justify-center font-black text-base shadow-sm">
+                              #{token.token_number}
                             </div>
+                            <div>
+                              <p className="font-bold text-zinc-900 text-sm">
+                                {token.customer_name || `Anonymous ${terms.guestTerm}`}
+                              </p>
+                              <div className="text-xs text-zinc-400 flex items-center gap-2 mt-0.5">
+                                <AccessChannelBadge channel={token.access_channel} />
+                                <span>•</span>
+                                <span>Est. Wait ~{formatWaitTime(estWaitMins)}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleUpdateStatus(token.id, 'SERVING')}
+                              disabled={actionLoading}
+                              className="border border-emerald-500/40 text-emerald-600 bg-emerald-50/60 hover:bg-emerald-100/80 text-xs font-bold px-3 py-1.5 rounded-full transition cursor-pointer"
+                            >
+                              Call
+                            </button>
+                            <button
+                              onClick={() => handleWaitlist(token.id)}
+                              disabled={actionLoading}
+                              className="border border-amber-500/40 text-amber-600 bg-amber-50/60 hover:bg-amber-100/80 text-xs font-bold px-3 py-1.5 rounded-full transition cursor-pointer"
+                            >
+                              Waitlist
+                            </button>
+                            {linkedBranches.length > 0 && (
+                              <button
+                                onClick={() => {
+                                  setTransferToken(token);
+                                  setTransferTargetStreamId(linkedBranches[0]?.stream_id || '');
+                                  setIsTransferModalOpen(true);
+                                }}
+                                disabled={actionLoading}
+                                className="border border-sky-500/40 text-sky-600 bg-sky-50/60 hover:bg-sky-100/80 text-xs font-bold px-3 py-1.5 rounded-full transition cursor-pointer flex items-center gap-1"
+                                title="Transfer patient to another linked branch"
+                              >
+                                <span>🔄 Transfer</span>
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleUpdateStatus(token.id, 'CANCELLED')}
+                              disabled={actionLoading}
+                              className="text-zinc-400 hover:text-red-600 text-xs font-medium px-2 py-1.5 transition cursor-pointer"
+                            >
+                              Remove
+                            </button>
                           </div>
                         </div>
 
-                        {/* Bottom row: action pills */}
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <button
-                            onClick={() => handleUpdateStatus(token.id, 'SERVING')}
-                            disabled={actionLoading}
-                            className="flex-1 sm:flex-none border border-emerald-500/40 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 text-[11px] font-bold px-3 py-1.5 rounded-xl transition cursor-pointer"
-                          >
-                            📣 Call
-                          </button>
-                          <button
-                            onClick={() => handleWaitlist(token.id)}
-                            disabled={actionLoading}
-                            className="flex-1 sm:flex-none border border-amber-500/40 text-amber-700 bg-amber-50 hover:bg-amber-100 text-[11px] font-bold px-3 py-1.5 rounded-xl transition cursor-pointer"
-                          >
-                            ⏭ Skip
-                          </button>
-                          {linkedBranches.length > 0 && (
+                        {/* MOBILE: stacked two-row layout */}
+                        <div className="lg:hidden p-3 rounded-2xl border border-zinc-100 bg-zinc-50/50 hover:bg-zinc-50 transition">
+                          <div className="flex items-center gap-3 mb-2.5">
+                            <div className="w-10 h-10 bg-black text-white rounded-xl flex items-center justify-center font-black text-sm shrink-0 shadow-sm">
+                              #{token.token_number}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-zinc-900 text-sm truncate">
+                                {token.customer_name || `Anonymous ${terms.guestTerm}`}
+                              </p>
+                              <div className="text-[11px] text-zinc-400 flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                <AccessChannelBadge channel={token.access_channel} />
+                                <span>•</span>
+                                <span>~{formatWaitTime(estWaitMins)} wait</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5">
                             <button
-                              onClick={() => {
-                                setTransferToken(token);
-                                setTransferTargetStreamId(linkedBranches[0]?.stream_id || '');
-                                setIsTransferModalOpen(true);
-                              }}
+                              onClick={() => handleUpdateStatus(token.id, 'SERVING')}
                               disabled={actionLoading}
-                              className="border border-sky-500/40 text-sky-700 bg-sky-50 hover:bg-sky-100 text-[11px] font-bold px-3 py-1.5 rounded-xl transition cursor-pointer"
-                              title="Transfer to another branch"
+                              className="flex-1 border border-emerald-500/40 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 text-[11px] font-bold px-3 py-1.5 rounded-xl transition cursor-pointer"
                             >
-                              🔄
+                              📣 Call
                             </button>
-                          )}
-                          <button
-                            onClick={() => handleUpdateStatus(token.id, 'CANCELLED')}
-                            disabled={actionLoading}
-                            className="ml-auto text-zinc-400 hover:text-red-500 text-[11px] font-medium px-2 py-1.5 transition cursor-pointer"
-                          >
-                            ✕
-                          </button>
+                            <button
+                              onClick={() => handleWaitlist(token.id)}
+                              disabled={actionLoading}
+                              className="flex-1 border border-amber-500/40 text-amber-700 bg-amber-50 hover:bg-amber-100 text-[11px] font-bold px-3 py-1.5 rounded-xl transition cursor-pointer"
+                            >
+                              ⏭ Skip
+                            </button>
+                            {linkedBranches.length > 0 && (
+                              <button
+                                onClick={() => {
+                                  setTransferToken(token);
+                                  setTransferTargetStreamId(linkedBranches[0]?.stream_id || '');
+                                  setIsTransferModalOpen(true);
+                                }}
+                                disabled={actionLoading}
+                                className="border border-sky-500/40 text-sky-700 bg-sky-50 hover:bg-sky-100 text-[11px] font-bold px-3 py-1.5 rounded-xl transition cursor-pointer"
+                              >
+                                🔄
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleUpdateStatus(token.id, 'CANCELLED')}
+                              disabled={actionLoading}
+                              className="ml-auto text-zinc-400 hover:text-red-500 text-[11px] font-medium px-2 py-1.5 transition cursor-pointer"
+                            >
+                              ✕
+                            </button>
+                          </div>
                         </div>
+
                       </div>
                     );
                   })}
