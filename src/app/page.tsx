@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { NumberSlider } from '@/components/NumberSlider';
+import { openRazorpayCheckout } from '@/lib/razorpayClient';
 
 export default function LandingPage() {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
@@ -56,6 +57,7 @@ export default function LandingPage() {
           closingTime,
           operatingDays,
           queueStructure,
+          initialPaymentAmount: 2499,
           stationCounts: {
             consultationRooms: countA,
             stylingChairs: countA,
@@ -69,8 +71,26 @@ export default function LandingPage() {
       });
 
       const json = await res.json();
-      if (res.ok && json.dashboardUrl) {
-        window.location.href = json.dashboardUrl;
+      if (res.ok && json.success) {
+        // Open Razorpay Checkout for Onboarding Activation
+        await openRazorpayCheckout({
+          businessId: json.business.id,
+          streamId: json.streamId,
+          businessName: bizName,
+          customerPhone: phone,
+          amount: 2499,
+          paymentType: 'ONBOARDING_INITIAL',
+          onSuccess: () => {
+            setLoading(false);
+            window.location.href = json.dashboardUrl;
+          },
+          onError: () => {
+            setLoading(false);
+            if (confirm('Payment was skipped or cancelled. View your newly created dashboard now?')) {
+              window.location.href = json.dashboardUrl;
+            }
+          },
+        });
       } else {
         alert(json.error || 'Registration failed. Please try again.');
         setLoading(false);

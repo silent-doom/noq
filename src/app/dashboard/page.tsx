@@ -7,6 +7,7 @@ import Ably from 'ably';
 import { AccessChannelBadge } from '@/components/AccessChannelBadge';
 import { NumberSlider } from '@/components/NumberSlider';
 import { getDomainTerminology, formatWaitTime, generateDomainStations } from '@/lib/domain';
+import { openRazorpayCheckout } from '@/lib/razorpayClient';
 
 interface Token {
   id: string;
@@ -216,29 +217,24 @@ function DashboardContent() {
 
     setRenewLoading(true);
     try {
-      const res = await fetch('/api/subscription/pay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          streamId,
-          amount: subscription?.monthlyFee || 999,
-          paymentMethod: 'ONLINE_CARD_UPI',
-        }),
+      await openRazorpayCheckout({
+        streamId,
+        amount: subscription?.monthlyFee || 999,
+        paymentType: 'MONTHLY_RENEWAL',
+        onSuccess: async () => {
+          setRenewLoading(false);
+          setIsRenewModalOpen(false);
+          alert('✅ Subscription renewed successfully! Your terminal is active.');
+          await fetchQueueData();
+        },
+        onError: (err) => {
+          setRenewLoading(false);
+          alert(err?.message || 'Payment was cancelled or failed.');
+        },
       });
-
-      const json = await res.json();
-      if (res.ok && json.success) {
-        alert('✅ Subscription renewed successfully! Your terminal is active.');
-        setIsRenewModalOpen(false);
-        await fetchQueueData();
-      } else {
-        alert(json.error || 'Payment failed. Please try again.');
-      }
-    } catch (err) {
-      console.error('Error renewing subscription:', err);
-      alert('Network error during renewal. Please try again.');
-    } finally {
+    } catch (err: any) {
       setRenewLoading(false);
+      alert(err?.message || 'Error launching payment checkout.');
     }
   };
 
