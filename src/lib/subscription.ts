@@ -19,6 +19,7 @@ export interface SubscriptionState {
 export async function ensureSubscriptionTables(client: PoolClient): Promise<void> {
   await client.query(`
     ALTER TABLE businesses 
+    ADD COLUMN IF NOT EXISTS google_maps_url TEXT,
     ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(30) DEFAULT 'ACTIVE',
     ADD COLUMN IF NOT EXISTS billing_anchor_day INT,
     ADD COLUMN IF NOT EXISTS subscription_start_date TIMESTAMPTZ DEFAULT NOW(),

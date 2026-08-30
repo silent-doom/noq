@@ -69,6 +69,9 @@ export async function POST(req: NextRequest) {
     await ensureSubscriptionTables(client);
 
     await client.query(`
+      ALTER TABLE businesses 
+      ADD COLUMN IF NOT EXISTS google_maps_url TEXT;
+
       ALTER TABLE queue_streams 
       ADD COLUMN IF NOT EXISTS stations JSONB,
       ADD COLUMN IF NOT EXISTS operating_days JSONB,
