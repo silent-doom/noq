@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const payAmount = Number(amount) > 0 ? Number(amount) : paymentType === 'ONBOARDING_INITIAL' ? 2499 : 999;
+    const payAmount = Number(amount) > 0 ? Number(amount) : paymentType === 'ONBOARDING_INITIAL' ? 1499 : 599;
     const receipt = `rcpt_${paymentType === 'ONBOARDING_INITIAL' ? 'init' : 'ren'}_${Date.now().toString().slice(-8)}`;
 
     const order = await createRazorpayOrder({

@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     }
 
     const biz = bRes.rows[0];
-    const payAmount = Number(amount) > 0 ? Number(amount) : paymentType === 'ONBOARDING_INITIAL' ? 2499 : 999;
+    const payAmount = Number(amount) > 0 ? Number(amount) : paymentType === 'ONBOARDING_INITIAL' ? 1499 : 599;
 
     await client.query('BEGIN');
     const { payment, nextBillingDate } = await recordSubscriptionPayment(

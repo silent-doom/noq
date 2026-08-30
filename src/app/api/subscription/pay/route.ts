@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     }
 
     const biz = bRes.rows[0];
-    const payAmount = Number(amount) > 0 ? Number(amount) : Number(biz.monthly_fee) || 999.00;
+    const payAmount = Number(amount) > 0 ? Number(amount) : Number(biz.monthly_fee) || 599.00;
 
     await client.query('BEGIN');
     const { payment, nextBillingDate } = await recordSubscriptionPayment(

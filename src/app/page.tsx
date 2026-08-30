@@ -36,7 +36,7 @@ export default function LandingPage() {
     );
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent, isTrial: boolean = false) => {
     e.preventDefault();
     if (!bizName.trim() || loading) return;
 
@@ -57,7 +57,8 @@ export default function LandingPage() {
           closingTime,
           operatingDays,
           queueStructure,
-          initialPaymentAmount: 2499,
+          isFreeTrial: isTrial,
+          initialPaymentAmount: 1499,
           stationCounts: {
             consultationRooms: countA,
             stylingChairs: countA,
@@ -72,13 +73,20 @@ export default function LandingPage() {
 
       const json = await res.json();
       if (res.ok && json.success) {
-        // Open Razorpay Checkout for Onboarding Activation
+        if (isTrial) {
+          // Free Trial - skip paywall immediately
+          setLoading(false);
+          window.location.href = json.dashboardUrl;
+          return;
+        }
+
+        // Paid Onboarding - Open Razorpay Checkout
         await openRazorpayCheckout({
           businessId: json.business.id,
           streamId: json.streamId,
           businessName: bizName,
           customerPhone: phone,
-          amount: 2499,
+          amount: 1499,
           paymentType: 'ONBOARDING_INITIAL',
           onSuccess: () => {
             setLoading(false);
@@ -86,7 +94,7 @@ export default function LandingPage() {
           },
           onError: () => {
             setLoading(false);
-            if (confirm('Payment was skipped or cancelled. View your newly created dashboard now?')) {
+            if (confirm('Payment was skipped or cancelled. View your newly created dashboard in trial mode?')) {
               window.location.href = json.dashboardUrl;
             }
           },
@@ -595,24 +603,36 @@ export default function LandingPage() {
                   <span className="font-bold text-white flex items-center gap-1.5">
                     💳 Setup + 1st Month Plan
                   </span>
-                  <span className="font-mono font-black text-emerald-400 text-sm">₹2,499</span>
+                  <span className="font-mono font-black text-emerald-400 text-sm">₹1,499</span>
                 </div>
                 <div className="flex justify-between items-center text-[11px] text-zinc-400 border-t border-zinc-800 pt-2">
                   <span>Recurring Renewal (Anchor Day: {new Date().getDate()})</span>
-                  <span className="font-mono font-bold text-zinc-300">₹999 / month</span>
+                  <span className="font-mono font-bold text-zinc-300">₹599 / month</span>
                 </div>
                 <p className="text-[10px] text-zinc-400 leading-tight">
                   ✨ Instant terminal access upon creation. Includes unlimited tokens, voice TTS announcements, multi-station parallel calling, and SMS gateway.
                 </p>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading || !bizName.trim()}
-                className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-extrabold py-4 rounded-2xl text-sm tracking-wide shadow-lg shadow-emerald-500/20 transition cursor-pointer mt-2"
-              >
-                {loading ? 'ACTIVATING YOUR QUEUE TERMINAL...' : 'PAY & ACTIVATE TERMINAL NOW ↗'}
-              </button>
+              <div className="space-y-2 pt-1">
+                <button
+                  type="submit"
+                  disabled={loading || !bizName.trim()}
+                  onClick={(e) => handleRegister(e, false)}
+                  className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-extrabold py-3.5 rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition cursor-pointer"
+                >
+                  {loading ? 'ACTIVATING TERMINAL...' : 'PAY ₹1,499 & ACTIVATE 1ST MONTH NOW ↗'}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={loading || !bizName.trim()}
+                  onClick={(e) => handleRegister(e, true)}
+                  className="w-full bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 border border-zinc-700 text-zinc-200 font-bold py-3 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <span>⚡ Start 3-Day Free Trial (No Card Required) ➔</span>
+                </button>
+              </div>
             </form>
           </div>
         </div>

@@ -390,16 +390,20 @@ graph LR
 ---
 
 ### Feature B14: Subscription Monetization, Grace Policy & Auto-Lock
-*Predictable billing lifecycle with automated grace reminders and space conservation.*
+*Predictable billing lifecycle with 3-day free trial, automated grace reminders, and space conservation.*
 
-- **Initial Setup + 1st Month Plan (₹2,499)**:
+- **3-Day Free Trial (Skip Paywall Option)**:
+  - Businesses can start immediately with zero card details required. Unlocks 3 days of full queue terminal functionality.
+- **Initial Setup + 1st Month Plan (₹1,499)**:
   - Covers instant business onboarding, physical station configuration, and first 30 days of unlimited virtual queue access.
+- **Monthly Recurring Renewal (₹599 / month)**:
+  - Billed on the business's monthly Anchor Day ($X$).
 - **Billing Anchor Day ($X$)**:
-  - Automatically pegged to the day of the month the business registered (e.g. Day 14 of every month).
+  - Automatically pegged to the day of the month the business registered or finished trial (e.g. Day 14 of every month).
 - **3-Day Grace Period ($X$ to $X + 3$ Days)**:
   - If renewal is unpaid on day $X$, the terminal displays a non-blocking top amber warning bar with days remaining before lock.
 - **Automatic Terminal Lock ($X + 3$ to $X + 10$ Days)**:
-  - If unpaid after 3 days of grace, the Operator Dashboard locks with an interactive checkout modal (*"Renew Subscription & Unlock (₹999)"*).
+  - If unpaid after 3 days of grace, the Operator Dashboard locks with an interactive checkout modal (*"Renew Subscription & Unlock (₹599)"*).
 - **Database Space Retention Cleanup ($X + 10$ Days)**:
   - If unpaid for 7 days after lock (10 days total overdue), historical tokens and inactive queues are automatically purged to reclaim PostgreSQL database storage.
 

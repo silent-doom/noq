@@ -1,7 +1,7 @@
 import { PoolClient } from 'pg';
 
 export interface SubscriptionState {
-  status: 'ACTIVE' | 'GRACE_PERIOD' | 'LOCKED' | 'EXPIRED';
+  status: 'ACTIVE' | 'TRIAL' | 'GRACE_PERIOD' | 'LOCKED' | 'EXPIRED';
   billingAnchorDay: number;
   nextBillingDate: Date | null;
   daysRemaining: number;
@@ -9,6 +9,7 @@ export interface SubscriptionState {
   monthlyFee: number;
   isLocked: boolean;
   isGracePeriod: boolean;
+  isTrial: boolean;
   message: string;
 }
 
@@ -24,7 +25,7 @@ export async function ensureSubscriptionTables(client: PoolClient): Promise<void
     ADD COLUMN IF NOT EXISTS next_billing_date TIMESTAMPTZ,
     ADD COLUMN IF NOT EXISTS last_payment_date TIMESTAMPTZ DEFAULT NOW(),
     ADD COLUMN IF NOT EXISTS plan_tier VARCHAR(50) DEFAULT 'STANDARD',
-    ADD COLUMN IF NOT EXISTS monthly_fee NUMERIC(10,2) DEFAULT 999.00;
+    ADD COLUMN IF NOT EXISTS monthly_fee NUMERIC(10,2) DEFAULT 599.00;
 
     CREATE TABLE IF NOT EXISTS subscription_payments (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -67,11 +68,6 @@ export function calculateNextBillingDate(anchorDay: number, fromDate: Date = new
 
 /**
  * Evaluates the subscription state for a business.
- * Policy:
- * - If NOW <= nextBillingDate: ACTIVE
- * - If nextBillingDate < NOW <= nextBillingDate + 3 days: GRACE_PERIOD
- * - If nextBillingDate + 3 days < NOW <= nextBillingDate + 10 days: LOCKED
- * - If NOW > nextBillingDate + 10 days: EXPIRED (Eligible for storage clean-up)
  */
 export function computeSubscriptionState(business: {
   subscription_status?: string;
@@ -83,7 +79,7 @@ export function computeSubscriptionState(business: {
   const now = new Date();
   const createdDate = business.created_at ? new Date(business.created_at) : now;
   const anchorDay = business.billing_anchor_day || createdDate.getDate() || 1;
-  const monthlyFee = Number(business.monthly_fee) || 999;
+  const monthlyFee = Number(business.monthly_fee) || 599;
 
   let nextBillingDate: Date;
   if (business.next_billing_date) {
@@ -94,6 +90,38 @@ export function computeSubscriptionState(business: {
 
   const diffMs = nextBillingDate.getTime() - now.getTime();
   const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  // If Free Trial is active
+  if (business.subscription_status === 'TRIAL') {
+    if (diffDays >= 0) {
+      return {
+        status: 'TRIAL',
+        billingAnchorDay: anchorDay,
+        nextBillingDate,
+        daysRemaining: diffDays,
+        daysOverdue: 0,
+        monthlyFee,
+        isLocked: false,
+        isGracePeriod: false,
+        isTrial: true,
+        message: `Free Trial Active: ${diffDays} day${diffDays === 1 ? '' : 's'} remaining before plan activation is required.`,
+      };
+    } else {
+      // Trial expired
+      return {
+        status: 'LOCKED',
+        billingAnchorDay: anchorDay,
+        nextBillingDate,
+        daysRemaining: 0,
+        daysOverdue: Math.abs(diffDays),
+        monthlyFee,
+        isLocked: true,
+        isGracePeriod: false,
+        isTrial: false,
+        message: '3-Day Free Trial Expired. Please activate your subscription to continue managing queues.',
+      };
+    }
+  }
 
   // If manual override to LOCKED or EXPIRED was set
   if (business.subscription_status === 'LOCKED') {
@@ -106,6 +134,7 @@ export function computeSubscriptionState(business: {
       monthlyFee,
       isLocked: true,
       isGracePeriod: false,
+      isTrial: false,
       message: 'Terminal locked due to overdue subscription payment.',
     };
   }
@@ -120,6 +149,7 @@ export function computeSubscriptionState(business: {
       monthlyFee,
       isLocked: true,
       isGracePeriod: false,
+      isTrial: false,
       message: 'Subscription expired and data scheduled for purge.',
     };
   }
@@ -135,6 +165,7 @@ export function computeSubscriptionState(business: {
       monthlyFee,
       isLocked: false,
       isGracePeriod: false,
+      isTrial: false,
       message: `Active (Next renewal due in ${diffDays} day${diffDays === 1 ? '' : 's'})`,
     };
   }
@@ -151,6 +182,7 @@ export function computeSubscriptionState(business: {
       monthlyFee,
       isLocked: false,
       isGracePeriod: true,
+      isTrial: false,
       message: `Grace Period: Payment overdue by ${daysOverdue} day${daysOverdue === 1 ? '' : 's'}. Terminal will lock in ${3 - daysOverdue} day${3 - daysOverdue === 1 ? '' : 's'}.`,
     };
   }
@@ -165,6 +197,7 @@ export function computeSubscriptionState(business: {
       monthlyFee,
       isLocked: true,
       isGracePeriod: false,
+      isTrial: false,
       message: `Terminal Locked: Payment is ${daysOverdue} days overdue. Please renew your monthly subscription to unlock.`,
     };
   }
@@ -178,6 +211,7 @@ export function computeSubscriptionState(business: {
     monthlyFee,
     isLocked: true,
     isGracePeriod: false,
+    isTrial: false,
     message: `Subscription Expired: Overdue by ${daysOverdue} days. Historical queue data is queued for storage purge.`,
   };
 }

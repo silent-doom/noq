@@ -774,8 +774,27 @@ function DashboardContent() {
           </div>
         </header>
 
+        {/* FREE TRIAL BANNER */}
+        {subscription?.isTrial && !subscription?.isLocked && (
+          <div className="mx-8 mt-4 p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center justify-between text-xs text-emerald-950 shadow-2xs animate-fade-in">
+            <div className="flex items-center gap-2.5">
+              <span className="text-lg">🌟</span>
+              <div>
+                <span className="font-extrabold text-emerald-900">3-Day Free Trial Active: </span>
+                <span className="text-emerald-700">{subscription.message}</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsRenewModalOpen(true)}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer shadow-2xs"
+            >
+              Activate 1st Month Plan (₹1,499) ↗
+            </button>
+          </div>
+        )}
+
         {/* GRACE PERIOD SUBSCRIPTION WARNING BANNER */}
-        {subscription?.isGracePeriod && !subscription?.isLocked && (
+        {subscription?.isGracePeriod && !subscription?.isLocked && !subscription?.isTrial && (
           <div className="mx-8 mt-4 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between text-xs text-amber-900 shadow-2xs animate-fade-in">
             <div className="flex items-center gap-2.5">
               <span className="text-lg">⚠️</span>
@@ -788,7 +807,7 @@ function DashboardContent() {
               onClick={() => setIsRenewModalOpen(true)}
               className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer shadow-2xs"
             >
-              Pay Now (₹{subscription.monthlyFee || 999}) ↗
+              Pay Now (₹{subscription.monthlyFee || 599}) ↗
             </button>
           </div>
         )}
@@ -803,14 +822,14 @@ function DashboardContent() {
               <div>
                 <h3 className="text-xl font-black tracking-tight text-white">Terminal Temporarily Locked</h3>
                 <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-                  {subscription.message || 'Your monthly subscription payment is overdue. Please renew to continue calling tokens.'}
+                  {subscription.message || 'Your subscription payment is overdue. Please renew to continue calling tokens.'}
                 </p>
               </div>
 
               <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl text-left space-y-2 text-xs">
                 <div className="flex justify-between text-zinc-400">
-                  <span>Monthly Renewal Fee</span>
-                  <span className="font-bold text-white font-mono">₹{subscription.monthlyFee || 999}</span>
+                  <span>Subscription Plan Fee</span>
+                  <span className="font-bold text-white font-mono">₹{subscription.monthlyFee || 599}</span>
                 </div>
                 <div className="flex justify-between text-zinc-400">
                   <span>Billing Anchor Day</span>
@@ -826,7 +845,7 @@ function DashboardContent() {
                 onClick={() => setIsRenewModalOpen(true)}
                 className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold py-3.5 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer shadow-lg shadow-emerald-500/20"
               >
-                Renew Subscription & Unlock Now (₹{subscription.monthlyFee || 999}) ↗
+                Renew Subscription & Unlock Now (₹{subscription.monthlyFee || 599}) ↗
               </button>
             </div>
           </div>
@@ -1414,7 +1433,7 @@ function DashboardContent() {
                   </div>
                   <div className="text-[11px] text-emerald-800 flex justify-between">
                     <span>Anchor Day: Day {subscription.billingAnchorDay}</span>
-                    <span>Fee: ₹{subscription.monthlyFee || 999}/mo</span>
+                    <span>Fee: ₹{subscription.monthlyFee || 599}/mo</span>
                   </div>
                   <p className="text-[10px] text-emerald-700">
                     {subscription.message}
@@ -1443,14 +1462,16 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* RENEWAL CHECKOUT MODAL */}
+      {/* RENEWAL / PLAN ACTIVATION CHECKOUT MODAL */}
       {isRenewModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-zinc-950 border border-zinc-800 rounded-3xl max-w-md w-full p-6 text-white shadow-2xl space-y-4">
             <div className="flex justify-between items-center">
               <div>
-                <h3 className="text-lg font-bold">Monthly Renewal Checkout</h3>
-                <p className="text-xs text-zinc-400 mt-0.5">Secure payment via Card, UPI, or Net Banking</p>
+                <h3 className="text-lg font-bold">
+                  {subscription?.isTrial ? 'Activate Full Plan' : 'Monthly Subscription Renewal'}
+                </h3>
+                <p className="text-xs text-zinc-400 mt-0.5">Secure payment via UPI, Cards, or Net Banking</p>
               </div>
               <button
                 onClick={() => setIsRenewModalOpen(false)}
@@ -1462,15 +1483,21 @@ function DashboardContent() {
 
             <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl space-y-2 text-xs">
               <div className="flex justify-between text-zinc-300">
-                <span>noQ Unlimited Virtual Queue Plan (1 Month)</span>
-                <span className="font-bold font-mono text-emerald-400">₹{subscription?.monthlyFee || 999}</span>
+                <span>
+                  {subscription?.isTrial
+                    ? 'Setup + 1st Month Plan (Unlimited Queues)'
+                    : 'noQ Unlimited Virtual Queue Plan (1 Month)'}
+                </span>
+                <span className="font-bold font-mono text-emerald-400">
+                  ₹{subscription?.isTrial ? 1499 : (subscription?.monthlyFee || 599)}
+                </span>
               </div>
               <div className="flex justify-between text-zinc-500 text-[11px] border-t border-zinc-800 pt-2">
                 <span>Billing Anchor Day</span>
                 <span>Day {subscription?.billingAnchorDay || 'X'}</span>
               </div>
               <div className="flex justify-between text-zinc-500 text-[11px]">
-                <span>Next Extended Period</span>
+                <span>Extended Period</span>
                 <span>+30 Days</span>
               </div>
             </div>
@@ -1481,7 +1508,9 @@ function DashboardContent() {
               disabled={renewLoading}
               className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-extrabold py-3.5 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer shadow-lg shadow-emerald-500/20"
             >
-              {renewLoading ? 'Processing Renewal...' : `Pay ₹${subscription?.monthlyFee || 999} & Activate ↗`}
+              {renewLoading
+                ? 'Processing Payment...'
+                : `Pay ₹${subscription?.isTrial ? 1499 : (subscription?.monthlyFee || 599)} & Activate ↗`}
             </button>
           </div>
         </div>

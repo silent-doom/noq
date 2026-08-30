@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
         nextBillingDate: subState.nextBillingDate,
         daysRemaining: subState.daysRemaining,
         daysOverdue: subState.daysOverdue,
-        monthlyFee: Number(b.monthly_fee) || 999,
+        monthlyFee: Number(b.monthly_fee) || 599,
         subscriptionStatus: subState.status,
         streamCount,
         totalTokens,
@@ -109,7 +109,7 @@ export async function GET(req: NextRequest) {
       platformMetrics: {
         totalRevenue,
         totalTransactions,
-        mrr: activeClients * 999,
+        mrr: activeClients * 599,
         totalBusinesses: businesses.length,
         activeClients,
         graceClients,
