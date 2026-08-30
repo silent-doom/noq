@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { publishQueueUpdate } from '@/lib/ably';
 import { verifyAdminSessionToken, maskPhoneNumber } from '@/lib/domain';
+import { computeSubscriptionState } from '@/lib/subscription';
 
 export async function GET(
   req: NextRequest,
@@ -16,9 +17,17 @@ export async function GET(
     const authHeader = req.headers.get('x-admin-token') || req.headers.get('authorization')?.replace('Bearer ', '');
     const isAdmin = verifyAdminSessionToken(authHeader, streamId);
 
-    // Fetch stream with parent business name and category
+    // Fetch stream with parent business details and subscription
     const streamRes = await client.query(
-      `SELECT qs.*, b.name AS business_name, b.category 
+      `SELECT qs.*, 
+              b.name AS business_name, 
+              b.category,
+              b.subscription_status,
+              b.billing_anchor_day,
+              b.next_billing_date,
+              b.last_payment_date,
+              b.monthly_fee,
+              b.created_at AS business_created_at
        FROM queue_streams qs 
        LEFT JOIN businesses b ON qs.business_id = b.id 
        WHERE qs.id = $1`,
@@ -31,6 +40,15 @@ export async function GET(
         { status: 404 }
       );
     }
+
+    const streamRow = streamRes.rows[0];
+    const subState = computeSubscriptionState({
+      subscription_status: streamRow.subscription_status,
+      billing_anchor_day: streamRow.billing_anchor_day,
+      next_billing_date: streamRow.next_billing_date,
+      monthly_fee: streamRow.monthly_fee,
+      created_at: streamRow.business_created_at || streamRow.created_at,
+    });
 
     // Fetch ALL tokens (SERVING, WAITING, SKIPPED) ordered by token_number ASC
     const tokensRes = await client.query(
@@ -47,8 +65,9 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      stream: streamRes.rows[0],
+      stream: streamRow,
       tokens: safeTokens,
+      subscription: subState,
       isAdmin,
     });
   } catch (error: any) {

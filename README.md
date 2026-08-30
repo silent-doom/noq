@@ -28,6 +28,8 @@
   - **Restaurants & Hotels**: Diners / Guests, Table / Server, Table Turn Pace, Dining Waiting List, Host Desks.
   - **Salons & Spas**: Clients, Stylist / Specialist, Service Duration, Styling Queue, Stylist Chairs, Wash Stations.
   - **Retail & Banking**: Customers, Service Counter, Service Pace, Main Queue, Service Counters.
+- **💳 Subscription Monetization & Grace Lock Policy**: Automated monthly billing anchored to registration day ($X$). Features 3-day grace period, interactive terminal lock screen with instant renewal checkout, and 10-day storage data retention purges.
+- **🛡️ Super Admin Platform Governance & Storage Extraction (`/superadmin`)**: Master dashboard for founders to monitor MRR, total platform revenue, tenant statuses, PostgreSQL storage consumption in KB/MB per client, and execute administrative grace extensions or storage purges with strict PII security.
 - **📢 Real-Time Broadcast Tickers**: Push live delay alerts or announcements across all connected customer passes and displays.
 - **📺 Lounge TV Display Board**: Full-screen TV display (`/display/[streamId]`) showing active serving tokens in a Multi-Station grid, station banners, and upcoming waitlists.
 

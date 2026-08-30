@@ -32,14 +32,16 @@
   - [Feature B11: Operations Analytics, Heatmaps & CSV Data Export (`/dashboard/analytics`)](#feature-b11-operations-analytics-heatmaps--csv-data-export-dashboardanalytics)
   - [Feature B12: Dynamic Industry Lexicon & Domain Terminology Adapter](#feature-b12-dynamic-industry-lexicon--domain-terminology-adapter)
   - [Feature B13: Terminal Security, PIN Locks & Cryptographic Session Tokens](#feature-b13-terminal-security-pin-locks--cryptographic-session-tokens)
+  - [Feature B14: Subscription Monetization, Grace Policy & Auto-Lock](#feature-b14-subscription-monetization-grace-policy--auto-lock)
   - [🏥 Business Provider Step-by-Step Operating Workflow](#-business-provider-step-by-step-operating-workflow)
-- [4. Frequently Asked Questions (FAQ)](#4-frequently-asked-questions-faq)
+- [4. Super Admin Platform Governance & Storage Extraction (`/superadmin`)](#4-super-admin-platform-governance--storage-extraction-superadmin)
+- [5. Frequently Asked Questions (FAQ)](#5-frequently-asked-questions-faq)
   - [Customer FAQs](#customer-faqs)
   - [Business Provider FAQs](#business-provider-faqs)
-- [5. Troubleshooting Guide](#5-troubleshooting-guide)
+- [6. Troubleshooting Guide](#6-troubleshooting-guide)
   - [Customer Troubleshooting](#customer-troubleshooting)
   - [Business Provider Troubleshooting](#business-provider-troubleshooting)
-- [6. Glossary of Terms](#6-glossary-of-terms)
+- [7. Glossary of Terms](#7-glossary-of-terms)
 
 ---
 
@@ -384,6 +386,46 @@ graph LR
   - Secure, signed session tokens for privileged operations (calling next, skipping, changing settings).
 - **Multi-Branch Destination PIN Verification**:
   - Linking clinics requires authorization from the destination branch administrator.
+
+---
+
+### Feature B14: Subscription Monetization, Grace Policy & Auto-Lock
+*Predictable billing lifecycle with automated grace reminders and space conservation.*
+
+- **Initial Setup + 1st Month Plan (₹2,499)**:
+  - Covers instant business onboarding, physical station configuration, and first 30 days of unlimited virtual queue access.
+- **Billing Anchor Day ($X$)**:
+  - Automatically pegged to the day of the month the business registered (e.g. Day 14 of every month).
+- **3-Day Grace Period ($X$ to $X + 3$ Days)**:
+  - If renewal is unpaid on day $X$, the terminal displays a non-blocking top amber warning bar with days remaining before lock.
+- **Automatic Terminal Lock ($X + 3$ to $X + 10$ Days)**:
+  - If unpaid after 3 days of grace, the Operator Dashboard locks with an interactive checkout modal (*"Renew Subscription & Unlock (₹999)"*).
+- **Database Space Retention Cleanup ($X + 10$ Days)**:
+  - If unpaid for 7 days after lock (10 days total overdue), historical tokens and inactive queues are automatically purged to reclaim PostgreSQL database storage.
+
+---
+
+## 4. Super Admin Platform Governance & Storage Extraction (`/superadmin`)
+
+*Command Center for noQ founders and platform administrators.*
+
+- **Real-Time Financial & Operational KPIs**:
+  - **MRR (Monthly Recurring Revenue)**: Live recurring run rate across active tenants.
+  - **Total Revenue Collected**: Complete financial ledger from `subscription_payments`.
+  - **Tenant Health**: Active vs. Grace Period vs. Locked vs. Expired account breakdown.
+- **Clientele Portfolio Directory**:
+  - Search and filter all registered businesses by name, category, phone, or subscription status.
+  - View exact registration date, anchor renewal day $X$, next billing date, and overdue count.
+- **Storage Footprint & Cost Extraction**:
+  - Shows exact PostgreSQL database consumption per tenant (in KB/MB), total tokens served, and stream counts.
+  - Enables accurate cost calculation and infrastructure margin monitoring.
+- **Administrative Master Overrides**:
+  - **+1 Month Paid**: Manually mark tenant subscription as paid and extend next billing cycle.
+  - **+7 Day Grace Extension**: Grant emergency grace extensions to clinics.
+  - **Manual Lock / Unlock**: Immediately freeze or unfreeze terminal access.
+  - **Storage Purge**: Reclaim database space by deleting stale historical records for churned accounts.
+- **Privacy & Security Protection**:
+  - Zero raw patient medical PII exposed; strictly anonymized throughput and resource stats.
 
 ---
 

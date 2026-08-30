@@ -93,6 +93,11 @@ function DashboardContent() {
   const [editQueueStruct, setEditQueueStruct] = useState<string>('UNIFIED_PARALLEL');
   const [editGoogleMapsUrl, setEditGoogleMapsUrl] = useState<string>('');
 
+  // Subscription State
+  const [subscription, setSubscription] = useState<any>(null);
+  const [isRenewModalOpen, setIsRenewModalOpen] = useState<boolean>(false);
+  const [renewLoading, setRenewLoading] = useState<boolean>(false);
+
   const terms = getDomainTerminology(streamInfo?.category);
 
   // Check saved session PIN authentication
@@ -178,6 +183,9 @@ function DashboardContent() {
 
       if (data.success) {
         setTokens(Array.isArray(data.tokens) ? data.tokens : []);
+        if (data.subscription) {
+          setSubscription(data.subscription);
+        }
         if (data.stream) {
           setStreamInfo(data.stream);
           const activePace =
@@ -201,6 +209,38 @@ function DashboardContent() {
       setLoading(false);
     }
   }, [streamId]);
+
+  const handleRenewSubscription = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!streamId || renewLoading) return;
+
+    setRenewLoading(true);
+    try {
+      const res = await fetch('/api/subscription/pay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          streamId,
+          amount: subscription?.monthlyFee || 999,
+          paymentMethod: 'ONLINE_CARD_UPI',
+        }),
+      });
+
+      const json = await res.json();
+      if (res.ok && json.success) {
+        alert('✅ Subscription renewed successfully! Your terminal is active.');
+        setIsRenewModalOpen(false);
+        await fetchQueueData();
+      } else {
+        alert(json.error || 'Payment failed. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error renewing subscription:', err);
+      alert('Network error during renewal. Please try again.');
+    } finally {
+      setRenewLoading(false);
+    }
+  };
 
   // Fetch Linked Branches
   const fetchLinkedBranches = useCallback(async () => {
@@ -737,6 +777,64 @@ function DashboardContent() {
             </button>
           </div>
         </header>
+
+        {/* GRACE PERIOD SUBSCRIPTION WARNING BANNER */}
+        {subscription?.isGracePeriod && !subscription?.isLocked && (
+          <div className="mx-8 mt-4 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between text-xs text-amber-900 shadow-2xs animate-fade-in">
+            <div className="flex items-center gap-2.5">
+              <span className="text-lg">⚠️</span>
+              <div>
+                <span className="font-extrabold text-amber-950">Subscription Renewal Due: </span>
+                <span className="text-amber-800">{subscription.message}</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsRenewModalOpen(true)}
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer shadow-2xs"
+            >
+              Pay Now (₹{subscription.monthlyFee || 999}) ↗
+            </button>
+          </div>
+        )}
+
+        {/* SUBSCRIPTION OVERDUE LOCK OVERLAY */}
+        {subscription?.isLocked && (
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className="bg-zinc-950 border border-red-900/60 rounded-3xl max-w-md w-full p-8 text-center text-white shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+              <div className="w-16 h-16 bg-red-950/80 border border-red-800 text-red-400 rounded-3xl flex items-center justify-center mx-auto text-3xl font-black">
+                🔒
+              </div>
+              <div>
+                <h3 className="text-xl font-black tracking-tight text-white">Terminal Temporarily Locked</h3>
+                <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                  {subscription.message || 'Your monthly subscription payment is overdue. Please renew to continue calling tokens.'}
+                </p>
+              </div>
+
+              <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl text-left space-y-2 text-xs">
+                <div className="flex justify-between text-zinc-400">
+                  <span>Monthly Renewal Fee</span>
+                  <span className="font-bold text-white font-mono">₹{subscription.monthlyFee || 999}</span>
+                </div>
+                <div className="flex justify-between text-zinc-400">
+                  <span>Billing Anchor Day</span>
+                  <span className="font-bold text-white font-mono">Day {subscription.billingAnchorDay || 'X'}</span>
+                </div>
+                <div className="flex justify-between text-zinc-400">
+                  <span>Days Overdue</span>
+                  <span className="font-bold text-red-400 font-mono">{subscription.daysOverdue || 4} Days</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsRenewModalOpen(true)}
+                className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold py-3.5 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer shadow-lg shadow-emerald-500/20"
+              >
+                Renew Subscription & Unlock Now (₹{subscription.monthlyFee || 999}) ↗
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ADMIN AUTHENTICATION LOCK OVERLAY */}
         {!isAuthenticated && (
@@ -1300,6 +1398,34 @@ function DashboardContent() {
                 </p>
               </div>
 
+              {/* Subscription & Billing Status Card in Settings */}
+              {subscription && (
+                <div className="bg-emerald-50/70 border border-emerald-200 p-4 rounded-2xl space-y-2 text-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-emerald-950 flex items-center gap-1.5">
+                      💳 Subscription Status: <span className="uppercase text-emerald-700 font-extrabold">{subscription.status}</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSettingsOpen(false);
+                        setIsRenewModalOpen(true);
+                      }}
+                      className="text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg transition cursor-pointer"
+                    >
+                      Renew / Pay
+                    </button>
+                  </div>
+                  <div className="text-[11px] text-emerald-800 flex justify-between">
+                    <span>Anchor Day: Day {subscription.billingAnchorDay}</span>
+                    <span>Fee: ₹{subscription.monthlyFee || 999}/mo</span>
+                  </div>
+                  <p className="text-[10px] text-emerald-700">
+                    {subscription.message}
+                  </p>
+                </div>
+              )}
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
@@ -1317,6 +1443,50 @@ function DashboardContent() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* RENEWAL CHECKOUT MODAL */}
+      {isRenewModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-950 border border-zinc-800 rounded-3xl max-w-md w-full p-6 text-white shadow-2xl space-y-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-bold">Monthly Renewal Checkout</h3>
+                <p className="text-xs text-zinc-400 mt-0.5">Secure payment via Card, UPI, or Net Banking</p>
+              </div>
+              <button
+                onClick={() => setIsRenewModalOpen(false)}
+                className="text-zinc-500 hover:text-white font-bold text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl space-y-2 text-xs">
+              <div className="flex justify-between text-zinc-300">
+                <span>noQ Unlimited Virtual Queue Plan (1 Month)</span>
+                <span className="font-bold font-mono text-emerald-400">₹{subscription?.monthlyFee || 999}</span>
+              </div>
+              <div className="flex justify-between text-zinc-500 text-[11px] border-t border-zinc-800 pt-2">
+                <span>Billing Anchor Day</span>
+                <span>Day {subscription?.billingAnchorDay || 'X'}</span>
+              </div>
+              <div className="flex justify-between text-zinc-500 text-[11px]">
+                <span>Next Extended Period</span>
+                <span>+30 Days</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleRenewSubscription}
+              disabled={renewLoading}
+              className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-extrabold py-3.5 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer shadow-lg shadow-emerald-500/20"
+            >
+              {renewLoading ? 'Processing Renewal...' : `Pay ₹${subscription?.monthlyFee || 999} & Activate ↗`}
+            </button>
           </div>
         </div>
       )}

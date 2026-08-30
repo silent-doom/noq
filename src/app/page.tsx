@@ -595,12 +595,29 @@ export default function LandingPage() {
                 />
               </div>
 
+              {/* Subscription & Pricing Summary Box */}
+              <div className="bg-zinc-900/90 border border-emerald-900/40 p-4 rounded-2xl space-y-2">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-bold text-white flex items-center gap-1.5">
+                    💳 Setup + 1st Month Plan
+                  </span>
+                  <span className="font-mono font-black text-emerald-400 text-sm">₹2,499</span>
+                </div>
+                <div className="flex justify-between items-center text-[11px] text-zinc-400 border-t border-zinc-800 pt-2">
+                  <span>Recurring Renewal (Anchor Day: {new Date().getDate()})</span>
+                  <span className="font-mono font-bold text-zinc-300">₹999 / month</span>
+                </div>
+                <p className="text-[10px] text-zinc-400 leading-tight">
+                  ✨ Instant terminal access upon creation. Includes unlimited tokens, voice TTS announcements, multi-station parallel calling, and SMS gateway.
+                </p>
+              </div>
+
               <button
                 type="submit"
                 disabled={loading || !bizName.trim()}
                 className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-extrabold py-4 rounded-2xl text-sm tracking-wide shadow-lg shadow-emerald-500/20 transition cursor-pointer mt-2"
               >
-                {loading ? 'CREATING YOUR QUEUE TERMINAL...' : 'CREATE QUEUE TERMINAL NOW ↗'}
+                {loading ? 'ACTIVATING YOUR QUEUE TERMINAL...' : 'PAY & ACTIVATE TERMINAL NOW ↗'}
               </button>
             </form>
           </div>
