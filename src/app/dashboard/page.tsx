@@ -1031,126 +1031,65 @@ function DashboardContent() {
           {/* ─── LEFT COLUMN: Control Panel ─── */}
           <div className="lg:col-span-5 space-y-4">
 
-            {/* Current Token Card */}
-            <div className="bg-black text-white rounded-3xl shadow-xl overflow-hidden">
-
-              {/* Mobile: horizontal strip layout */}
-              <div className="flex lg:hidden items-center gap-4 p-4">
-                {/* Token number big */}
-                <div className="w-20 h-20 bg-zinc-900 rounded-2xl flex flex-col items-center justify-center shrink-0 border border-zinc-800">
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">NOW</span>
-                  <span className="text-3xl font-black text-white leading-none mt-0.5">
-                    {currentServingTokenObj?.token_number ? `#${currentServingTokenObj.token_number}` : '--'}
-                  </span>
-                </div>
-
-                {/* Name + status + actions */}
-                <div className="flex-1 min-w-0 space-y-2.5">
-                  <div>
-                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${currentServingTokenObj ? 'bg-emerald-500/20 text-emerald-400' : 'bg-zinc-800 text-zinc-500'}`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${currentServingTokenObj ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-600'}`} />
-                      {currentServingTokenObj ? 'SERVING NOW' : 'AT REST'}
-                    </span>
-                    <p className="text-sm font-semibold text-zinc-200 mt-1 truncate">
-                      {currentServingTokenObj?.customer_name || terms.atRestStatus}
-                    </p>
-                  </div>
-
-                  {/* Action buttons row — horizontal on mobile */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleNextToken}
-                      disabled={actionLoading || allWaitingTokens.length === 0}
-                      className="flex-1 bg-emerald-500 hover:bg-emerald-600 disabled:bg-zinc-800 disabled:text-zinc-600 text-white text-[11px] font-bold py-2.5 rounded-xl transition cursor-pointer"
-                    >
-                      {actionLoading ? '...' : `CALL NEXT`}
-                    </button>
-                    <button
-                      onClick={() => currentServingTokenObj && handleUpdateStatus(currentServingTokenObj.id, 'COMPLETED')}
-                      disabled={!currentServingTokenObj || actionLoading}
-                      className="px-3 py-2.5 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-[11px] font-semibold text-emerald-400 rounded-xl border border-zinc-800 cursor-pointer"
-                    >
-                      ✓ Done
-                    </button>
-                    <button
-                      onClick={handleExtendPace}
-                      disabled={actionLoading}
-                      className="px-3 py-2.5 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-[11px] font-bold text-amber-400 rounded-xl border border-zinc-800 cursor-pointer"
-                      title="+5 mins"
-                    >
-                      +5m
-                    </button>
-                    <button
-                      onClick={() => currentServingTokenObj && handleWaitlist(currentServingTokenObj.id)}
-                      disabled={!currentServingTokenObj || actionLoading}
-                      className="px-3 py-2.5 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-[11px] font-semibold text-zinc-400 rounded-xl border border-zinc-800 cursor-pointer"
-                    >
-                      Skip
-                    </button>
-                  </div>
-                </div>
+            {/* Current Token Card — centred on all screen sizes */}
+            <div className="bg-black text-white rounded-[2rem] p-6 sm:p-7 flex flex-col items-center text-center shadow-xl">
+              <div className="w-full flex items-center justify-between">
+                <span className={`inline-flex items-center gap-1.5 ${currentServingTokenObj ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-zinc-800 text-zinc-400 border-zinc-700'} border text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${currentServingTokenObj ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-500'}`} />
+                  {currentServingTokenObj ? 'SERVING NOW' : 'COUNTER AT REST'}
+                </span>
               </div>
 
-              {/* Desktop: original centred layout */}
-              <div className="hidden lg:flex flex-col items-center text-center p-7">
-                <div className="w-full flex items-center justify-between">
-                  <span className={`inline-flex items-center gap-1.5 ${currentServingTokenObj ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-zinc-800 text-zinc-400 border-zinc-700'} border text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider`}>
-                    <span className={`h-1.5 w-1.5 rounded-full ${currentServingTokenObj ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-500'}`} />
-                    {currentServingTokenObj ? 'SERVING NOW' : 'COUNTER AT REST'}
-                  </span>
-                </div>
+              <span className="text-[11px] font-bold text-zinc-400 tracking-widest uppercase mt-6">
+                CURRENT TOKEN
+              </span>
 
-                <span className="text-[11px] font-bold text-zinc-400 tracking-widest uppercase mt-6">
-                  CURRENT TOKEN
-                </span>
+              <div className="text-6xl sm:text-7xl font-black text-white tracking-tight my-2">
+                {currentServingTokenObj && currentServingTokenObj.token_number > 0
+                  ? `#${currentServingTokenObj.token_number}`
+                  : '--'}
+              </div>
 
-                <div className="text-7xl font-black text-white tracking-tight my-2">
-                  {currentServingTokenObj && currentServingTokenObj.token_number > 0
-                    ? `#${currentServingTokenObj.token_number}`
-                    : '--'}
-                </div>
+              <div className="text-zinc-300 font-medium text-sm mb-6 max-w-xs leading-relaxed">
+                {currentServingTokenObj && currentServingTokenObj.token_number > 0
+                  ? currentServingTokenObj.customer_name
+                  : terms.atRestStatus}
+              </div>
 
-                <div className="text-zinc-300 font-medium text-sm mb-6 max-w-xs leading-relaxed">
-                  {currentServingTokenObj && currentServingTokenObj.token_number > 0
-                    ? currentServingTokenObj.customer_name
-                    : terms.atRestStatus}
-                </div>
+              <button
+                onClick={handleNextToken}
+                disabled={actionLoading || allWaitingTokens.length === 0}
+                className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20 cursor-pointer"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span>{actionLoading ? 'Updating...' : `CALL NEXT ${terms.guestTerm.toUpperCase()}`}</span>
+              </button>
 
+              <div className="mt-3 w-full flex gap-2">
                 <button
-                  onClick={handleNextToken}
-                  disabled={actionLoading || allWaitingTokens.length === 0}
-                  className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20 cursor-pointer"
+                  onClick={() => currentServingTokenObj && handleUpdateStatus(currentServingTokenObj.id, 'COMPLETED')}
+                  disabled={!currentServingTokenObj || actionLoading}
+                  className="flex-1 py-3 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-xs font-semibold text-emerald-400 rounded-xl transition border border-zinc-800 cursor-pointer"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  <span>{actionLoading ? 'Updating...' : `CALL NEXT ${terms.guestTerm.toUpperCase()}`}</span>
+                  Mark Done
                 </button>
-
-                <div className="mt-3 w-full flex gap-2">
-                  <button
-                    onClick={() => currentServingTokenObj && handleUpdateStatus(currentServingTokenObj.id, 'COMPLETED')}
-                    disabled={!currentServingTokenObj || actionLoading}
-                    className="flex-1 py-3 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-xs font-semibold text-emerald-400 rounded-xl transition border border-zinc-800 cursor-pointer"
-                  >
-                    Mark Done
-                  </button>
-                  <button
-                    onClick={handleExtendPace}
-                    disabled={actionLoading}
-                    className="py-3 px-3.5 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-xs font-bold text-amber-400 rounded-xl transition border border-zinc-800 cursor-pointer"
-                    title="Add +5 mins extra service duration"
-                  >
-                    ⏱️ +5m
-                  </button>
-                  <button
-                    onClick={() => currentServingTokenObj && handleWaitlist(currentServingTokenObj.id)}
-                    disabled={!currentServingTokenObj || actionLoading}
-                    className="py-3 px-4 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-xs font-semibold text-zinc-400 rounded-xl transition border border-zinc-800 cursor-pointer"
-                  >
-                    Skip
-                  </button>
-                </div>
+                <button
+                  onClick={handleExtendPace}
+                  disabled={actionLoading}
+                  className="py-3 px-3.5 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-xs font-bold text-amber-400 rounded-xl transition border border-zinc-800 cursor-pointer"
+                  title="Add +5 mins extra service duration"
+                >
+                  ⏱️ +5m
+                </button>
+                <button
+                  onClick={() => currentServingTokenObj && handleWaitlist(currentServingTokenObj.id)}
+                  disabled={!currentServingTokenObj || actionLoading}
+                  className="py-3 px-4 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-xs font-semibold text-zinc-400 rounded-xl transition border border-zinc-800 cursor-pointer"
+                >
+                  Skip
+                </button>
               </div>
             </div>
 
