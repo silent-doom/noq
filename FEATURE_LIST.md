@@ -1,252 +1,372 @@
-# 📘 noQ — Complete Feature List & Layman User Guide
+# 📘 noQ — Persona-Based Feature List & Layman User Guide
+
 > **Official Live App**: [https://noq-serve.vercel.app/](https://noq-serve.vercel.app/)  
-> **System Type**: Zero-Hardware Intelligent Virtual Queue & Crowd Flow Engine
+> **Platform Type**: Zero-Hardware Intelligent Virtual Queue & Crowd Flow Engine
 
 ---
 
 ## 🌟 Table of Contents
-1. [Introduction to noQ](#1-introduction-to-noq)
-2. [Core Concepts Explained Simply](#2-core-concepts-explained-simply)
-3. [Exhaustive Feature Breakdown (Points & Subpoints)](#3-exhaustive-feature-breakdown-points--subpoints)
-   - [1. Instant QR Code Queue Entry (Scan & Join)](#1-instant-qr-code-queue-entry-scan--join)
-   - [2. Zero-Install Mobile Live Digital Pass](#2-zero-install-mobile-live-digital-pass)
-   - [3. Remote Web Booking & Time Slot Scheduling](#3-remote-web-booking--time-slot-scheduling)
-   - [4. Multi-Doctor & Multi-Station Parallel Calling Engine](#4-multi-doctor--multi-station-parallel-calling-engine)
-   - [5. Operator Control Dashboard (Admin Terminal)](#5-operator-control-dashboard-admin-terminal)
-   - [6. Multi-Branch Clinic Linkage & Patient Transfer Network](#6-multi-branch-clinic-linkage--patient-transfer-network)
-   - [7. Smart Waitlist & Skipped Guest Recall System](#7-smart-waitlist--skipped-guest-recall-system)
-   - [8. Lounge TV Screen Display Board with Voice Announcements](#8-lounge-tv-screen-display-board-with-voice-announcements)
-   - [9. Print-Ready A4 Venue QR Poster Generator](#9-print-ready-a4-venue-qr-poster-generator)
-   - [10. Multi-Channel Notification Engine (SMS, Web Push, WhatsApp)](#10-multi-channel-notification-engine-sms-web-push-whatsapp)
-   - [11. Dynamic Industry Lexicon & Domain Adapter](#11-dynamic-industry-lexicon--domain-adapter)
-   - [12. Operations Analytics, Heatmaps & CSV Data Export](#12-operations-analytics-heatmaps--csv-data-export)
-   - [13. Privacy, Data Protection & PII Security](#13-privacy-data-protection--pii-security)
-4. [Step-by-Step User Workflows](#4-step-by-step-user-workflows)
-5. [Frequently Asked Questions (FAQ)](#5-frequently-asked-questions-faq)
-6. [Comprehensive Troubleshooting Guide](#6-comprehensive-troubleshooting-guide)
-7. [Glossary of Terms](#7-glossary-of-terms)
+
+- [1. Introduction & Overview](#1-introduction--overview)
+- [2. Persona 1: Customer / Patient / Guest Experience](#2-persona-1-customer--patient--guest-experience)
+  - [Feature C1: Instant On-Site QR Scan & Fast Check-In](#feature-c1-instant-on-site-qr-scan--fast-check-in)
+  - [Feature C2: Zero-Install Mobile Live Digital Pass (`/t/[tokenId]`)](#feature-c2-zero-install-mobile-live-digital-pass-ttokenid)
+  - [Feature C3: Remote Web Booking & Future Time Slot Scheduling (`/book/[streamId]`)](#feature-c3-remote-web-booking--future-time-slot-scheduling-bookstreamid)
+  - [Feature C4: Lock-Screen Push & Multi-Channel Turn Alerts](#feature-c4-lock-screen-push--multi-channel-turn-alerts)
+  - [Feature C5: Dynamic Wait Times, Spots Ahead & Overrun Warnings](#feature-c5-dynamic-wait-times-spots-ahead--overrun-warnings)
+  - [Feature C6: Self-Serve Cancellation & Reschedule Requests](#feature-c6-self-serve-cancellation--reschedule-requests)
+  - [Feature C7: 5-Star Feedback & Automated Google Maps Review Redirection](#feature-c7-5-star-feedback--automated-google-maps-review-redirection)
+  - [Feature C8: Privacy & Data Protection for Visitors](#feature-c8-privacy--data-protection-for-visitors)
+  - [🚶 Customer Step-by-Step Journey Walkthrough](#-customer-step-by-step-journey-walkthrough)
+- [3. Persona 2: Business Provider / Doctor / Operator Experience](#3-persona-2-business-provider--doctor--operator-experience)
+  - [Feature B1: 60-Second Instant Onboarding & Station Setup](#feature-b1-60-second-instant-onboarding--station-setup)
+  - [Feature B2: Central Operator Terminal & Calling Dashboard (`/dashboard`)](#feature-b2-central-operator-terminal--calling-dashboard-dashboard)
+  - [Feature B3: Multi-Doctor & Multi-Station Parallel Calling Engine](#feature-b3-multi-doctor--multi-station-parallel-calling-engine)
+  - [Feature B4: Smart Waitlist & Fair Priority Latecomer Recall (`/dashboard/waitlist`)](#feature-b4-smart-waitlist--fair-priority-latecomer-recall-dashboardwaitlist)
+  - [Feature B5: Reschedule Request Approval & Rejection Hub](#feature-b5-reschedule-request-approval--rejection-hub)
+  - [Feature B6: Multi-Branch Clinic Linkage & Patient Transfer Network](#feature-b6-multi-branch-clinic-linkage--patient-transfer-network)
+  - [Feature B7: Lounge TV Display Board with Voice Announcements (`/display/[streamId]`)](#feature-b7-lounge-tv-display-board-with-voice-announcements-displaystreamid)
+  - [Feature B8: Print-Ready A4 Venue QR Poster Generator (`/dashboard/poster`)](#feature-b8-print-ready-a4-venue-qr-poster-generator-dashboardposter)
+  - [Feature B9: Live Broadcast Announcements & Delay Tickers](#feature-b9-live-broadcast-announcements--delay-tickers)
+  - [Feature B10: Direct WhatsApp Messaging & Manual Walk-in Registry](#feature-b10-direct-whatsapp-messaging--manual-walk-in-registry)
+  - [Feature B11: Operations Analytics, Heatmaps & CSV Data Export (`/dashboard/analytics`)](#feature-b11-operations-analytics-heatmaps--csv-data-export-dashboardanalytics)
+  - [Feature B12: Dynamic Industry Lexicon & Domain Terminology Adapter](#feature-b12-dynamic-industry-lexicon--domain-terminology-adapter)
+  - [Feature B13: Terminal Security, PIN Locks & Cryptographic Session Tokens](#feature-b13-terminal-security-pin-locks--cryptographic-session-tokens)
+  - [🏥 Business Provider Step-by-Step Operating Workflow](#-business-provider-step-by-step-operating-workflow)
+- [4. Frequently Asked Questions (FAQ)](#4-frequently-asked-questions-faq)
+  - [Customer FAQs](#customer-faqs)
+  - [Business Provider FAQs](#business-provider-faqs)
+- [5. Troubleshooting Guide](#5-troubleshooting-guide)
+  - [Customer Troubleshooting](#customer-troubleshooting)
+  - [Business Provider Troubleshooting](#business-provider-troubleshooting)
+- [6. Glossary of Terms](#6-glossary-of-terms)
 
 ---
 
-## 1. Introduction to noQ
+## 1. Introduction & Overview
 
-### What is noQ?
-**noQ** is a modern, cloud-based virtual queue management system designed to eliminate physical waiting lines, crowded waiting rooms, and confusing paper token slips. 
+**noQ** is an intelligent, zero-hardware virtual queue and waitlist platform designed to replace physical waiting lines and chaotic waiting rooms with seamless digital workflows.
 
-Instead of forcing patients, diners, or customers to stand in line or sit in cramped waiting areas for hours:
-- Customers simply **scan a QR code** or **book a slot online**.
-- They receive a **Live Digital Pass** on their smartphone browser (no app download required).
-- They can walk around, grab coffee, or wait in their car while watching their live queue position, estimated wait time, and room/station assignment.
-- When it's their turn, noQ alerts them via **Lock-Screen Push Notifications**, **SMS**, **WhatsApp**, and **Lounge TV Voice Announcements**.
-
-### Who is noQ for?
-- **Healthcare & Clinics**: Doctors, OPDs, dental offices, diagnostic labs, hospitals.
-- **Restaurants, Cafes & Bars**: Hostess desks, dining waitlists, food pickup counters.
-- **Salons, Spas & Barbers**: Stylist appointment queues, walk-in hair and beauty services.
-- **Retail, Banks & Service Centers**: Customer service desks, repair centers, checkout counters.
+The system is organized around **two distinct user personas**:
+1. **The Customer / Patient / Guest**: Enjoys a zero-wait, stress-free experience on their own smartphone with real-time pass updates, notifications, and freedom to wait anywhere.
+2. **The Business Provider / Doctor / Operator**: Enjoys a powerful, streamlined command terminal to call tokens across multiple rooms/stations, manage no-shows, network branches, broadcast delays, and collect 5-star Google Maps reviews.
 
 ---
 
-## 2. Core Concepts Explained Simply
+```mermaid
+graph LR
+    subgraph "Customer Experience"
+        A[Scan QR / Remote Booking] --> B[Live Digital Pass on Phone]
+        B --> C[Real-Time Position & ETA]
+        C --> D[Turn Alert: Voice / Push / SMS]
+        D --> E[Leave 5-Star Review on Google Maps]
+    end
 
-| Concept | Plain English Explanation |
-| :--- | :--- |
-| **Queue Stream** | The central digital line for your business or doctor. Each branch or service has a unique stream. |
-| **Digital Pass (`/t/[tokenId]`)** | A web-based ticket that opens instantly on any smartphone browser without installing anything from the App Store or Google Play. |
-| **Station / Counter** | The physical location where service takes place (e.g., *Doctor Room 1*, *Stylist Chair 3*, *Table 4*, *Counter 2*). |
-| **Access Channel** | How the customer joined the queue: `PHYSICAL_QR` (scanned on-site), `REMOTE` (booked online), or `WALK_IN` (entered manually by front desk). |
-| **Fair Priority Recall** | A smart algorithm that re-inserts late or skipped customers near the front of the queue without putting them all the way at the back or unfairly skipping existing on-time guests. |
-| **Multi-Branch Linkage** | Connecting two or more clinics or branches owned by the same business so staff can switch views in 1 tap and transfer patients seamlessly. |
+    subgraph "Business Provider Experience"
+        F[Register Business & Stations] --> G[Operator Dashboard]
+        G --> H[Print A4 QR Poster]
+        G --> I[Lounge TV Display Board]
+        G --> J[Call Next Token in Parallel]
+        G --> K[Analytics & CSV Reports]
+    end
+
+    B <== Ably Real-Time Sync ==> G
+    G ==> I
+```
 
 ---
 
-## 3. Exhaustive Feature Breakdown (Points & Subpoints)
+## 2. Persona 1: Customer / Patient / Guest Experience
+
+*The tools, passes, and conveniences designed for everyday visitors, patients, diners, and clients.*
 
 ---
 
-### 1. Instant QR Code Queue Entry (Scan & Join)
-*Allows on-site visitors to join the queue in 5 seconds using their phone camera.*
+### Feature C1: Instant On-Site QR Scan & Fast Check-In
+*Join the line in 5 seconds with zero app installation.*
 
 - **Zero App Download Required**:
-  - Works on standard iOS Camera and Android Google Lens.
-  - Opens instantly in Safari, Chrome, Samsung Internet, Firefox, or any mobile browser.
-- **Minimal Data Input**:
-  - Customer only enters their Name and Mobile Phone Number.
-  - Automatically remembers returning visitors on the same browser.
-- **Instant Digital Pass Issuance**:
-  - Generates a unique sequential token number (e.g., Token `#14`).
-  - Immediately redirects customer to their live interactive pass.
-- **SMS Confirmation with Direct URL**:
-  - Automatically dispatches an SMS text message to the customer's phone containing a direct link back to their pass.
+  - Open standard camera on iPhone or Android and scan the on-site QR code.
+  - No need to download anything from the Apple App Store or Google Play Store.
+- **Fast 2-Field Entry**:
+  - Enter just your Name and Phone Number to secure your place in line.
+  - Automatically remembers returning visitors on the same browser for 1-tap re-entry.
+- **Instant Sequential Token**:
+  - Instantly issues your digital token (e.g. Token `#14`) and loads your live pass.
+- **Automated SMS Pass Delivery**:
+  - Dispatches an SMS confirmation containing your direct pass URL so you never lose your ticket.
 
 ---
 
-### 2. Zero-Install Mobile Live Digital Pass
-*The customer's personal live dashboard on their smartphone (`/t/[tokenId]`).*
+### Feature C2: Zero-Install Mobile Live Digital Pass (`/t/[tokenId]`)
+*Your personal live waiting pass on your phone browser.*
 
-- **Live Position & Spots Ahead Tracker**:
-  - Displays large, clear token number (e.g., `#12`).
-  - Shows real-time badge: *"3 spots ahead of you"*.
-  - Live animated pulsating indicator showing queue activity.
-- **Dynamic Estimated Time of Arrival (ETA)**:
-  - Real-time countdown timer calculating remaining wait time based on actual average consultation speed.
-  - Formats smartly as minutes (e.g., `25 min`) or hours (e.g., `1 hr 15 min`).
-- **Station & Room Calling Banner**:
-  - When called, the screen flashes emerald green with high-visibility banner: *"NOW SERVING — Please proceed to Doctor Room 2"*.
-  - Plays an audible turn chime on the customer's smartphone.
-- **Lock-Screen Web Push Notifications**:
-  - One-tap button: `🔔 Enable Lock-Screen Turn Alerts`.
-  - Sends OS notifications directly to phone lock screens even when the browser tab is closed.
-- **Overrun & Delay Warnings**:
-  - If a consultation runs longer than normal, an amber notice appears: *"⚠️ Session running slightly over time (+10m)"*.
-- **Self-Serve Queue Cancellation**:
-  - `Cancel Token` button allows guests who need to leave early to surrender their ticket with 1 click, freeing up queue space for others.
-- **Self-Serve Reschedule Request**:
-  - Customers who cannot make it can pick a preferred future date and time slot (`10:00 AM`, `02:30 PM`, etc.) directly from their pass.
-- **5-Star CSAT Customer Satisfaction Rating & Google Maps Review Redirection**:
-  - Upon session completion, an interactive 5-star rating widget appears with optional text review for instant service feedback.
-  - **Automated Google Maps Redirection**: If the business added their Google Maps Review URL (configured easily at onboarding or in dashboard settings), customers who submit their rating are automatically redirected to the business's official Google Maps review profile to leave a public 5-star review.
-  - A prominent *"⭐ Share Review on Google Maps ↗"* action card remains accessible so customers can post their review anytime.
-- **Location & Google Maps Integration**:
-  - Quick button to view venue address and get driving directions in Google Maps or Apple Maps.
+- **Live Progress & Spots Ahead Counter**:
+  - Displays your token number prominently with live countdown: *"3 spots ahead of you"*.
+  - Animated pulsating heartbeat indicator confirms your pass is actively connected to the venue.
+- **Station / Room Assignment Alert**:
+  - When your turn is called, the pass screen flashes emerald green:
+    > *"NOW SERVING — Please proceed to Doctor Room 2"*
+  - Plays an audible turn chime directly through your phone speakers.
+- **Add to Home Screen (PWA)**:
+  - 1-tap instructions to pin your digital pass to your smartphone home screen like a native app.
+- **Share via WhatsApp or Copy Link**:
+  - Easily forward your pass link to family members or caregivers so they can monitor your queue status remotely.
+- **Directions & Venue Map**:
+  - 1-tap button to view venue location and navigate directly via Google Maps or Apple Maps.
 
 ---
 
-### 3. Remote Web Booking & Time Slot Scheduling
-*Enables customers to book from home before arriving (`/book/[streamId]`).*
+### Feature C3: Remote Web Booking & Future Time Slot Scheduling (`/book/[streamId]`)
+*Secure your spot from home or the office before travelling.*
 
-- **Dual Booking Modes**:
-  - **⚡ Join Live Queue Now**: Instantly grabs the next available token in today's active line from anywhere.
-  - **📅 Advance Time Slot**: Lets users pick a specific appointment time from dynamically generated slots (e.g., `09:30 AM`, `11:00 AM`, `04:30 PM`).
+- **⚡ Join Live Queue Now**:
+  - Remotely grab a live ticket in today's active line before leaving home.
+- **📅 Advance Time Slot Selection**:
+  - Pick a specific appointment time slot from dynamically generated intervals (e.g. `10:00 AM`, `11:30 AM`, `03:00 PM`).
 - **Live Waiting Line Preview**:
-  - Shows how many people are currently waiting and estimated wait time before the user commits.
-- **Operating Hours & Days Enforcement**:
-  - Automatically restricts bookings to valid business hours and open operating days.
-- **Broadcast Notice Visibility**:
-  - Any emergency announcement or holiday notice set by the business appears at the top of the booking page.
+  - View how many people are currently waiting and estimated consultation pace before booking.
+- **Operating Hours Enforcement**:
+  - Automatically verifies valid working days and open business hours to prevent invalid bookings.
 
 ---
 
-### 4. Multi-Doctor & Multi-Station Parallel Calling Engine
-*Empowers venues with multiple rooms, doctors, or counters to serve customers in parallel without confusion.*
+### Feature C4: Lock-Screen Push & Multi-Channel Turn Alerts
+*Never miss your turn, even with your phone in your pocket or browser closed.*
 
-- **Parallel Non-Blocking Queues**:
-  - Doctor Room 1 and Doctor Room 2 can call and serve Token `#15` and Token `#16` simultaneously.
-  - Calling a token at one counter does **not** override or cancel the active session at another counter.
-- **Station-Specific Routing**:
-  - Every called token is explicitly tagged with its designated station (e.g., `Exam Bed 1`, `Stylist Chair 3`, `Host Station 2`).
-  - The assigned station is synchronized across the Customer Live Pass, Operator Dashboard, TV Screen, and Voice Announcement.
-- **Customizable Station Counts**:
-  - Configurable during onboarding or stream settings (e.g., 3 Doctor Rooms + 2 Exam Beds).
+- **Native Lock-Screen Web Push Notifications**:
+  - Tap `🔔 Enable Lock-Screen Turn Alerts` on your pass.
+  - Delivers operating system alerts to Android and iOS (Safari 16.4+) lock screens.
+- **Automated SMS Text Alerts**:
+  - Receive automated SMS text messages when you are 3 spots away and when your token is called to the counter.
+- **WhatsApp Direct Turn Updates**:
+  - Receive turn reminders and rescheduling notices directly via WhatsApp.
 
 ---
 
-### 5. Operator Control Dashboard (Admin Terminal)
-*The central control room for front desk staff, receptionists, and doctors (`/dashboard`).*
+### Feature C5: Dynamic Wait Times, Spots Ahead & Overrun Warnings
+*Clear, accurate transparency so you can manage your time.*
+
+- **Smart Dynamic ETA**:
+  - Continuously calculated countdown based on actual average consultation speed (e.g. `~25 min` or `~1 hr 15 min`).
+- **Session Overrun Alerts**:
+  - If a previous appointment runs longer than normal, your pass displays an amber notice:
+    > *"⚠️ Session is running slightly over time (+10m). Your updated ETA has been adjusted."*
+- **Live Venue Announcements**:
+  - Any emergency delay or doctor announcement posted by the venue scrolls live across your digital pass in real time.
+
+---
+
+### Feature C6: Self-Serve Cancellation & Reschedule Requests
+*Complete flexibility if your schedule changes.*
+
+- **Self-Serve Queue Cancellation**:
+  - If you need to leave or cannot wait, tap `Cancel Token` to release your spot and free up space for others.
+- **Self-Serve Reschedule Request**:
+  - If running late, tap `📅 Request Future Reschedule`.
+  - Select your preferred new date and time slot within operating hours.
+  - The business reviews your request and dispatches an updated pass via SMS.
+
+---
+
+### Feature C7: 5-Star Feedback & Automated Google Maps Review Redirection
+*Share your experience and boost the business's public profile.*
+
+- **Post-Service 5-Star CSAT Rating**:
+  - When your session is marked complete, an interactive 5-star rating widget and comment box appear on your pass.
+- **Automated Google Maps Review Redirection**:
+  - Upon tapping **"Submit & Review on Google Maps ↗"**, your feedback is logged, and you are automatically redirected to the business's official Google Maps profile to leave a public 5-star review.
+- **Persistent Review Action Card**:
+  - A clean action card with **"⭐ Share Review on Google Maps ↗"** remains available on your pass if you wish to review later.
+
+---
+
+### Feature C8: Privacy & Data Protection for Visitors
+*Your personal information is always safe.*
+
+- **PII Phone Number Masking**:
+  - Your phone number is masked across all public screens and displays (e.g. `+91 •••••• 4512`).
+- **Name Abbreviation**:
+  - Your name is abbreviated on public waiting screens (e.g. `John D.` or `J***n`) for healthcare HIPAA/privacy compliance.
+
+---
+
+### 🚶 Customer Step-by-Step Journey Walkthrough
+
+```
+[1. Arrive at Venue] ➔ [2. Scan Poster QR] ➔ [3. Enter Name & Phone] 
+          ↓
+[4. Receive Live Pass & Enable Push Alerts] ➔ [5. Relax in Lobby or Cafe]
+          ↓
+[6. Flashing Screen + Chime: "Proceed to Room 2"] ➔ [7. Enter Consultation]
+          ↓
+[8. Session Finished] ➔ [9. Rate 5 Stars & Leave Google Review]
+```
+
+---
+
+## 3. Persona 2: Business Provider / Doctor / Operator Experience
+
+*The command center, multi-station engine, and analytics built for doctors, receptionists, hosts, and clinic managers.*
+
+---
+
+### Feature B1: 60-Second Instant Onboarding & Station Setup
+*Launch a fully functional enterprise virtual queue in under 1 minute.*
+
+- **Instant Terminal Creation**:
+  - Register venue name, select industry category, and configure service pace.
+- **Physical Layout & Station Customizer**:
+  - Select physical rooms, beds, chairs, and counters (e.g., 2 Doctor Rooms + 1 Exam Bed, or 4 Stylist Chairs).
+- **Working Hours & Days Schedule**:
+  - Set opening time, closing time, and active operating days (e.g. Mon–Sat, 09:00 to 20:00).
+- **Queue Structure Selection**:
+  - Choose between **⚡ Parallel Unified Queue** (single line, parallel calling) or **🩺 Dedicated Provider Queues**.
+- **Google Maps Review Link Setup**:
+  - Input your Google Maps review URL during onboarding so customers are automatically guided to review your business.
+- **Admin PIN Security**:
+  - Set a 6-digit PIN to secure your operator terminal against unauthorized access.
+
+---
+
+### Feature B2: Central Operator Terminal & Calling Dashboard (`/dashboard`)
+*The primary screen for front desk staff, nurses, receptionists, and doctors.*
 
 - **One-Click "Call Next" Action**:
-  - Scoped counter picker allows the operator to select their station and summon the next waiting guest in under 1 second.
-  - Automatically marks the previously serving guest as completed.
-- **Manual Walk-In Entry**:
-  - Quick popup modal to register guests who do not have a smartphone or arrive without scanning.
+  - Select your active counter/station and summon the next waiting guest in under 1 second.
+  - Automatically completes the previous guest and advances the line.
 - **Dynamic Service Pace Controller**:
-  - `+5 Min Extra Time` quick button when a consultation is taking longer than expected.
-  - Interactive **NumberSlider** to adjust base service pace from 2 to 120 minutes.
-- **Real-Time Live Broadcast Ticker**:
-  - Type an announcement (e.g., *"Doctor delayed by 15 mins due to emergency"*) to instantly broadcast it across all customer passes and TV screens.
-- **Direct WhatsApp Dispatcher**:
-  - Single-click green WhatsApp button generates a pre-formatted turn reminder message with customer name and token number ready to send via WhatsApp Web/App.
-- **Queue State Filters & Search Bar**:
-  - Real-time search by customer name or token number.
+  - Tap `+5 Min Extra Time` to add overrun time when an appointment takes longer.
+  - Drag the tactile **NumberSlider** to adjust base consultation pace (2 to 120 mins).
+- **Live Search & Queue Filtering**:
+  - Search any guest instantly by name or token number.
   - Filter view by Waiting, Serving, Completed, and Skipped.
-- **Admin PIN Protection & Session Security**:
-  - 6-digit PIN authentication prevents unauthorized access.
-  - Issues cryptographic session token for secure administrative actions.
 - **Accessibility Modes**:
-  - **High-Contrast Theme**: Maximizes black-and-white contrast for low-vision operators.
-  - **Large Typography Mode**: Enlarges text and touch targets for tablets and touchscreens.
+  - **High-Contrast Theme**: Maximizes contrast for low-vision operators.
+  - **Large Typography Mode**: Enlarges text and touch targets for tablet kiosks.
 
 ---
 
-### 6. Multi-Branch Clinic Linkage & Patient Transfer Network
-*Allows doctors and healthcare organizations with multiple locations to network their clinics.*
+### Feature B3: Multi-Doctor & Multi-Station Parallel Calling Engine
+*Run concurrent consultations across multiple rooms without collisions.*
 
-- **Secure Inter-Branch Pairing (`/api/branch/link`)**:
-  - Link separate branch streams (e.g., *South Mumbai Clinic* & *Navi Mumbai Branch*) using the target branch's Stream ID and Admin PIN.
-- **1-Tap Branch Queue Switching**:
-  - Operator can switch between branch dashboards with a single tap from the dashboard header without re-logging in.
-- **Cross-Branch Patient Transfer (`/api/branch/transfer`)**:
-  - If a patient arrives at Branch A but needs specialized care at Branch B, the operator can transfer them with 1 click.
-  - Automatically cancels the ticket at Branch A and generates a new token at Branch B.
-  - Dispatches an SMS alert to the patient notifying them of their new token and destination branch.
+- **Parallel Non-Blocking Queues**:
+  - Doctor Room 1 and Doctor Room 2 can call and serve Token `#10` and Token `#11` simultaneously.
+  - Calling a token at one station will **not** cancel or override the active session at another station.
+- **Station-Specific Routing**:
+  - Tokens are explicitly tagged with their destination (e.g. `Doctor Room 1`, `Exam Bed 2`, `Stylist Chair 3`, `Counter 4`).
+  - Synchronized across the Customer Pass, Lounge TV, Voice TTS, and Admin Dashboard.
 
 ---
 
-### 7. Smart Waitlist & Skipped Guest Recall System
-*Manages late arrivals, no-shows, and appointment reschedules (`/dashboard/waitlist`).*
+### Feature B4: Smart Waitlist & Fair Priority Latecomer Recall (`/dashboard/waitlist`)
+*Handle no-shows and latecomers smoothly without causing waiting room disputes.*
 
 - **Waitlist / Skip Absent Guests**:
-  - If Token `#7` does not show up when called, receptionist clicks `Waitlist / Skip`.
-  - Moves them out of the active serving slot without deleting their record, allowing the queue to keep moving.
-- **Fair Priority Re-Insertion Algorithm**:
-  - When the late guest finally arrives at the desk, receptionist clicks `Re-Queue Fairly`.
-  - Instead of forcing them to the very end of the line (e.g., behind 20 new people) or unfairly placing them at the very front, noQ inserts them smoothly at the midpoint of the current waiting queue.
-- **Reschedule Request Approval & Rejection Hub**:
-  - View incoming reschedule requests submitted by customers from their live pass.
-  - Review requested date and time slot.
-  - **Approve**: Automatically issues a new token for that time and sends confirmation SMS.
-  - **Reject**: Sends a polite notice SMS with optional reason note so the customer can pick another slot.
+  - If a patient does not respond when called, click `Waitlist / Skip`.
+  - Moves them aside without deleting their record, keeping the line moving.
+- **Fair Priority Midpoint Re-Insertion**:
+  - When the late patient finally arrives, click `Re-Queue Fairly`.
+  - Automatically places them at the **equitable midpoint** of the current waiting queue rather than sending them all the way to the back or unfairly jumping on-time guests.
+- **Permanent Cancellation**:
+  - Cancel any skipped ticket permanently with 1 click if the guest has left.
 
 ---
 
-### 8. Lounge TV Screen Display Board with Voice Announcements
-*A full-screen, high-visibility waiting room display for TVs and monitors (`/display/[streamId]`).*
+### Feature B5: Reschedule Request Approval & Rejection Hub
+*Manage customer date and time change requests effortlessly.*
+
+- **Incoming Reschedule Queue**:
+  - View requested future dates and time slots submitted by customers from their passes.
+- **1-Click Approval**:
+  - Automatically issues a new token for the requested slot and sends an automated SMS confirmation.
+- **1-Click Rejection with Custom Note**:
+  - Sends a polite SMS explaining why the slot is unavailable so the guest can choose an alternative time.
+
+---
+
+### Feature B6: Multi-Branch Clinic Linkage & Patient Transfer Network
+*Connect multiple locations owned by the same business or doctor.*
+
+- **Secure Branch Pairing (`/api/branch/link`)**:
+  - Link separately onboarded clinics (e.g., *Bandra Clinic* & *Navi Mumbai Branch*) using the destination branch Stream ID and PIN.
+- **1-Tap Terminal Switching**:
+  - Switch active branch dashboards from the header dropdown without logging out.
+- **Cross-Branch Patient Transfer (`/api/branch/transfer`)**:
+  - Transfer a patient who arrived at the wrong branch or needs specialist equipment at another location.
+  - Automatically creates a new token at the destination clinic, cancels the old token, and dispatches a relocation SMS to the patient.
+
+---
+
+### Feature B7: Lounge TV Display Board with Voice Announcements (`/display/[streamId]`)
+*Turn any waiting room TV into a professional airport-style status board.*
 
 - **Multi-Station Active Serving Grid**:
-  - Large, bold display of active token numbers alongside their assigned stations (e.g., `Token #22 → Doctor Room 1`, `Token #23 → Doctor Room 2`).
-- **Next 5 Upcoming Tokens Waitlist**:
-  - Compact sidebar showing the next tokens in line so visitors in the room know when they are up next.
-- **Automated Voice Text-to-Speech (TTS) Announcements**:
-  - Automatically speaks announcements in natural English using Web Speech API:
+  - Full-screen high-visibility board showing active tokens and their assigned rooms/counters.
+- **Upcoming Next 5 Tokens Waitlist**:
+  - Compact sidebar showing who is up next.
+- **Browser Web Speech API Voice (TTS) Announcements**:
+  - Automatically speaks announcements in natural English:
     > *"Attention please. Token number 15, please proceed to Doctor Room 2."*
-  - Requires zero extra software or hardware—runs directly inside any Smart TV browser or connected PC.
-- **Live Broadcast Announcement Ticker**:
-  - Scrolling marquee banner at the bottom of the TV screen for venue notices and delay alerts.
-- **Fullscreen & High Contrast Controls**:
-  - One-tap toggle for clean borderless TV display.
+  - Requires zero additional software or hardware—runs directly inside any Smart TV browser.
+- **Fullscreen & High-Contrast Mode**:
+  - 1-click borderless TV presentation mode.
 
 ---
 
-### 9. Print-Ready A4 Venue QR Poster Generator
-*Generates professional on-site signage ready to print and mount (`/dashboard/poster`).*
+### Feature B8: Print-Ready A4 Venue QR Poster Generator (`/dashboard/poster`)
+*Generate professional on-site signage in seconds.*
 
-- **Vector-Crisp High-Resolution QR Code**:
-  - Embeds the exact direct scan URL for your venue queue.
-- **Clear Layman Instructions**:
-  - Step-by-step visual guide: *"1. Scan QR Code → 2. Get Live Pass → 3. Walk In When Called"*.
-- **1-Click Browser Print Trigger**:
-  - Auto-configured CSS print media stylesheet formats cleanly on standard A4 / US Letter paper without printing unwanted headers or buttons.
-- **Branded & Verified**:
-  - Includes venue name and verified link to `https://noq-serve.vercel.app/`.
-
----
-
-### 10. Multi-Channel Notification Engine (SMS, Web Push, WhatsApp)
-*Ensures customers never miss their turn regardless of their device or connectivity.*
-
-- **httpSMS Android SIM Cellular Gateway**:
-  - Direct integration with httpSMS Android app to send real SMS text messages using an on-premise Android SIM card at local operator plan rates (zero third-party SMS markups).
-- **VAPID Native Web Push Service Worker**:
-  - Industry-standard Web Push protocol that delivers lock-screen notifications to Android (Chrome) and iOS 16.4+ (Safari).
-- **Pre-Configured WhatsApp Alerts**:
-  - Instant click-to-chat links for receptionists to notify customers directly on WhatsApp.
+- **High-Resolution Vector QR Code**:
+  - Formatted with your direct venue scan link.
+- **Step-by-Step Layman Instructions**:
+  - Clear graphic guide: *"1. Scan QR Code → 2. Get Live Pass → 3. Walk In When Called"*.
+- **1-Click Clean Print Styling**:
+  - Formats cleanly on standard A4 or US Letter paper without printing unwanted web buttons.
+- **Verified App Link**:
+  - Displays official `https://noq-serve.vercel.app/` verification.
 
 ---
 
-### 11. Dynamic Industry Lexicon & Domain Adapter
-*Adapts the entire system vocabulary to match your specific industry automatically.*
+### Feature B9: Live Broadcast Announcements & Delay Tickers
+*Communicate emergency notices and delay alerts instantly to everyone.*
 
-| Domain | Guest Term | Provider Term | Pace Term | Queue Title | Default Stations |
+- **Global Broadcast Ticker**:
+  - Type an announcement (e.g. *"Doctor delayed by 15 mins due to emergency surgery"*).
+  - Instantly appears across all Customer Passes, Remote Booking pages, TV Displays, and Admin Dashboards.
+
+---
+
+### Feature B10: Direct WhatsApp Messaging & Manual Walk-in Registry
+*Accommodate offline visitors and communicate directly.*
+
+- **Manual Walk-In Modal**:
+  - Register elderly visitors or guests without smartphones in 3 seconds.
+- **WhatsApp Click-to-Chat Button**:
+  - Single-click green WhatsApp icon pre-fills a turn message with customer name and token number ready to send.
+
+---
+
+### Feature B11: Operations Analytics, Heatmaps & CSV Data Export (`/dashboard/analytics`)
+*Make data-driven staffing and operational decisions.*
+
+- **Operational KPIs**:
+  - Track total tokens issued, completed count, skipped count, cancelled count, and completion rate %.
+- **Hourly Peak Congestion Heatmap**:
+  - Visual 24-hour bar chart displaying peak rush hours to assist in scheduling doctors and staff.
+- **Access Channel Distribution**:
+  - Breakdown of traffic originating from On-Site QR Scans vs Remote Web Bookings vs Manual Walk-Ins.
+- **Customer CSAT Scores & Verified Reviews**:
+  - Real-time average star rating calculation and recent verified customer feedback comments.
+- **1-Click Structured CSV Report Export**:
+  - Download full `.csv` logs with token numbers, customer names, masked phone numbers, channels, and timestamps for audits.
+
+---
+
+### Feature B12: Dynamic Industry Lexicon & Domain Terminology Adapter
+*The software speaks your industry's language automatically.*
+
+| Industry Category | Guest Term | Provider Term | Pace Term | Queue Title | Default Stations |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Healthcare / Clinic** | Patient | Doctor / Specialist | Consultation Pace | Main OPD Queue | Doctor Room 1, Exam Bed 1 |
 | **Restaurant / Cafe** | Diner / Guest | Table / Server | Table Turn Pace | Dining Waiting List | Host Station 1, Express Pickup 1 |
@@ -255,168 +375,109 @@ Instead of forcing patients, diners, or customers to stand in line or sit in cra
 
 ---
 
-### 12. Operations Analytics, Heatmaps & CSV Data Export
-*Actionable business intelligence for managers and owners (`/dashboard/analytics`).*
+### Feature B13: Terminal Security, PIN Locks & Cryptographic Session Tokens
+*Enterprise protection for business operations.*
 
-- **Key Performance Indicators (KPIs)**:
-  - Total tokens issued, completed count, skipped count, cancelled count.
-  - Overall completion rate percentage and average service time in minutes.
-- **Hourly Peak Traffic Heatmap**:
-  - Visual 24-hour bar chart highlighting peak rush hours to assist with staff scheduling.
-- **Access Channel Breakdown**:
-  - Pie/bar distribution showing the percentage of guests arriving via On-Site QR vs Remote Web Booking vs Walk-In.
-- **Real-Time Customer Satisfaction (CSAT) & Feedback**:
-  - Average star rating calculation and recent verified customer text comments.
-- **1-Click Structured CSV Data Export**:
-  - Generates downloadable `.csv` report with token numbers, guest names, masked phone numbers, access channels, timestamps, and status for audit and reporting.
+- **6-Digit Admin Passcode**:
+  - Prevents patients or visitors from tampering with queue controls.
+- **HMAC Cryptographic Session Tokens**:
+  - Secure, signed session tokens for privileged operations (calling next, skipping, changing settings).
+- **Multi-Branch Destination PIN Verification**:
+  - Linking clinics requires authorization from the destination branch administrator.
 
 ---
 
-### 13. Privacy, Data Protection & PII Security
-*Enterprise-grade privacy protections for sensitive customer data.*
+### 🏥 Business Provider Step-by-Step Operating Workflow
 
-- **Automatic PII Phone Masking**:
-  - Publicly accessible APIs and displays automatically mask customer phone numbers (e.g., `+91 •••••• 4512`).
-- **Customer Name Privacy Abbreviation**:
-  - Displays customer names in public waiting areas as `John D.` or `J***n` to comply with healthcare and privacy standards.
-- **HMAC-SHA256 Cryptographic Session Tokens**:
-  - Protects privileged actions (calling next, skipping, changing settings) with secure, expiring admin session tokens.
-
----
-
-## 4. Step-by-Step User Workflows
-
-```mermaid
-flowchart TD
-    A[Business Onboarding] -->|Register Name & Stations| B[Admin Terminal Created]
-    B --> C[Print A4 QR Poster]
-    C --> D[Mount Poster at Entrance]
-    
-    E[Customer Arrives] -->|Scans QR Code| F[Live Pass on Phone]
-    G[Remote Customer] -->|Visits Website| F
-    
-    F -->|Real-Time Sync| H[Waits Anywhere]
-    B -->|Calls Next Token| I[TV Voice Announcement + SMS + Push]
-    I -->|Flashing Screen| J[Customer Enters Station]
-    B -->|Marks Done| K[Customer Submits 5-Star Feedback]
+```
+[1. Business Onboarding] ➔ [2. Print & Mount QR Poster] ➔ [3. Open TV Lounge Display]
+                                     ↓
+                     [4. Open Operator Dashboard]
+                                     ↓
+                    [5. Select Station & Click CALL NEXT]
+                     ↙                                 ↘
+         [Patient Arrives: Complete]           [Patient Absent: Waitlist / Skip]
+                     ↓                                         ↓
+   [Auto-Redirect to Google Review]             [Re-Queue Fairly When Arrived]
 ```
 
-### Workflow A: Quick 60-Second Setup for Business Owners
-1. Visit [https://noq-serve.vercel.app/](https://noq-serve.vercel.app/) and click **"Register Business / Launch Terminal"**.
-2. Enter your business name (e.g., *Apex Dental Care*), select your industry (e.g., *Clinic*), and choose your stations (e.g., 2 Doctor Rooms).
-3. Set your 6-digit Admin PIN and service pace.
-4. Click **Create Queue Terminal** — your dashboard is live immediately!
-5. Navigate to **Printable QR Poster** (`/dashboard/poster`), print the page, and place it at your front desk.
+---
 
-### Workflow B: The Customer Journey
-1. **Joining the Queue**: Customer opens their phone camera and scans the poster QR code.
-2. **Entering Info**: Customer enters their name and phone number on the web screen.
-3. **Tracking**: The customer sees Token `#12`, with 3 spots ahead of them and an estimated 15-minute wait.
-4. **Freedom to Move**: Customer relaxes at a nearby cafe or in the lobby.
-5. **Turn Alert**: When called, their phone vibrates, displays a push notification, and the pass screen turns green: *"Please proceed to Doctor Room 1"*.
-6. **Completion**: After their consultation, the customer taps 5 stars to rate their experience.
+## 4. Frequently Asked Questions (FAQ)
 
-### Workflow C: Front Desk Operator Routine
-1. Open the **Operator Dashboard** on a tablet, laptop, or desktop.
-2. When ready for the next patient, select your station (e.g., *Doctor Room 1*) and tap **"CALL NEXT"**.
-3. If a patient is not present, tap **"Waitlist / Skip"** to proceed to the next patient without deleting the absent patient's record.
-4. When the late patient arrives, open the **Smart Waitlist** tab and tap **"Re-Queue Fairly"**.
+### Customer FAQs
+
+#### Q1: Do I need to install an app from Google Play or Apple App Store?
+**No.** noQ is 100% web-based. It runs inside standard mobile browsers (Safari, Chrome, Firefox, Edge). Simply scan the QR code and your pass opens instantly.
+
+#### Q2: Will I be notified if I lock my phone or close the browser tab?
+**Yes.** When you open your digital pass, tap **"Enable Lock-Screen Turn Alerts"**. You will receive native push notifications on your phone lock screen (Android and iOS 16.4+). You also receive automated SMS text alerts.
+
+#### Q3: What if I am running late or cannot make it?
+From your digital pass, tap **"Request Future Reschedule"** to pick a new date and time slot, or tap **"Cancel Token"** if you cannot attend.
+
+#### Q4: How do I leave a Google Review for the business?
+Once your consultation or service is completed, an interactive 5-star rating widget appears. Submitting your rating automatically opens the business's official Google Maps profile so you can share your review publicly.
 
 ---
 
-## 5. Frequently Asked Questions (FAQ)
+### Business Provider FAQs
 
-### General Questions
-
-#### Q1: Do customers or patients need to install an app from Google Play or Apple App Store?
-**No.** noQ is 100% web-based. It runs inside standard mobile browsers (Safari, Chrome, Firefox, Edge). Customers simply scan the QR code and their pass opens instantly.
-
-#### Q2: What hardware is required to run noQ?
+#### Q5: What hardware do I need to purchase to run noQ?
 **Zero specialized hardware.**
-- **Front Desk**: Any smartphone, tablet, iPad, laptop, or desktop computer with a web browser.
-- **Waiting Lounge TV**: Any Smart TV with a built-in browser, or a TV connected to a Chromecast, Firestick, mini-PC, or HDMI cable.
-- **Customers**: Any smartphone with a camera and web browser.
+- **Front Desk**: Any smartphone, tablet, iPad, laptop, or desktop computer with an internet browser.
+- **Waiting Room TV**: Any Smart TV with a web browser, or a TV with a Firestick, Chromecast, or HDMI cable.
+- **Signage**: A standard office printer for the A4 QR poster.
 
-#### Q3: Can noQ handle multiple doctors or service counters at the same time?
-**Yes.** noQ is built specifically for parallel multi-station operations. Doctor Room 1 and Doctor Room 2 can call, serve, and complete patients simultaneously without interfering with one another.
+#### Q6: Can multiple doctors or counters call patients simultaneously?
+**Yes.** noQ supports parallel multi-station operations. Doctor Room 1 and Doctor Room 2 can call and serve patients simultaneously without cross-cancelling.
 
----
+#### Q7: How does noQ send SMS text messages at local rates?
+noQ integrates with the **httpSMS Android Gateway**, allowing you to connect an on-premise Android phone with a local SIM card to send real cellular SMS messages without third-party API surcharges.
 
-### Notifications & Connectivity
+#### Q8: What if a patient arrives late after being skipped?
+In the **Smart Waitlist** tab, tap **"Re-Queue Fairly"**. noQ's mathematical algorithm places them at the midpoint of the current waiting queue, resolving lobby disputes peacefully.
 
-#### Q4: How do Lock-Screen Push Notifications work if the customer closes their browser tab?
-noQ utilizes standard Web Push (VAPID) service workers. Once the customer taps *"Enable Turn Alerts"*, notifications are delivered to the operating system notification tray (Android and iOS 16.4+) even if the browser tab is closed.
-
-#### Q5: How does SMS sending work?
-noQ supports the **httpSMS Android Gateway**, allowing businesses to connect an on-premise Android phone with a local SIM card to dispatch real cellular SMS messages without paying expensive per-SMS API markups.
-
-#### Q6: What happens if a customer has an older phone or no internet connection?
-The front desk can enter them manually using the **"Add Walk-in"** button. The customer can listen for voice announcements on the lounge TV or watch the large TV display board.
+#### Q9: Can I link multiple clinics and transfer patients between them?
+**Yes.** Use the **Multi-Branch Network** to connect multiple branches with their Stream IDs and PINs. Switch branch queues with 1 tap and transfer patients seamlessly with automated SMS alerts.
 
 ---
 
-### Operational Scenarios
+## 5. Troubleshooting Guide
 
-#### Q7: What if a customer does not show up when their number is called?
-Do not delete their ticket. Tap **"Waitlist / Skip"**. This moves them aside so other waiting guests are not delayed. When they arrive later, go to the **Waitlist** tab and tap **"Re-Queue Fairly"** to insert them smoothly into the queue.
+### Customer Troubleshooting
 
-#### Q8: Can a doctor who operates clinics in multiple locations link their branches?
-**Yes.** Using the **Multi-Branch Network** feature, you can link Branch A and Branch B using their Stream ID and PIN. You can toggle between branches in 1 tap and transfer patients between clinics with automated SMS notifications.
-
-#### Q9: Can customers reschedule their appointment if they are running late?
-**Yes.** From their digital pass, customers can tap *"Request Reschedule"*, choose a preferred date and time slot, and submit. The operator can approve or reject this request with 1 click in the Waitlist manager.
-
----
-
-## 6. Comprehensive Troubleshooting Guide
-
-### 1. The Customer Live Pass is Not Updating in Real Time
-- **Cause**: Network firewall blocking WebSocket connections, or low connectivity.
-- **Solution**:
-  1. noQ has an automatic 10-second polling fallback if real-time WebSockets are interrupted.
-  2. Ensure the device is connected to active mobile data or venue Wi-Fi.
-  3. Tap the browser reload button; session state is safely preserved.
-
-### 2. The TV Display is Not Speaking Voice Announcements
-- **Cause**: Modern web browsers block automated audio autoplay until a user interacts with the page.
-- **Solution**:
-  1. Click anywhere on the TV screen or tap the **"🔊 Click to Enable Voice Announcements"** button on the display page.
-  2. Ensure TV speakers / volume are unmuted.
-  3. Verify that the browser supports the Web Speech API (Chrome, Safari, and Edge support this natively).
-
-### 3. Web Push Notifications Are Not Appearing on iPhone
-- **Cause**: iOS requires iOS version 16.4 or newer and requires the user to grant notification permissions.
-- **Solution**:
-  1. Ensure the iPhone is running iOS 16.4 or higher.
-  2. Make sure the user taps **"Allow"** when prompted for notification permissions.
-  3. Verify that iOS *"Do Not Disturb"* or *"Focus Mode"* is not silencing web notifications.
-
-### 4. Admin PIN is Not Accepted / Locked Out of Dashboard
-- **Cause**: Incorrect PIN entered or expired session token.
-- **Solution**:
-  1. Use the 6-digit PIN set during business onboarding (Default fallback: `123456`).
-  2. Clear browser session storage or open the dashboard in an incognito window to re-trigger the PIN prompt.
-
-### 5. Printable Poster QR Code Does Not Scan Properly
-- **Cause**: Low printer ink or insufficient lighting.
-- **Solution**:
-  1. Print the poster in high contrast / black & white at 100% scale (A4 / Letter size).
-  2. Ensure the printed QR code is not smudged or wrinkled.
-  3. Verify that the mobile phone camera lens is clean and has adequate ambient lighting.
+| Problem | Likely Cause | Solution |
+| :--- | :--- | :--- |
+| **Pass is not updating in real time** | Low mobile connectivity or network firewall | Tap the browser refresh button. Your token and position are saved safely on the server. |
+| **Push notifications not appearing on iPhone** | Notification permission not granted or iOS < 16.4 | Ensure iPhone is running iOS 16.4+, tap "Allow" on notification prompt, and check that Focus/Do Not Disturb is disabled. |
+| **Lost digital pass browser tab** | Accidental tab closure | Click the pass link sent to your phone via SMS, or re-scan the venue QR code (it will automatically restore your active ticket). |
 
 ---
 
-## 7. Glossary of Terms
+### Business Provider Troubleshooting
 
-- **Ably Realtime**: The low-latency cloud synchronization engine that updates all screens within milliseconds without requiring page refreshes.
-- **CSAT (Customer Satisfaction Score)**: A 1-to-5 star rating submitted by customers after their service is completed.
-- **Dynamic ETA**: The continuously recalculated estimated wait time based on how fast consultations are proceeding.
+| Problem | Likely Cause | Solution |
+| :--- | :--- | :--- |
+| **TV Display is not speaking voice announcements** | Browser autoplay audio policy | Click anywhere on the TV screen or tap **"🔊 Click to Enable Voice Announcements"** to grant audio permission. |
+| **Admin PIN not accepted** | Incorrect PIN entered | Use the 6-digit PIN created during onboarding (default fallback: `123456`), or clear session storage in browser settings. |
+| **Printed QR poster not scanning** | Low printer toner or dark environment | Print in high contrast / black-and-white at 100% scale and ensure adequate lighting at the front desk. |
+| **SMS messages not delivering** | Android httpSMS gateway phone disconnected | Ensure the Android gateway phone has active cellular signal, SMS balance, and httpSMS background service running. |
+
+---
+
+## 6. Glossary of Terms
+
+- **Ably Realtime**: The low-latency cloud synchronization engine that updates all customer passes, dashboards, and TV displays in sub-milliseconds.
+- **CSAT (Customer Satisfaction Score)**: A 1-to-5 star rating submitted by customers upon service completion.
+- **Dynamic ETA**: The continuously recalculated estimated wait time based on actual consultation pace.
 - **Fair Priority Algorithm**: A mathematical midpoint re-queue calculation that places returned latecomers into an equitable queue position.
-- **httpSMS**: A gateway service connecting Android SIM cards to web applications for local-rate SMS dispatch.
-- **PII (Personally Identifiable Information)**: Sensitive customer data (e.g., phone numbers and full names) protected and masked by noQ.
-- **Stream ID**: The unique alphanumeric identifier for a specific venue or clinic queue.
-- **TTS (Text-to-Speech)**: Synthetic voice engine that converts written token callouts into spoken announcements on waiting room TVs.
-- **VAPID Web Push**: Standard protocol for sending push notifications directly to mobile operating system lock screens from web apps.
+- **httpSMS**: A cellular gateway service connecting Android SIM cards to web applications for local-rate SMS dispatch.
+- **PII (Personally Identifiable Information)**: Sensitive customer data (phone numbers and full names) protected and masked by noQ.
+- **Queue Stream**: The central virtual queue instance for a specific clinic, restaurant, or business branch.
+- **Station / Counter**: The designated service area (e.g. *Doctor Room 1*, *Stylist Chair 2*, *Table 4*, *Counter 3*).
+- **TTS (Text-to-Speech)**: The browser speech synthesis engine that converts token callouts into spoken English audio announcements on lounge TVs.
+- **VAPID Web Push**: The standardized web protocol for sending push alerts directly to smartphone lock screens without requiring an installed native app.
 
 ---
 
