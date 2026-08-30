@@ -467,57 +467,30 @@ export default function LandingPage() {
                 )}
               </div>
 
-              {/* Fixed Working Hours Setup */}
-              <div className="bg-zinc-900/90 border border-zinc-800 p-4 rounded-2xl space-y-3">
-                <div className="flex justify-between items-center">
-                  <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
-                    Fixed Working Hours & Schedule
-                  </p>
-                  <span className="text-[10px] text-zinc-400 font-mono">24-Hour Format</span>
-                </div>
+              {/* Fixed Working Days Setup */}
+              <div className="bg-zinc-900/90 border border-zinc-800 p-4 rounded-2xl space-y-2.5">
+                <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
+                  Operating / Working Days
+                </p>
 
-                <div>
-                  <span className="block text-[11px] font-medium text-zinc-400 mb-1.5">Operating / Working Days</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => {
-                      const isSelected = operatingDays.includes(day);
-                      return (
-                        <button
-                          key={day}
-                          type="button"
-                          onClick={() => toggleDay(day)}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                            isSelected
-                              ? 'bg-emerald-500 text-black shadow-xs'
-                              : 'bg-zinc-950 text-zinc-500 border border-zinc-800 hover:text-white'
-                          }`}
-                        >
-                          {day}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 pt-1">
-                  <div>
-                    <label className="block text-[11px] font-medium text-zinc-400 mb-1">Opening Time</label>
-                    <input
-                      type="time"
-                      value={openingTime}
-                      onChange={(e) => setOpeningTime(e.target.value)}
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-zinc-400 mb-1">Closing Time</label>
-                    <input
-                      type="time"
-                      value={closingTime}
-                      onChange={(e) => setClosingTime(e.target.value)}
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => {
+                    const isSelected = operatingDays.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => toggleDay(day)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                          isSelected
+                            ? 'bg-emerald-500 text-black shadow-xs'
+                            : 'bg-zinc-950 text-zinc-500 border border-zinc-800 hover:text-white'
+                        }`}
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
