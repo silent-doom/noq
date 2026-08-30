@@ -81,6 +81,9 @@ function DashboardContent() {
   const [a11yHighContrast, setA11yHighContrast] = useState<boolean>(false);
   const [a11yLargeText, setA11yLargeText] = useState<boolean>(false);
 
+  // Mobile sidebar toggle
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
+
   // Modal States
   const [isWalkInOpen, setIsWalkInOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
@@ -565,14 +568,37 @@ function DashboardContent() {
 
   return (
     <div className="flex h-screen bg-[#f4f5f7] font-sans text-zinc-900 overflow-hidden relative">
-      {/* Dark Left Sidebar */}
-      <aside className="w-64 bg-black text-zinc-400 flex flex-col justify-between p-5 shrink-0">
+      {/* Mobile sidebar overlay backdrop */}
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-30 lg:hidden"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
+      {/* Dark Left Sidebar — hidden on mobile, slide-in on toggle */}
+      <aside
+        className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-black text-zinc-400 flex flex-col justify-between p-5 shrink-0 transition-transform duration-300 ${
+          isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
+      >
         <div>
-          <div className="flex items-center gap-2.5 mb-8 px-2">
-            <span className="text-2xl font-black text-white tracking-tight">noQ</span>
-            <span className="text-[10px] bg-zinc-800 text-zinc-400 font-mono font-medium px-2 py-0.5 rounded tracking-wide">
-              OPERATOR
-            </span>
+          <div className="flex items-center justify-between gap-2.5 mb-8 px-2">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-black text-white tracking-tight">noQ</span>
+              <span className="text-[10px] bg-zinc-800 text-zinc-400 font-mono font-medium px-2 py-0.5 rounded tracking-wide">
+                OPERATOR
+              </span>
+            </div>
+            {/* Close button on mobile */}
+            <button
+              className="lg:hidden text-zinc-400 hover:text-white"
+              onClick={() => setIsMobileSidebarOpen(false)}
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
 
           <nav className="space-y-1.5">
@@ -652,57 +678,72 @@ function DashboardContent() {
 
       {/* Main Screen Panel */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="px-8 py-4 flex items-center justify-between border-b border-zinc-200/60 bg-white/70 backdrop-blur-md sticky top-0 z-10">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-zinc-900">
+        <header className="px-4 sm:px-8 py-3 flex items-center justify-between border-b border-zinc-200/60 bg-white/70 backdrop-blur-md sticky top-0 z-10 gap-2">
+          {/* Left: Hamburger (mobile) + Business Name */}
+          <div className="flex items-center gap-2 min-w-0">
+            {/* Mobile hamburger */}
+            <button
+              className="lg:hidden w-9 h-9 flex items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 hover:bg-zinc-200 shrink-0"
+              onClick={() => setIsMobileSidebarOpen(true)}
+              aria-label="Open Menu"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+
+            <h1 className="text-base sm:text-xl font-bold text-zinc-900 truncate max-w-[150px] sm:max-w-none">
               {streamInfo?.business_name || 'Business Venue'}
             </h1>
-            <span className="text-xs bg-zinc-100 text-zinc-600 font-semibold px-3 py-1 rounded-full border border-zinc-200">
+            <span className="hidden sm:inline text-xs bg-zinc-100 text-zinc-600 font-semibold px-3 py-1 rounded-full border border-zinc-200 shrink-0">
               {streamInfo?.stream_name || terms.queueTitle}
             </span>
 
-            {/* Linked Branch Switcher */}
-            {linkedBranches.length > 0 ? (
-              <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1 text-xs text-emerald-950 font-bold">
-                <span className="text-[10px] text-emerald-700 uppercase tracking-wider">BRANCH:</span>
-                <select
-                  value={streamId || ''}
-                  onChange={(e) => {
-                    const newId = e.target.value;
-                    if (newId && newId !== streamId) {
-                      window.location.href = `/dashboard?streamId=${newId}`;
-                    }
-                  }}
-                  className="bg-transparent text-emerald-900 font-bold focus:outline-none cursor-pointer"
+            {/* Linked Branch Switcher — desktop only */}
+            <div className="hidden lg:block">
+              {linkedBranches.length > 0 ? (
+                <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1 text-xs text-emerald-950 font-bold">
+                  <span className="text-[10px] text-emerald-700 uppercase tracking-wider">BRANCH:</span>
+                  <select
+                    value={streamId || ''}
+                    onChange={(e) => {
+                      const newId = e.target.value;
+                      if (newId && newId !== streamId) {
+                        window.location.href = `/dashboard?streamId=${newId}`;
+                      }
+                    }}
+                    className="bg-transparent text-emerald-900 font-bold focus:outline-none cursor-pointer"
+                  >
+                    <option value={streamId || ''}>📍 {streamInfo?.business_name || 'Current'} (Active)</option>
+                    {linkedBranches.map((b) => (
+                      <option key={b.stream_id} value={b.stream_id}>
+                        ➔ {b.business_name} ({b.stream_name})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsLinkModalOpen(true)}
+                  className="text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1 rounded-full transition flex items-center gap-1 cursor-pointer"
+                  title="Connect another clinic/branch of this doctor"
                 >
-                  <option value={streamId || ''}>📍 {streamInfo?.business_name || 'Current'} (Active)</option>
-                  {linkedBranches.map((b) => (
-                    <option key={b.stream_id} value={b.stream_id}>
-                      ➔ {b.business_name} ({b.stream_name})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setIsLinkModalOpen(true)}
-                className="text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1 rounded-full transition flex items-center gap-1 cursor-pointer"
-                title="Connect another clinic/branch of this doctor"
-              >
-                <span>+ Link Branch</span>
-              </button>
-            )}
+                  <span>+ Link Branch</span>
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Multi-Counter / Station Selector */}
-            <div className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 rounded-full px-3 py-1 text-xs text-white">
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">STATION:</span>
+          {/* Right: Controls */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Station selector — visible on all sizes but compact */}
+            <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-full px-2.5 py-1 text-xs text-white">
+              <span className="hidden sm:inline text-[10px] font-bold text-zinc-400 uppercase tracking-wider">STN:</span>
               <select
                 value={activeCounter}
                 onChange={(e) => setActiveCounter(e.target.value)}
-                className="bg-transparent font-bold text-emerald-400 focus:outline-none cursor-pointer"
+                className="bg-transparent font-bold text-emerald-400 focus:outline-none cursor-pointer max-w-[90px] sm:max-w-none text-[11px]"
               >
                 {(Array.isArray(streamInfo?.stations) && streamInfo.stations.length > 0
                   ? streamInfo.stations
@@ -715,30 +756,31 @@ function DashboardContent() {
               </select>
             </div>
 
-            <div className="relative">
+            {/* Search — hidden on mobile, shown on sm+ */}
+            <div className="relative hidden sm:block">
               <svg className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
                 type="text"
-                placeholder={`Search ${terms.guestTerm.toLowerCase()} or token...`}
+                placeholder={`Search ${terms.guestTerm.toLowerCase()}...`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-56 pl-9 pr-3 py-1.5 bg-white border border-zinc-200 rounded-full text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition shadow-xs"
+                className="w-44 pl-9 pr-3 py-1.5 bg-white border border-zinc-200 rounded-full text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition shadow-xs"
               />
             </div>
 
-            {/* Accessibility Button */}
+            {/* A11y — desktop only */}
             <button
               onClick={() => setIsA11yOpen(true)}
-              className="px-2.5 py-1.5 rounded-full bg-white border border-zinc-200 text-xs font-bold text-zinc-700 hover:bg-zinc-50 shadow-2xs transition cursor-pointer flex items-center gap-1"
-              title="Accessibility Settings (Contrast, Text Size)"
+              className="hidden lg:flex px-2.5 py-1.5 rounded-full bg-white border border-zinc-200 text-xs font-bold text-zinc-700 hover:bg-zinc-50 shadow-2xs transition cursor-pointer items-center gap-1"
+              title="Accessibility Settings"
               aria-label="Accessibility Options"
             >
               <span>👓 A11y</span>
             </button>
 
-            {/* Lock / Unlock Status Indicator */}
+            {/* Lock / Unlock Status */}
             <button
               onClick={() => {
                 if (isAuthenticated) {
@@ -751,16 +793,16 @@ function DashboardContent() {
                   }
                 }
               }}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition ${
+              className={`hidden sm:flex px-2.5 py-1.5 rounded-full text-xs font-bold items-center gap-1.5 transition ${
                 isAuthenticated
                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
                   : 'bg-amber-50 text-amber-700 border border-amber-200'
               }`}
             >
-              <span>{isAuthenticated ? '🔒 Admin Unlocked' : '🔑 Lock Active'}</span>
+              <span>{isAuthenticated ? '🔒 Unlocked' : '🔑 Locked'}</span>
             </button>
 
-            {/* Settings Gear Icon Modal Toggle */}
+            {/* Settings Gear */}
             <button
               onClick={() => setIsSettingsOpen(true)}
               className="w-9 h-9 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-600 hover:bg-zinc-50 shadow-xs transition cursor-pointer"
@@ -771,12 +813,22 @@ function DashboardContent() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </button>
+
+            {/* New Walk-in — shown on mobile as quick action */}
+            <button
+              onClick={() => setIsWalkInOpen(true)}
+              className="lg:hidden w-9 h-9 rounded-full bg-emerald-500 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 transition cursor-pointer"
+              title={`Add Walk-in ${terms.guestTerm}`}
+              aria-label="Add Walk-in"
+            >
+              +
+            </button>
           </div>
         </header>
 
         {/* FREE TRIAL BANNER */}
         {subscription?.isTrial && !subscription?.isLocked && (
-          <div className="mx-8 mt-4 p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center justify-between text-xs text-emerald-950 shadow-2xs animate-fade-in">
+          <div className="mx-4 sm:mx-8 mt-4 p-3 sm:p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-emerald-950 shadow-2xs animate-fade-in">
             <div className="flex items-center gap-2.5">
               <span className="text-lg">🌟</span>
               <div>
@@ -786,7 +838,7 @@ function DashboardContent() {
             </div>
             <button
               onClick={() => setIsRenewModalOpen(true)}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer shadow-2xs"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer shadow-2xs shrink-0"
             >
               Activate 1st Month Plan (₹1,499) ↗
             </button>
@@ -795,7 +847,7 @@ function DashboardContent() {
 
         {/* GRACE PERIOD SUBSCRIPTION WARNING BANNER */}
         {subscription?.isGracePeriod && !subscription?.isLocked && !subscription?.isTrial && (
-          <div className="mx-8 mt-4 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between text-xs text-amber-900 shadow-2xs animate-fade-in">
+          <div className="mx-4 sm:mx-8 mt-4 p-3 sm:p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-amber-900 shadow-2xs animate-fade-in">
             <div className="flex items-center gap-2.5">
               <span className="text-lg">⚠️</span>
               <div>
@@ -805,9 +857,9 @@ function DashboardContent() {
             </div>
             <button
               onClick={() => setIsRenewModalOpen(true)}
-              className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer shadow-2xs"
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer shadow-2xs shrink-0"
             >
-              Pay Now (₹{subscription.monthlyFee || 599}) ↗
+              Pay Now (₹{subscription.monthlyFee || 499}) ↗
             </button>
           </div>
         )}
@@ -829,7 +881,7 @@ function DashboardContent() {
               <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl text-left space-y-2 text-xs">
                 <div className="flex justify-between text-zinc-400">
                   <span>Subscription Plan Fee</span>
-                  <span className="font-bold text-white font-mono">₹{subscription.monthlyFee || 599}</span>
+                  <span className="font-bold text-white font-mono">₹{subscription.monthlyFee || 499}</span>
                 </div>
                 <div className="flex justify-between text-zinc-400">
                   <span>Billing Anchor Day</span>
@@ -845,7 +897,7 @@ function DashboardContent() {
                 onClick={() => setIsRenewModalOpen(true)}
                 className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold py-3.5 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer shadow-lg shadow-emerald-500/20"
               >
-                Renew Subscription & Unlock Now (₹{subscription.monthlyFee || 599}) ↗
+                Renew Subscription & Unlock Now (₹{subscription.monthlyFee || 499}) ↗
               </button>
             </div>
           </div>
@@ -918,7 +970,7 @@ function DashboardContent() {
 
         {/* Pending Reschedule Requests Alert Banner */}
         {safeTokens.filter((t) => t?.reschedule_status === 'PENDING').length > 0 && (
-          <div className="mx-8 mt-6 bg-amber-50 border-2 border-amber-300 rounded-3xl p-5 shadow-lg">
+          <div className="mx-4 sm:mx-8 mt-6 bg-amber-50 border-2 border-amber-300 rounded-3xl p-5 shadow-lg">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-xl">📥</span>
               <h3 className="text-sm font-black text-amber-950 uppercase tracking-wide">
@@ -974,10 +1026,10 @@ function DashboardContent() {
         )}
 
         {/* Layout Grid */}
-        <div className="p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-7xl">
+        <div className="p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-8 max-w-7xl">
           {/* Left Column */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="bg-black text-white rounded-[2rem] p-7 flex flex-col items-center text-center relative shadow-xl">
+          <div className="lg:col-span-5 space-y-4 sm:space-y-6">
+            <div className="bg-black text-white rounded-[2rem] p-5 sm:p-7 flex flex-col items-center text-center relative shadow-xl">
               <div className="w-full flex items-center justify-between">
                 <span className={`inline-flex items-center gap-1.5 ${currentServingTokenObj ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-zinc-800 text-zinc-400 border-zinc-700'} border text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${currentServingTokenObj ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-500'}`} />
@@ -1433,7 +1485,7 @@ function DashboardContent() {
                   </div>
                   <div className="text-[11px] text-emerald-800 flex justify-between">
                     <span>Anchor Day: Day {subscription.billingAnchorDay}</span>
-                    <span>Fee: ₹{subscription.monthlyFee || 599}/mo</span>
+                    <span>Fee: ₹{subscription.monthlyFee || 499}/mo</span>
                   </div>
                   <p className="text-[10px] text-emerald-700">
                     {subscription.message}
@@ -1489,7 +1541,7 @@ function DashboardContent() {
                     : 'noQ Unlimited Virtual Queue Plan (1 Month)'}
                 </span>
                 <span className="font-bold font-mono text-emerald-400">
-                  ₹{subscription?.isTrial ? 1499 : (subscription?.monthlyFee || 599)}
+                  ₹{subscription?.isTrial ? 1499 : (subscription?.monthlyFee || 499)}
                 </span>
               </div>
               <div className="flex justify-between text-zinc-500 text-[11px] border-t border-zinc-800 pt-2">
@@ -1510,7 +1562,7 @@ function DashboardContent() {
             >
               {renewLoading
                 ? 'Processing Payment...'
-                : `Pay ₹${subscription?.isTrial ? 1499 : (subscription?.monthlyFee || 599)} & Activate ↗`}
+                : `Pay ₹${subscription?.isTrial ? 1499 : (subscription?.monthlyFee || 499)} & Activate ↗`}
             </button>
           </div>
         </div>

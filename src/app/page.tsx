@@ -114,14 +114,14 @@ export default function LandingPage() {
     clinic: {
       badge: 'Clinics & Hospitals',
       title: 'Eliminate Crowded OPD Waiting Rooms',
-      desc: 'Patients scan QR codes or book via WhatsApp to track live consultation status. Doctors manage flow effortlessly.',
+      desc: 'Patients scan on-site QR codes or book online to track live consultation status with automated SMS alerts. Doctors manage flow effortlessly.',
       guestTerm: 'Patient',
       paceTerm: 'Consultation Pace',
     },
     restaurant: {
       badge: 'Restaurants & Hotels',
       title: 'Streamline Table Seating & Dining Queues',
-      desc: 'Diners receive instant SMS/WhatsApp alerts when their table is ready, freeing up entrance foyers and boosting table turnover.',
+      desc: 'Diners receive instant SMS text alerts when their table is ready, freeing up entrance foyers and boosting table turnover.',
       guestTerm: 'Diner',
       paceTerm: 'Table Turn Time',
     },
@@ -280,11 +280,11 @@ export default function LandingPage() {
 
           <div className="bg-[#0d0e12] border border-zinc-800/80 p-6 rounded-3xl space-y-3">
             <div className="w-10 h-10 bg-emerald-950 text-emerald-400 rounded-2xl flex items-center justify-center font-bold text-lg">
-              💬
+              📲
             </div>
-            <h3 className="text-base font-bold text-white">WhatsApp & SMS Integration</h3>
+            <h3 className="text-base font-bold text-white">Automated SMS Text Alerts</h3>
             <p className="text-xs text-zinc-400 leading-relaxed">
-              Customers can book tokens directly via WhatsApp messages and receive SMS alerts when their turn is approaching.
+              Customers receive instant cellular SMS text alerts on their mobile phones when their turn is approaching without needing any app.
             </p>
           </div>
 
@@ -607,7 +607,7 @@ export default function LandingPage() {
                 </div>
                 <div className="flex justify-between items-center text-[11px] text-zinc-400 border-t border-zinc-800 pt-2">
                   <span>Recurring Renewal (Anchor Day: {new Date().getDate()})</span>
-                  <span className="font-mono font-bold text-zinc-300">₹599 / month</span>
+                  <span className="font-mono font-bold text-zinc-300">₹499 / month</span>
                 </div>
                 <p className="text-[10px] text-zinc-400 leading-tight">
                   ✨ Instant terminal access upon creation. Includes unlimited tokens, voice TTS announcements, multi-station parallel calling, and SMS gateway.

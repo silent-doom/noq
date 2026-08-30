@@ -26,7 +26,7 @@ export async function ensureSubscriptionTables(client: PoolClient): Promise<void
     ADD COLUMN IF NOT EXISTS next_billing_date TIMESTAMPTZ,
     ADD COLUMN IF NOT EXISTS last_payment_date TIMESTAMPTZ DEFAULT NOW(),
     ADD COLUMN IF NOT EXISTS plan_tier VARCHAR(50) DEFAULT 'STANDARD',
-    ADD COLUMN IF NOT EXISTS monthly_fee NUMERIC(10,2) DEFAULT 599.00;
+    ADD COLUMN IF NOT EXISTS monthly_fee NUMERIC(10,2) DEFAULT 499.00;
 
     CREATE TABLE IF NOT EXISTS subscription_payments (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -80,7 +80,7 @@ export function computeSubscriptionState(business: {
   const now = new Date();
   const createdDate = business.created_at ? new Date(business.created_at) : now;
   const anchorDay = business.billing_anchor_day || createdDate.getDate() || 1;
-  const monthlyFee = Number(business.monthly_fee) || 599;
+  const monthlyFee = Number(business.monthly_fee) || 499;
 
   let nextBillingDate: Date;
   if (business.next_billing_date) {

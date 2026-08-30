@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
       `INSERT INTO businesses 
        (name, category, phone, base_service_time_mins, max_daily_capacity, qr_code_slug, admin_passcode, google_maps_url,
         subscription_status, billing_anchor_day, subscription_start_date, next_billing_date, last_payment_date, monthly_fee)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), $11, NOW(), 599.00)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), $11, NOW(), 499.00)
        RETURNING *`,
       [name.trim(), businessCategory, phoneVal, paceMins, capacity, qrSlug, passcodeVal, mapsUrlVal, initialStatus, anchorDay, nextBilling]
     );
