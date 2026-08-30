@@ -791,12 +791,12 @@ export default function TokenPassPage() {
         <div className="bg-[#0b0b0b] px-6 py-4 flex items-center justify-between text-xs font-medium text-[#888888]">
           <span>No app installation required</span>
           <a
-            href="https://noq.app"
+            href="https://noq-serve.vercel.app/"
             target="_blank"
             rel="noopener noreferrer"
             className="text-white hover:underline flex items-center gap-0.5"
           >
-            noQ.app <span className="text-xs">↗</span>
+            noq-serve.vercel.app <span className="text-xs">↗</span>
           </a>
         </div>
 

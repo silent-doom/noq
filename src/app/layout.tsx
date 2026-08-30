@@ -18,7 +18,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://noq.vercel.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://noq-serve.vercel.app'),
   title: {
     default: 'noQ • Zero-Wait Intelligent Virtual Queue Engine',
     template: '%s | noQ Virtual Queue',
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     title: 'noQ • Zero-Wait Intelligent Virtual Queue Engine',
     description:
       'Eliminate waiting rooms and foyers with real-time digital queue passes, OS lock-screen push alerts, and automated turn notifications across Clinics, Salons, Restaurants & Retail.',
-    url: 'https://noq.vercel.app',
+    url: 'https://noq-serve.vercel.app',
     siteName: 'noQ',
     images: [
       {

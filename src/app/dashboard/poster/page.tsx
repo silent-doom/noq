@@ -99,7 +99,14 @@ function PosterContent() {
         {/* Footer */}
         <div className="border-t-4 border-black pt-6 flex items-center justify-between text-xs font-bold text-zinc-700">
           <span>Zero Hardware • No App Install Required</span>
-          <span className="font-mono font-black text-black text-sm">noQ.app</span>
+          <a
+            href="https://noq-serve.vercel.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono font-black text-black text-sm hover:underline"
+          >
+            noq-serve.vercel.app
+          </a>
         </div>
 
       </div>

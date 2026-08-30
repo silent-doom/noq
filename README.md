@@ -1,5 +1,8 @@
 # noQ — Intelligent Multi-Domain Virtual Queue Engine
 
+> **Live Production App**: [https://noq-serve.vercel.app/](https://noq-serve.vercel.app/)  
+> **📖 Complete Layman User Guide & Feature Documentation**: [FEATURE_LIST.md](file:///Users/faizanchoudhary/Documents/noq/FEATURE_LIST.md)
+
 > **noQ** is an enterprise-grade virtual queue management platform that replaces physical waiting lines with live digital passes, native lock-screen Web Push alerts, Android SIM SMS dispatch, Ably real-time Pub/Sub, multi-branch clinic linkage & transfers, TV voice announcements, and dynamic domain adaptation across Clinics, Restaurants, Salons, and Retail.
 
 ---
@@ -75,10 +78,10 @@ HTTPSMS_FROM_NUMBER="+917827369050"
 # Web Push VAPID Keypair
 NEXT_PUBLIC_VAPID_PUBLIC_KEY="your-vapid-public-key"
 VAPID_PRIVATE_KEY="your-vapid-private-key"
-VAPID_SUBJECT="mailto:support@noq.app"
+VAPID_SUBJECT="mailto:support@noq-serve.vercel.app"
 
 # App Base URL
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
+NEXT_PUBLIC_APP_URL="https://noq-serve.vercel.app"
 ```
 
 ### 4. Run Development Server

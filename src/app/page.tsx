@@ -302,7 +302,7 @@ export default function LandingPage() {
 
       {/* FOOTER */}
       <footer className="max-w-7xl mx-auto px-6 py-8 border-t border-zinc-900 text-center text-xs text-zinc-500">
-        © 2026 noQ.app — Enterprise Virtual Queue Engine. All rights reserved.
+        © 2026 <a href="https://noq-serve.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-white underline underline-offset-2">noQ (noq-serve.vercel.app)</a> — Enterprise Virtual Queue Engine. All rights reserved.
       </footer>
 
       {/* REGISTER BUSINESS MODAL */}
