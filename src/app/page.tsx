@@ -329,16 +329,17 @@ export default function LandingPage() {
 
       {/* REGISTER BUSINESS MODAL */}
       {isRegisterOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-zinc-950 rounded-3xl max-w-md w-full p-7 border border-zinc-800 shadow-2xl text-white">
-            <div className="flex justify-between items-center mb-6">
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+          <div className="bg-zinc-950 rounded-3xl max-w-lg w-full p-6 sm:p-7 border border-zinc-800 shadow-2xl text-white my-auto max-h-[90vh] overflow-y-auto scrollbar-thin">
+            <div className="flex justify-between items-center mb-5 sticky top-0 bg-zinc-950/95 backdrop-blur-xs pb-3 pt-1 border-b border-zinc-900 z-10">
               <div>
                 <h3 className="text-xl font-bold tracking-tight">Register Your Business</h3>
                 <p className="text-xs text-zinc-400 mt-0.5">Start managing virtual queues in 60 seconds.</p>
               </div>
               <button
+                type="button"
                 onClick={() => setIsRegisterOpen(false)}
-                className="text-zinc-500 hover:text-white font-bold text-sm"
+                className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 font-bold text-sm transition cursor-pointer"
               >
                 ✕
               </button>
