@@ -39,13 +39,16 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Queue stream not found' }, { status: 404 });
     }
 
-    // Safe to read MAX now — stream row is locked
-    const maxTokenRes = await client.query(
-      `SELECT COALESCE(MAX(token_number), 0) AS max_token FROM tokens WHERE stream_id = $1`,
+    // Atomically increment the stream's daily token counter
+    const counterRes = await client.query(
+      `UPDATE queue_streams 
+       SET last_token_number = last_token_number + 1, updated_at = NOW() 
+       WHERE id = $1 
+       RETURNING last_token_number`,
       [streamId]
     );
 
-    const nextTokenNum = Number(maxTokenRes.rows[0].max_token) + 1;
+    const nextTokenNum = Number(counterRes.rows[0].last_token_number);
     const phoneVal = customer_phone.trim();
 
     const insertRes = await client.query(

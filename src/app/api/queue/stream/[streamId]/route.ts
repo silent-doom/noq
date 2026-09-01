@@ -92,8 +92,11 @@ export async function PATCH(
     const body = await req.json();
 
     await client.query(`
-      ALTER TABLE queue_streams ADD COLUMN IF NOT EXISTS google_maps_url TEXT;
       ALTER TABLE businesses ADD COLUMN IF NOT EXISTS google_maps_url TEXT;
+      ALTER TABLE queue_streams ADD COLUMN IF NOT EXISTS google_maps_url TEXT;
+      ALTER TABLE queue_streams ADD COLUMN IF NOT EXISTS last_reset_date DATE;
+      ALTER TABLE queue_streams ADD COLUMN IF NOT EXISTS last_token_number INTEGER DEFAULT 0;
+      ALTER TABLE tokens ADD COLUMN IF NOT EXISTS assigned_station VARCHAR(100);
     `);
 
     const { broadcast_message, opening_time, closing_time, operating_days, queue_structure, stations } = body;

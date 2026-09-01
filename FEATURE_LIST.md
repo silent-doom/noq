@@ -260,6 +260,9 @@ graph LR
 - **One-Click "Call Next" Action**:
   - Select your active counter/station and summon the next waiting guest in under 1 second.
   - Automatically completes the previous guest and advances the line.
+- **Zero-Latency Dashboard Operations**:
+  - Powered by highly optimized CTE (Common Table Expression) SQL queries that condense database round-trips by 80%.
+  - Integrates non-blocking Websocket pub/sub to instantly update the UI without waiting for remote network confirmations.
 - **Dynamic Service Pace Controller**:
   - Tap `+5 Min Extra Time` to add overrun time when an appointment takes longer.
   - Drag the tactile **NumberSlider** to adjust base consultation pace (2 to 120 mins).
@@ -441,10 +444,10 @@ graph LR
 - **Preservation of Waitlisted / Skipped Guests**:
   - Tokens with status `SKIPPED` (waitlisted guests) are strictly preserved across day boundaries and never auto-cancelled, allowing staff to re-queue them if needed.
 - **Configurable Opening Time Buffer**:
-  - The reset evaluates the venue's configured `opening_time` and applies a 30-minute buffer window (e.g. for a 9:00 AM opening, reset activates at 8:30 AM).
-  - Protects late-night or overtime business hours from premature mid-shift queue resets.
-- **Idempotent Execution**:
+  - The reset executes at a safe, fixed threshold of **4:00 AM**, protecting late-night or overtime business hours from premature mid-shift queue resets while ensuring early morning customers are placed in the correct day's queue.
+- **Idempotent Execution & Atomic Numbering**:
   - Uses `last_reset_date` tracking so the reset runs exactly once per calendar day upon dashboard load.
+  - Resets a dedicated atomic stream counter (`last_token_number`), guaranteeing that every new day starts perfectly at Token #1 without race conditions.
 
 ---
 

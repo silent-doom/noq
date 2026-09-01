@@ -44,12 +44,15 @@ export async function POST(
 
     const businessName = streamCheck.rows[0].business_name || 'Clinic Queue';
 
-    // 2. Read max token
-    const maxRes = await client.query(
-      `SELECT COALESCE(MAX(token_number), 0) AS max_token FROM tokens WHERE stream_id = $1`,
+    // 2. Read and increment max token
+    const counterRes = await client.query(
+      `UPDATE queue_streams 
+       SET last_token_number = last_token_number + 1, updated_at = NOW() 
+       WHERE id = $1 
+       RETURNING last_token_number`,
       [streamId]
     );
-    const nextTokenNum = Number(maxRes.rows[0].max_token) + 1;
+    const nextTokenNum = Number(counterRes.rows[0].last_token_number);
 
     // 3. Insert Token
     const insertRes = await client.query(

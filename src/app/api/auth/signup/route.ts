@@ -59,7 +59,8 @@ export async function POST(req: NextRequest) {
         ADD COLUMN IF NOT EXISTS closing_time VARCHAR(10),
         ADD COLUMN IF NOT EXISTS queue_structure VARCHAR(50),
         ADD COLUMN IF NOT EXISTS google_maps_url TEXT,
-        ADD COLUMN IF NOT EXISTS last_reset_date DATE;
+        ADD COLUMN IF NOT EXISTS last_reset_date DATE,
+        ADD COLUMN IF NOT EXISTS last_token_number INTEGER DEFAULT 0;
     `);
 
     // Check username uniqueness

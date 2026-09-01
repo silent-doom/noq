@@ -40,25 +40,36 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Stream not found' }, { status: 404 });
     }
 
-    // 2. Mark previous SERVING token for THIS specific station as COMPLETED
-    await client.query(
-      `UPDATE tokens 
-       SET status = 'COMPLETED', completed_serving_at = NOW(), updated_at = NOW() 
-       WHERE stream_id = $1 AND status = 'SERVING' AND (assigned_station = $2 OR assigned_station IS NULL)`,
+    // 2. Advance the queue in a single optimized CTE (Common Table Expression) round-trip!
+    // This completes the old token, grabs the next waiting token, updates its status, and updates the stream.
+    const advanceRes = await client.query(
+      `WITH completed AS (
+         UPDATE tokens 
+         SET status = 'COMPLETED', completed_serving_at = NOW(), updated_at = NOW() 
+         WHERE stream_id = $1 AND status = 'SERVING' AND (assigned_station = $2 OR assigned_station IS NULL)
+         RETURNING id
+       ),
+       next_waiting AS (
+         SELECT id FROM tokens 
+         WHERE stream_id = $1 AND status = 'WAITING' 
+         ORDER BY token_number ASC LIMIT 1 FOR UPDATE
+       ),
+       updated_next AS (
+         UPDATE tokens 
+         SET status = 'SERVING', assigned_station = $2, started_serving_at = NOW(), updated_at = NOW() 
+         WHERE id = (SELECT id FROM next_waiting)
+         RETURNING *
+       ),
+       update_stream AS (
+         UPDATE queue_streams 
+         SET current_serving_token = (SELECT token_number FROM updated_next), active_token_started_at = NOW(), updated_at = NOW() 
+         WHERE id = $1 AND EXISTS (SELECT 1 FROM updated_next)
+       )
+       SELECT * FROM updated_next`,
       [streamId, counterName]
     );
 
-    // 3. Fetch the next WAITING token (canonical order: token_number ASC)
-    const nextTokenRes = await client.query(
-      `SELECT * FROM tokens 
-       WHERE stream_id = $1 AND status = 'WAITING' 
-       ORDER BY token_number ASC 
-       LIMIT 1
-       FOR UPDATE`,
-      [streamId]
-    );
-
-    if (nextTokenRes.rows.length === 0) {
+    if (advanceRes.rows.length === 0) {
       // Queue is now empty — clear stream state if no other station is serving
       const remainingServing = await client.query(
         `SELECT COUNT(*) FROM tokens WHERE stream_id = $1 AND status = 'SERVING'`,
@@ -75,36 +86,21 @@ export async function POST(
       }
 
       await client.query('COMMIT');
-      await publishQueueUpdate(streamId, 'TOKEN_CALLED', { serving_token: null, counter_name: counterName });
+      
+      // Fire non-blocking Ably update
+      publishQueueUpdate(streamId, 'TOKEN_CALLED', { serving_token: null, counter_name: counterName });
+      
       return NextResponse.json({ success: true, message: 'Queue is now empty', serving_token: null });
     }
 
-    const nextToken = nextTokenRes.rows[0];
-
-    // 4. Set new token to SERVING with assigned_station
-    const updatedTokenRes = await client.query(
-      `UPDATE tokens 
-       SET status = 'SERVING', assigned_station = $2, started_serving_at = NOW(), updated_at = NOW() 
-       WHERE id = $1 
-       RETURNING *`,
-      [nextToken.id, counterName]
-    );
-
+    const nextToken = advanceRes.rows[0];
     const servingTokenPayload = {
-      ...updatedTokenRes.rows[0],
+      ...nextToken,
       assigned_station: counterName,
       counter_name: counterName,
     };
 
-    // 5. Update queue stream state
-    await client.query(
-      `UPDATE queue_streams 
-       SET current_serving_token = $1, active_token_started_at = NOW(), updated_at = NOW() 
-       WHERE id = $2`,
-      [nextToken.token_number, streamId]
-    );
-
-    // 6. Peek at the upcoming token (2nd in line) for advance notification
+    // 3. Peek at the upcoming token (2nd in line) for advance notification
     const upcomingTokenRes = await client.query(
       `SELECT * FROM tokens 
        WHERE stream_id = $1 AND status = 'WAITING' AND id != $2 
@@ -114,8 +110,8 @@ export async function POST(
 
     await client.query('COMMIT');
 
-    // Fire real-time Ably update
-    await publishQueueUpdate(streamId, 'TOKEN_CALLED', { serving_token: servingTokenPayload });
+    // Fire real-time Ably update (Non-blocking so we don't lag the dashboard response)
+    publishQueueUpdate(streamId, 'TOKEN_CALLED', { serving_token: servingTokenPayload });
 
     // Fire Lock-Screen Native Web Push Notification
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -138,7 +134,7 @@ export async function POST(
       }
     }
 
-    return NextResponse.json({ success: true, serving_token: updatedTokenRes.rows[0] });
+    return NextResponse.json({ success: true, serving_token: servingTokenPayload });
   } catch (error: any) {
     await client.query('ROLLBACK');
     console.error('Error advancing queue (stream/next):', error);

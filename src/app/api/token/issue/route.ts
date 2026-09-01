@@ -33,15 +33,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Queue stream not found' }, { status: 404 });
     }
 
-    // 2. Fetch current max token number (safe because stream row is locked above)
-    const maxTokenRes = await client.query(
-      `SELECT COALESCE(MAX(token_number), 0) AS max_token 
-       FROM tokens 
-       WHERE stream_id = $1`,
+    // 2. Atomically increment the stream's daily token counter
+    const counterRes = await client.query(
+      `UPDATE queue_streams 
+       SET last_token_number = last_token_number + 1, updated_at = NOW() 
+       WHERE id = $1 
+       RETURNING last_token_number`,
       [streamId]
     );
 
-    const nextTokenNumber = Number(maxTokenRes.rows[0].max_token) + 1;
+    const nextTokenNumber = Number(counterRes.rows[0].last_token_number);
 
     // 3. Insert new token
     const insertRes = await client.query(

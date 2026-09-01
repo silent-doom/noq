@@ -45,19 +45,11 @@ export async function POST(
     const stream = streamRes.rows[0];
     const now = new Date();
 
-    // Convert opening_time (e.g. "09:00") to today's Date for comparison
-    const openingTime: string = stream.opening_time || '09:00';
-    const [openHour, openMin] = openingTime.split(':').map(Number);
-    const bufferMinutes = 30;
-
-    // Reset window start = opening_time - 30 min buffer
+    // Reset window start: Fixed at 4:00 AM local time
+    // This allows late-night businesses (open till 2-3 AM) to finish their day naturally,
+    // and early-morning businesses to accept new bookings before they open.
     const resetWindowStart = new Date(now);
-    resetWindowStart.setHours(openHour, openMin - bufferMinutes, 0, 0);
-    // Handle edge case: if opening is before 00:30 (rare), clamp to midnight
-    if (resetWindowStart.getHours() < 0) {
-      resetWindowStart.setHours(0, 0, 0, 0);
-    }
-
+    resetWindowStart.setHours(4, 0, 0, 0);
     // Today's date string (YYYY-MM-DD) in local time
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const lastResetDate = stream.last_reset_date
@@ -105,6 +97,7 @@ export async function POST(
     await client.query(
       `UPDATE queue_streams
        SET current_serving_token = 0,
+           last_token_number = 0,
            last_reset_date = $2,
            updated_at = NOW()
        WHERE id = $1`,

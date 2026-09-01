@@ -10,7 +10,8 @@
 ## ⚡ Key Features
 
 - **🔐 Business Account Auth & Cross-Device Operator Access (`/login` & `/signup`)**: Onboard businesses with unique usernames and encrypted passwords. Operators can securely sign in from any secondary phone, tablet, or desktop to access their dashboard without memorizing long stream UUIDs.
-- **🔄 Automated Daily Queue Reset with Opening Buffer**: Automatically resets and archives active queues daily while preserving `SKIPPED` (waitlist) tokens. Calculates reset window based on business `opening_time` with a 30-minute safety buffer to protect overtime business.
+- **🔄 Automated Daily Queue Reset with Atomic Numbering**: Automatically resets and archives active queues daily at a safe 4:00 AM threshold. Guarantees perfect token numbering starting at #1 every day using a race-condition-free atomic stream counter.
+- **🚀 Zero-Latency Dashboard Operations**: Advanced "Call Next" operations using highly optimized CTE (Common Table Expression) SQL combined with non-blocking Ably Websockets to instantly advance multi-station queues without freezing the UI.
 - **📱 Responsive Mobile Operator Interface**: Mobile-first alignment and overflow-free design for the operator dashboard, including full mobile responsiveness for pending customer reschedule requests and token action controls.
 - **📱 Zero-App Lock-Screen Digital Pass**: Customers scan on-site QR codes or book remotely to track live queue positions, spots ahead, dynamic ETAs, and assigned room/station in real-time (`/t/[tokenId]`).
 - **🏥 Multi-Branch Clinic Linkage & Patient Transfer**: Link separately onboarded clinics of the same doctor/business (e.g. Mumbai & Navi Mumbai) using secure stream IDs and PINs. Switch active branch queues in 1 tap and transfer patients seamlessly across clinics with automatic live pass and SMS updates.
