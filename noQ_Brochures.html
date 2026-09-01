@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>noQ - Brochures</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
+
+    @page { 
+      size: A4 landscape; 
+      margin: 0; 
+    }
+    
+    body { 
+      margin: 0; 
+      padding: 0; 
+      background-color: #0a0a0a; 
+      color: #ffffff; 
+      font-family: 'Inter', sans-serif;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .brochure-page {
+      width: 297mm;
+      height: 210mm;
+      display: flex;
+      padding: 15mm;
+      box-sizing: border-box;
+      page-break-after: always;
+      background: radial-gradient(circle at top left, rgba(16, 185, 129, 0.1), transparent 40%),
+                  radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.05), transparent 40%);
+      background-color: #0a0a0a;
+      overflow: hidden;
+    }
+
+    .column {
+      flex: 1;
+      padding: 0 12mm;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .column:first-child { padding-left: 0; }
+    .column:last-child { padding-right: 0; border-right: none; }
+    .column:not(:last-child) { border-right: 1px solid rgba(255, 255, 255, 0.1); }
+
+    h1, h2, h3 { color: #10b981; margin: 0; } /* Emerald 500 */
+    h1 { font-size: 26px; font-weight: 900; margin-bottom: 12px; }
+    h2 { font-size: 18px; font-weight: 800; margin-top: 30px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+    
+    p { font-size: 13px; color: #d4d4d8; line-height: 1.6; margin-bottom: 10px; }
+    
+    ul { padding-left: 18px; margin-top: 5px; }
+    li { margin-bottom: 12px; font-size: 13px; color: #d4d4d8; font-weight: 600; line-height: 1.4; }
+
+    .hero-box {
+      background: #18181b; /* zinc-900 */
+      border: 1px solid #27272a;
+      border-radius: 16px;
+      padding: 25px;
+      text-align: center;
+      margin-top: 10px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .hero-box .badge {
+      display: inline-block;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+      font-size: 9px;
+      text-transform: uppercase;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 20px;
+      margin-bottom: 15px;
+    }
+
+    .hero-title {
+      font-size: 32px;
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1.1;
+      margin-bottom: 15px;
+    }
+    
+    .hero-title span {
+      color: #10b981;
+    }
+
+    .hero-desc {
+      font-size: 11px;
+      color: #a1a1aa;
+      line-height: 1.5;
+    }
+
+    .why-list {
+      list-style: none;
+      padding: 0;
+      text-align: center;
+    }
+    
+    .why-list li {
+      font-size: 16px;
+      font-weight: 800;
+      color: #f4f4f5;
+      margin-bottom: 15px;
+    }
+
+    .contact-box { 
+      margin-top: auto; 
+    }
+    
+    .contact-title { 
+      color: #10b981; 
+      font-size: 20px; 
+      font-weight: 900; 
+      margin-bottom: 8px; 
+    }
+    
+    .contact-text { 
+      color: #ffffff; 
+      font-size: 16px; 
+      font-weight: 600; 
+      line-height: 1.5; 
+    }
+
+    .pass-mockup {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 25px 20px;
+      color: #000;
+      text-align: center;
+      margin-top: 20px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+      border: 4px solid #27272a;
+    }
+
+    .pass-title { font-size: 9px; color: #71717a; text-transform: uppercase; font-weight: 800; letter-spacing: 1px;}
+    .pass-venue { font-size: 18px; font-weight: 900; color: #18181b; margin: 5px 0 2px 0; }
+    .pass-subtitle { font-size: 12px; color: #52525b; font-weight: 600; margin-bottom: 25px; }
+    
+    .pass-token { font-size: 64px; font-weight: 900; color: #09090b; margin: 15px 0; line-height: 1;}
+    
+    .pass-stats { display: flex; justify-content: space-between; margin-top: 20px; gap: 10px; }
+    .pass-stat-box { background: #f4f4f5; border-radius: 12px; padding: 12px 10px; flex: 1; border: 1px solid #e4e4e7; }
+    .pass-stat-label { font-size: 9px; color: #71717a; text-transform: uppercase; font-weight: 800; }
+    .pass-stat-value { font-size: 14px; font-weight: 900; color: #18181b; margin-top: 4px; }
+
+    .btn-mock {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid #10b981;
+      color: #047857;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 10px;
+      border-radius: 10px;
+      margin-top: 15px;
+      text-transform: uppercase;
+    }
+    
+    .btn-dark {
+      background: #18181b;
+      color: #fff;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- BROCHURE 1: HEALTHCARE / CLINIC -->
+  <div class="brochure-page">
+    <div class="column">
+      <h1>About us</h1>
+      <p>noQ is an enterprise queue platform where you can turn the chaos of OPDs and walk-in patients into a digitalized, well-organized token system.</p>
+      
+      <h2>OUR SERVICES</h2>
+      <ul>
+        <li>Eliminate crowded OPD waiting rooms</li>
+        <li>Print-ready A4 QR posters provided</li>
+        <li>ZERO app download required for patients</li>
+        <li>Smart Waitlist for latecomers & no-shows</li>
+        <li>TV Display Board with Voice Announcements</li>
+        <li>Live delay broadcasts & SMS turn alerts</li>
+        <li>Multi-Doctor parallel calling engine</li>
+        <li>Boost your Google reviews with post-visit ratings</li>
+      </ul>
+    </div>
+    
+    <div class="column">
+      <div class="hero-box">
+        <div class="badge">Zero Hardware • Zero App Install</div>
+        <div class="hero-title">Turn Physical Waiting Lines Into <span>Digital Flow</span></div>
+        <div class="hero-desc">The non-intrusive queue engine for clinics and hospitals. Give patients real-time mobile tracking passes while your team calls next in one tap.</div>
+      </div>
+      
+      <h2 style="text-align: center;">WHY CHOOSE US?</h2>
+      <ul class="why-list">
+        <li>60-Second Clinic Setup</li>
+        <li>Affordable Monthly Pricing</li>
+        <li>Strict Patient Privacy (Masked PII)</li>
+        <li>Seamless Multi-Branch Linkage</li>
+      </ul>
+    </div>
+    
+    <div class="column">
+      <h1>Scan the QR, Get the pass</h1>
+      <div class="pass-mockup">
+        <div class="pass-title">LOCATION & VENUE</div>
+        <div class="pass-venue">Dr. Sharma Clinic</div>
+        <div class="pass-subtitle">Patient: Rahul</div>
+        
+        <div class="pass-title" style="margin-top: 20px;">YOUR ASSIGNED TOKEN</div>
+        <div class="pass-token">#45</div>
+        
+        <div class="pass-stats">
+          <div class="pass-stat-box">
+            <div class="pass-stat-label">AHEAD IN QUEUE</div>
+            <div class="pass-stat-value">0 Patients</div>
+          </div>
+          <div class="pass-stat-box">
+            <div class="pass-stat-label">EST. WAIT TIME</div>
+            <div class="pass-stat-value">~1 min</div>
+          </div>
+        </div>
+        
+        <div class="btn-mock">Inform Me via SMS When Turn Approaches</div>
+        <div class="btn-mock btn-dark">Request Future Reschedule</div>
+      </div>
+      
+      <div class="contact-box">
+        <div class="contact-title">Contact us</div>
+        <div class="contact-text">
+          📞 9004673212<br>
+          📞 9769301215<br>
+          🌐 noq-serve.vercel.app
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BROCHURE 2: RESTAURANTS -->
+  <div class="brochure-page">
+    <div class="column">
+      <h1>About us</h1>
+      <p>noQ is a premium waitlist management system that eliminates host-stand chaos and gives diners the freedom to wait anywhere comfortably.</p>
+      
+      <h2>OUR SERVICES</h2>
+      <ul>
+        <li>Eliminate crowded entrance foyers</li>
+        <li>ZERO app download required for guests</li>
+        <li>Automated SMS "Table Ready" alerts</li>
+        <li>Smart Waitlist for absent guests</li>
+        <li>Print-ready QR standee posters</li>
+        <li>Real-time delay & broadcast messages</li>
+        <li>Peak traffic & hourly congestion analytics</li>
+        <li>Boost your Google reviews automatically</li>
+      </ul>
+    </div>
+    
+    <div class="column">
+      <div class="hero-box">
+        <div class="badge">Elevate The Guest Experience</div>
+        <div class="hero-title">Start Hospitality Before They <span>Even Sit</span></div>
+        <div class="hero-desc">The modern waitlist engine for restaurants, cafes, and hotels. Notify diners exactly when their table is ready in a single tap.</div>
+      </div>
+      
+      <h2 style="text-align: center;">WHY CHOOSE US?</h2>
+      <ul class="why-list">
+        <li>Faster Table Turnover</li>
+        <li>Higher Guest Satisfaction</li>
+        <li>Zero Hardware Required</li>
+        <li>Simple & Convenient Usage</li>
+      </ul>
+    </div>
+    
+    <div class="column">
+      <h1>Scan the QR, Join the list</h1>
+      <div class="pass-mockup">
+        <div class="pass-title">LOCATION & VENUE</div>
+        <div class="pass-venue">The Spice Garden</div>
+        <div class="pass-subtitle">Guest: Rahul • Party of 4</div>
+        
+        <div class="pass-title" style="margin-top: 20px;">YOUR ASSIGNED TICKET</div>
+        <div class="pass-token">#12</div>
+        
+        <div class="pass-stats">
+          <div class="pass-stat-box">
+            <div class="pass-stat-label">AHEAD IN QUEUE</div>
+            <div class="pass-stat-value">3 Tables</div>
+          </div>
+          <div class="pass-stat-box">
+            <div class="pass-stat-label">EST. WAIT TIME</div>
+            <div class="pass-stat-value">~15 mins</div>
+          </div>
+        </div>
+        
+        <div class="btn-mock">Notify Me via SMS When Table Ready</div>
+      </div>
+      
+      <div class="contact-box">
+        <div class="contact-title">Contact us</div>
+        <div class="contact-text">
+          📞 9004673212<br>
+          📞 9769301215<br>
+          🌐 noq-serve.vercel.app
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BROCHURE 3: SALONS / SPAS -->
+  <div class="brochure-page">
+    <div class="column">
+      <h1>About us</h1>
+      <p>noQ is a specialized queue engine designed for salons and spas, allowing you to manage walk-ins and appointments gracefully across multiple stylists.</p>
+      
+      <h2>OUR SERVICES</h2>
+      <ul>
+        <li>Prevent crowded and noisy waiting areas</li>
+        <li>ZERO app download required for clients</li>
+        <li>Automated SMS turn & appointment alerts</li>
+        <li>Multi-stylist parallel calling dashboard</li>
+        <li>Smart waitlist for late clients</li>
+        <li>Print-ready QR reception posters</li>
+        <li>Handle future date/time reschedule requests</li>
+        <li>Post-service 5-star Google review routing</li>
+      </ul>
+    </div>
+    
+    <div class="column">
+      <div class="hero-box">
+        <div class="badge">Perfectly Timed Appointments</div>
+        <div class="hero-title">Precision Client Flow for the <span>Modern Salon</span></div>
+        <div class="hero-desc">Keep clients informed of stylist availability and estimated service duration with live digital tracking passes.</div>
+      </div>
+      
+      <h2 style="text-align: center;">WHY CHOOSE US?</h2>
+      <ul class="why-list">
+        <li>Seamless Stylist Routing</li>
+        <li>Easy & Intuitive Access</li>
+        <li>Affordable Monthly Plan</li>
+        <li>Hardware-Free Operation</li>
+      </ul>
+    </div>
+    
+    <div class="column">
+      <h1>Scan the QR, Get the pass</h1>
+      <div class="pass-mockup">
+        <div class="pass-title">LOCATION & VENUE</div>
+        <div class="pass-venue">Luxe Hair & Spa</div>
+        <div class="pass-subtitle">Client: Priya</div>
+        
+        <div class="pass-title" style="margin-top: 20px;">YOUR ASSIGNED TOKEN</div>
+        <div class="pass-token">#08</div>
+        
+        <div class="pass-stats">
+          <div class="pass-stat-box">
+            <div class="pass-stat-label">AHEAD IN QUEUE</div>
+            <div class="pass-stat-value">1 Client</div>
+          </div>
+          <div class="pass-stat-box">
+            <div class="pass-stat-label">EST. WAIT TIME</div>
+            <div class="pass-stat-value">~10 mins</div>
+          </div>
+        </div>
+        
+        <div class="btn-mock">Inform Me via SMS When Turn Approaches</div>
+        <div class="btn-mock btn-dark">Request Future Reschedule</div>
+      </div>
+      
+      <div class="contact-box">
+        <div class="contact-title">Contact us</div>
+        <div class="contact-text">
+          📞 9004673212<br>
+          📞 9769301215<br>
+          🌐 noq-serve.vercel.app
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BROCHURE 4: RETAIL & BANKS -->
+  <div class="brochure-page">
+    <div class="column">
+      <h1>About us</h1>
+      <p>noQ is an enterprise-grade token system that streamlines physical queues at service counters, keeping customers informed and relaxed while they browse.</p>
+      
+      <h2>OUR SERVICES</h2>
+      <ul>
+        <li>Eliminate long, frustrating standing lines</li>
+        <li>ZERO app download required for customers</li>
+        <li>Lounge TV Display Boards with Voice TTS</li>
+        <li>Multi-counter parallel calling engine</li>
+        <li>Automated SMS and Push notification alerts</li>
+        <li>Cross-branch network routing support</li>
+        <li>Comprehensive daily traffic analytics</li>
+        <li>Automated Google Maps review collection</li>
+      </ul>
+    </div>
+    
+    <div class="column">
+      <div class="hero-box">
+        <div class="badge">Enterprise Scalability</div>
+        <div class="hero-title">Zero Physical Queue <span>Crowding</span></div>
+        <div class="hero-desc">Smart ticketing for service counters, branches, and customer centers. Optimize throughput and customer satisfaction effortlessly.</div>
+      </div>
+      
+      <h2 style="text-align: center;">WHY CHOOSE US?</h2>
+      <ul class="why-list">
+        <li>60-Second Branch Deployment</li>
+        <li>Bank-Grade Security & Privacy</li>
+        <li>Smooth Customer Experience</li>
+        <li>High-Volume Reliability</li>
+      </ul>
+    </div>
+    
+    <div class="column">
+      <h1>Scan the QR, Get the ticket</h1>
+      <div class="pass-mockup">
+        <div class="pass-title">LOCATION & VENUE</div>
+        <div class="pass-venue">City Bank Central Branch</div>
+        <div class="pass-subtitle">Customer: Anonymous</div>
+        
+        <div class="pass-title" style="margin-top: 20px;">YOUR ASSIGNED TOKEN</div>
+        <div class="pass-token">#92</div>
+        
+        <div class="pass-stats">
+          <div class="pass-stat-box">
+            <div class="pass-stat-label">AHEAD IN QUEUE</div>
+            <div class="pass-stat-value">5 Customers</div>
+          </div>
+          <div class="pass-stat-box">
+            <div class="pass-stat-label">EST. WAIT TIME</div>
+            <div class="pass-stat-value">~20 mins</div>
+          </div>
+        </div>
+        
+        <div class="btn-mock">Inform Me via SMS When Turn Approaches</div>
+      </div>
+      
+      <div class="contact-box">
+        <div class="contact-title">Contact us</div>
+        <div class="contact-text">
+          📞 9004673212<br>
+          📞 9769301215<br>
+          🌐 noq-serve.vercel.app
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
