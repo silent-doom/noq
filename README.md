@@ -9,6 +9,9 @@
 
 ## ⚡ Key Features
 
+- **🔐 Business Account Auth & Cross-Device Operator Access (`/login` & `/signup`)**: Onboard businesses with unique usernames and encrypted passwords. Operators can securely sign in from any secondary phone, tablet, or desktop to access their dashboard without memorizing long stream UUIDs.
+- **🔄 Automated Daily Queue Reset with Opening Buffer**: Automatically resets and archives active queues daily while preserving `SKIPPED` (waitlist) tokens. Calculates reset window based on business `opening_time` with a 30-minute safety buffer to protect overtime business.
+- **📱 Responsive Mobile Operator Interface**: Mobile-first alignment and overflow-free design for the operator dashboard, including full mobile responsiveness for pending customer reschedule requests and token action controls.
 - **📱 Zero-App Lock-Screen Digital Pass**: Customers scan on-site QR codes or book remotely to track live queue positions, spots ahead, dynamic ETAs, and assigned room/station in real-time (`/t/[tokenId]`).
 - **🏥 Multi-Branch Clinic Linkage & Patient Transfer**: Link separately onboarded clinics of the same doctor/business (e.g. Mumbai & Navi Mumbai) using secure stream IDs and PINs. Switch active branch queues in 1 tap and transfer patients seamlessly across clinics with automatic live pass and SMS updates.
 - **⚡ Parallel Multi-Doctor & Multi-Station Queueing**: Supports concurrent consultations across multiple rooms/tables in parallel without cross-cancelling active sessions.
@@ -103,7 +106,9 @@ noq/
 │   └── sw.js                            # Background Web Push Service Worker
 ├── src/
 │   ├── app/
-│   │   ├── page.tsx                     # SaaS Landing Page, Onboarding & NumberSliders
+│   │   ├── page.tsx                     # SaaS Landing Page & Onboarding
+│   │   ├── login/                       # Business Operator Login Page (Cross-Device)
+│   │   ├── signup/                      # Full Business Registration & Auth Setup
 │   │   ├── dashboard/                   # Operator Terminal, Multi-Branch & Stations
 │   │   │   ├── analytics/               # CSV Export & Peak Traffic Heatmaps
 │   │   │   ├── poster/                  # Printable Venue QR Code Poster View
@@ -113,11 +118,14 @@ noq/
 │   │   ├── scan/[streamId]/             # On-Site QR Landing & Digital Pass Issuer
 │   │   ├── t/[tokenId]/                 # Live Mobile Customer Pass & Feedback
 │   │   └── api/
+│   │       ├── auth/login/              # Business Login & Session Issuer
+│   │       ├── auth/signup/             # Business Signup with Credential Hashing
 │   │       ├── admin/verify/            # PIN Verification & Session Token Generator
 │   │       ├── branch/link/             # Multi-Clinic Networking API
 │   │       ├── branch/transfer/         # Cross-Branch Patient Transfer API
 │   │       ├── business/register/       # Business Onboarding & Station Generator
 │   │       ├── queue/stream/            # Live Queue State & PII Masking
+│   │       ├── queue/stream/[id]/reset  # Daily Queue Reset API (Opening Buffer)
 │   │       ├── queue/next/              # Scoped Parallel Next Token Calling
 │   │       ├── token/[tokenId]/         # Token Live Pass, Status & Feedback
 │   │       └── push/subscribe/          # Web Push VAPID Subscription

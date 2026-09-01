@@ -19,20 +19,22 @@
   - [Feature C8: Privacy & Data Protection for Visitors](#feature-c8-privacy--data-protection-for-visitors)
   - [🚶 Customer Step-by-Step Journey Walkthrough](#-customer-step-by-step-journey-walkthrough)
 - [3. Persona 2: Business Provider / Doctor / Operator Experience](#3-persona-2-business-provider--doctor--operator-experience)
-  - [Feature B1: 60-Second Instant Onboarding & Station Setup](#feature-b1-60-second-instant-onboarding--station-setup)
-  - [Feature B2: Central Operator Terminal & Calling Dashboard (`/dashboard`)](#feature-b2-central-operator-terminal--calling-dashboard-dashboard)
-  - [Feature B3: Multi-Doctor & Multi-Station Parallel Calling Engine](#feature-b3-multi-doctor--multi-station-parallel-calling-engine)
-  - [Feature B4: Smart Waitlist & Fair Priority Latecomer Recall (`/dashboard/waitlist`)](#feature-b4-smart-waitlist--fair-priority-latecomer-recall-dashboardwaitlist)
-  - [Feature B5: Reschedule Request Approval & Rejection Hub](#feature-b5-reschedule-request-approval--rejection-hub)
-  - [Feature B6: Multi-Branch Clinic Linkage & Patient Transfer Network](#feature-b6-multi-branch-clinic-linkage--patient-transfer-network)
-  - [Feature B7: Lounge TV Display Board with Voice Announcements (`/display/[streamId]`)](#feature-b7-lounge-tv-display-board-with-voice-announcements-displaystreamid)
-  - [Feature B8: Print-Ready A4 Venue QR Poster Generator (`/dashboard/poster`)](#feature-b8-print-ready-a4-venue-qr-poster-generator-dashboardposter)
-  - [Feature B9: Live Broadcast Announcements & Delay Tickers](#feature-b9-live-broadcast-announcements--delay-tickers)
-  - [Feature B10: Direct WhatsApp Messaging & Manual Walk-in Registry](#feature-b10-direct-whatsapp-messaging--manual-walk-in-registry)
-  - [Feature B11: Operations Analytics, Heatmaps & CSV Data Export (`/dashboard/analytics`)](#feature-b11-operations-analytics-heatmaps--csv-data-export-dashboardanalytics)
-  - [Feature B12: Dynamic Industry Lexicon & Domain Terminology Adapter](#feature-b12-dynamic-industry-lexicon--domain-terminology-adapter)
-  - [Feature B13: Terminal Security, PIN Locks & Cryptographic Session Tokens](#feature-b13-terminal-security-pin-locks--cryptographic-session-tokens)
-  - [Feature B14: Subscription Monetization, Grace Policy & Auto-Lock](#feature-b14-subscription-monetization-grace-policy--auto-lock)
+  - [Feature B1: Business Account Auth & Cross-Device Access (`/login` & `/signup`)](#feature-b1-business-account-auth--cross-device-access-login--signup)
+  - [Feature B2: 60-Second Instant Onboarding & Station Setup](#feature-b2-60-second-instant-onboarding--station-setup)
+  - [Feature B3: Central Operator Terminal & Mobile-Optimized Calling Dashboard (`/dashboard`)](#feature-b3-central-operator-terminal--mobile-optimized-calling-dashboard-dashboard)
+  - [Feature B4: Multi-Doctor & Multi-Station Parallel Calling Engine](#feature-b4-multi-doctor--multi-station-parallel-calling-engine)
+  - [Feature B5: Smart Waitlist & Fair Priority Latecomer Recall (`/dashboard/waitlist`)](#feature-b5-smart-waitlist--fair-priority-latecomer-recall-dashboardwaitlist)
+  - [Feature B6: Reschedule Request Approval & Rejection Hub](#feature-b6-reschedule-request-approval--rejection-hub)
+  - [Feature B7: Multi-Branch Clinic Linkage & Patient Transfer Network](#feature-b7-multi-branch-clinic-linkage--patient-transfer-network)
+  - [Feature B8: Lounge TV Display Board with Voice Announcements (`/display/[streamId]`)](#feature-b8-lounge-tv-display-board-with-voice-announcements-displaystreamid)
+  - [Feature B9: Print-Ready A4 Venue QR Poster Generator (`/dashboard/poster`)](#feature-b9-print-ready-a4-venue-qr-poster-generator-dashboardposter)
+  - [Feature B10: Live Broadcast Announcements & Delay Tickers](#feature-b10-live-broadcast-announcements--delay-tickers)
+  - [Feature B11: Direct WhatsApp Messaging & Manual Walk-in Registry](#feature-b11-direct-whatsapp-messaging--manual-walk-in-registry)
+  - [Feature B12: Operations Analytics, Heatmaps & CSV Data Export (`/dashboard/analytics`)](#feature-b12-operations-analytics-heatmaps--csv-data-export-dashboardanalytics)
+  - [Feature B13: Dynamic Industry Lexicon & Domain Terminology Adapter](#feature-b13-dynamic-industry-lexicon--domain-terminology-adapter)
+  - [Feature B14: Terminal Security, PIN Locks & Cryptographic Session Tokens](#feature-b14-terminal-security-pin-locks--cryptographic-session-tokens)
+  - [Feature B15: Subscription Monetization, Grace Policy & Auto-Lock](#feature-b15-subscription-monetization-grace-policy--auto-lock)
+  - [Feature B16: Automated Daily Queue Reset with Opening Buffer](#feature-b16-automated-daily-queue-reset-with-opening-buffer)
   - [🏥 Business Provider Step-by-Step Operating Workflow](#-business-provider-step-by-step-operating-workflow)
 - [4. Super Admin Platform Governance & Storage Extraction (`/superadmin`)](#4-super-admin-platform-governance--storage-extraction-superadmin)
 - [5. Frequently Asked Questions (FAQ)](#5-frequently-asked-questions-faq)
@@ -213,7 +215,25 @@ graph LR
 
 ---
 
-### Feature B1: 60-Second Instant Onboarding & Station Setup
+### Feature B1: Business Account Auth & Cross-Device Access (`/login` & `/signup`)
+*Secure operator authentication for seamless multi-device dashboard management.*
+
+- **Unique Username & Encrypted Password**:
+  - Each business registers a unique, user-friendly username (e.g. `metrocare-bandra`) and a secure password.
+  - Passwords are cryptographically salted and hashed (SHA-256) on the backend before storage.
+- **Dedicated Login Portal (`/login`)**:
+  - Operators, doctors, and staff can log in from any secondary smartphone, tablet, or PC to immediately access their dashboard.
+  - Eliminates the need to bookmark or memorize long, obscure queue stream UUID URLs.
+- **Cross-Device Persistent Session**:
+  - Upon sign-in, issues a secure token stored in browser `localStorage` and `sessionStorage`.
+  - Automatically unlocks the Operator Dashboard without prompting for manual Stream ID or PIN entries on authorized devices.
+- **Seamless 2-Step Registration (`/signup`)**:
+  - Step 1: Set up operator login credentials.
+  - Step 2: Configure physical station layout, operating schedule, and domain parameters.
+
+---
+
+### Feature B2: 60-Second Instant Onboarding & Station Setup
 *Launch a fully functional enterprise virtual queue in under 1 minute.*
 
 - **Instant Terminal Creation**:
@@ -231,9 +251,12 @@ graph LR
 
 ---
 
-### Feature B2: Central Operator Terminal & Calling Dashboard (`/dashboard`)
-*The primary screen for front desk staff, nurses, receptionists, and doctors.*
+### Feature B3: Central Operator Terminal & Mobile-Optimized Calling Dashboard (`/dashboard`)
+*The primary command center for front desk staff, nurses, receptionists, and doctors.*
 
+- **Mobile-First Responsive Layout & Zero Overflow**:
+  - Fully responsive layout optimized for mobile screens (375px+), tablets, and widescreen desktop monitors.
+  - Stacked action rows and responsive buttons prevent horizontal clipping or awkward cutoffs on smaller mobile screens.
 - **One-Click "Call Next" Action**:
   - Select your active counter/station and summon the next waiting guest in under 1 second.
   - Automatically completes the previous guest and advances the line.
@@ -249,7 +272,7 @@ graph LR
 
 ---
 
-### Feature B3: Multi-Doctor & Multi-Station Parallel Calling Engine
+### Feature B4: Multi-Doctor & Multi-Station Parallel Calling Engine
 *Run concurrent consultations across multiple rooms without collisions.*
 
 - **Parallel Non-Blocking Queues**:
@@ -261,7 +284,7 @@ graph LR
 
 ---
 
-### Feature B4: Smart Waitlist & Fair Priority Latecomer Recall (`/dashboard/waitlist`)
+### Feature B5: Smart Waitlist & Fair Priority Latecomer Recall (`/dashboard/waitlist`)
 *Handle no-shows and latecomers smoothly without causing waiting room disputes.*
 
 - **Waitlist / Skip Absent Guests**:
@@ -275,7 +298,7 @@ graph LR
 
 ---
 
-### Feature B5: Reschedule Request Approval & Rejection Hub
+### Feature B6: Reschedule Request Approval & Rejection Hub
 *Manage customer date and time change requests effortlessly.*
 
 - **Incoming Reschedule Queue**:
@@ -287,7 +310,7 @@ graph LR
 
 ---
 
-### Feature B6: Multi-Branch Clinic Linkage & Patient Transfer Network
+### Feature B7: Multi-Branch Clinic Linkage & Patient Transfer Network
 *Connect multiple locations owned by the same business or doctor.*
 
 - **Secure Branch Pairing (`/api/branch/link`)**:
@@ -300,7 +323,7 @@ graph LR
 
 ---
 
-### Feature B7: Lounge TV Display Board with Voice Announcements (`/display/[streamId]`)
+### Feature B8: Lounge TV Display Board with Voice Announcements (`/display/[streamId]`)
 *Turn any waiting room TV into a professional airport-style status board.*
 
 - **Multi-Station Active Serving Grid**:
@@ -316,7 +339,7 @@ graph LR
 
 ---
 
-### Feature B8: Print-Ready A4 Venue QR Poster Generator (`/dashboard/poster`)
+### Feature B9: Print-Ready A4 Venue QR Poster Generator (`/dashboard/poster`)
 *Generate professional on-site signage in seconds.*
 
 - **High-Resolution Vector QR Code**:
@@ -330,7 +353,7 @@ graph LR
 
 ---
 
-### Feature B9: Live Broadcast Announcements & Delay Tickers
+### Feature B10: Live Broadcast Announcements & Delay Tickers
 *Communicate emergency notices and delay alerts instantly to everyone.*
 
 - **Global Broadcast Ticker**:
@@ -339,7 +362,7 @@ graph LR
 
 ---
 
-### Feature B10: Direct WhatsApp Messaging & Manual Walk-in Registry
+### Feature B11: Direct WhatsApp Messaging & Manual Walk-in Registry
 *Accommodate offline visitors and communicate directly.*
 
 - **Manual Walk-In Modal**:
@@ -349,7 +372,7 @@ graph LR
 
 ---
 
-### Feature B11: Operations Analytics, Heatmaps & CSV Data Export (`/dashboard/analytics`)
+### Feature B12: Operations Analytics, Heatmaps & CSV Data Export (`/dashboard/analytics`)
 *Make data-driven staffing and operational decisions.*
 
 - **Operational KPIs**:
@@ -365,7 +388,7 @@ graph LR
 
 ---
 
-### Feature B12: Dynamic Industry Lexicon & Domain Terminology Adapter
+### Feature B13: Dynamic Industry Lexicon & Domain Terminology Adapter
 *The software speaks your industry's language automatically.*
 
 | Industry Category | Guest Term | Provider Term | Pace Term | Queue Title | Default Stations |
@@ -377,7 +400,7 @@ graph LR
 
 ---
 
-### Feature B13: Terminal Security, PIN Locks & Cryptographic Session Tokens
+### Feature B14: Terminal Security, PIN Locks & Cryptographic Session Tokens
 *Enterprise protection for business operations.*
 
 - **6-Digit Admin Passcode**:
@@ -389,7 +412,7 @@ graph LR
 
 ---
 
-### Feature B14: Subscription Monetization, Grace Policy & Auto-Lock
+### Feature B15: Subscription Monetization, Grace Policy & Auto-Lock
 *Predictable billing lifecycle with 3-day free trial, automated grace reminders, and space conservation.*
 
 - **3-Day Free Trial (Skip Paywall Option)**:
@@ -406,6 +429,22 @@ graph LR
   - If unpaid after 3 days of grace, the Operator Dashboard locks with an interactive checkout modal (*"Renew Subscription & Unlock (₹499)"*).
 - **Database Space Retention Cleanup ($X + 10$ Days)**:
   - If unpaid for 7 days after lock (10 days total overdue), historical tokens and inactive queues are automatically purged to reclaim PostgreSQL database storage.
+
+---
+
+### Feature B16: Automated Daily Queue Reset with Opening Buffer
+*Clean slate for every operational day with smart rollover protection.*
+
+- **Daily Automatic Archiving**:
+  - When a new calendar day begins, stale `WAITING` and `SERVING` tokens are automatically archived as `CANCELLED`.
+  - Resets the internal `current_serving_token` counter to 0 so new guests start with fresh sequential numbers.
+- **Preservation of Waitlisted / Skipped Guests**:
+  - Tokens with status `SKIPPED` (waitlisted guests) are strictly preserved across day boundaries and never auto-cancelled, allowing staff to re-queue them if needed.
+- **Configurable Opening Time Buffer**:
+  - The reset evaluates the venue's configured `opening_time` and applies a 30-minute buffer window (e.g. for a 9:00 AM opening, reset activates at 8:30 AM).
+  - Protects late-night or overtime business hours from premature mid-shift queue resets.
+- **Idempotent Execution**:
+  - Uses `last_reset_date` tracking so the reset runs exactly once per calendar day upon dashboard load.
 
 ---
 

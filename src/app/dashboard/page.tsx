@@ -176,6 +176,9 @@ function DashboardContent() {
         headers['x-admin-token'] = adminToken;
       }
 
+      // Trigger daily queue reset check (runs once per calendar day, safe to call every load)
+      fetch(`/api/queue/stream/${streamId}/reset`, { method: 'POST' }).catch(() => {});
+
       const res = await fetch(`/api/queue/stream/${streamId}`, {
         headers,
         cache: 'no-store',
@@ -970,24 +973,25 @@ function DashboardContent() {
 
         {/* Pending Reschedule Requests Alert Banner */}
         {safeTokens.filter((t) => t?.reschedule_status === 'PENDING').length > 0 && (
-          <div className="mx-4 sm:mx-8 mt-6 bg-amber-50 border-2 border-amber-300 rounded-3xl p-5 shadow-lg">
+          <div className="mx-4 sm:mx-8 mt-6 bg-amber-50 border-2 border-amber-300 rounded-3xl p-4 sm:p-5 shadow-lg">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-xl">📥</span>
               <h3 className="text-sm font-black text-amber-950 uppercase tracking-wide">
-                Pending Future Reschedule Requests ({safeTokens.filter((t) => t?.reschedule_status === 'PENDING').length})
+                Pending Reschedule Requests ({safeTokens.filter((t) => t?.reschedule_status === 'PENDING').length})
               </h3>
             </div>
             <div className="space-y-2.5">
               {safeTokens
                 .filter((t) => t?.reschedule_status === 'PENDING')
                 .map((req) => (
-                  <div key={req.id} className="bg-white border border-amber-200 p-4 rounded-2xl flex items-center justify-between shadow-xs gap-4">
-                    <div>
-                      <div className="flex items-center gap-2">
+                  <div key={req.id} className="bg-white border border-amber-200 p-3 sm:p-4 rounded-2xl shadow-xs">
+                    {/* Info row */}
+                    <div className="mb-3">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="font-extrabold text-sm text-zinc-900">
                           {req.customer_name || 'Guest'}
                         </span>
-                        <span className="text-xs font-mono font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md">
+                        <span className="text-xs font-mono font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md shrink-0">
                           Token #{req.token_number}
                         </span>
                         {req.customer_phone && (
@@ -996,16 +1000,20 @@ function DashboardContent() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-zinc-700 font-semibold mt-1">
-                        📅 Requested Slot: <strong className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">{req.reschedule_requested_date} at {req.reschedule_requested_slot}</strong>
+                      <p className="text-xs text-zinc-700 font-semibold mt-1.5">
+                        📅 <span className="text-zinc-500">Requested:</span>{' '}
+                        <strong className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                          {req.reschedule_requested_date} at {req.reschedule_requested_slot}
+                        </strong>
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    {/* Action buttons — full width on mobile, inline on desktop */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                       <button
                         onClick={() => handleApproveReschedule(req.id, 'APPROVE')}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition cursor-pointer shadow-sm flex items-center gap-1"
+                        className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2.5 rounded-xl transition cursor-pointer shadow-sm flex items-center justify-center gap-1"
                       >
-                        ✓ APPROVE & ISSUE TOKEN
+                        ✓ Approve & Issue Token
                       </button>
                       <button
                         onClick={() => {
@@ -1014,9 +1022,9 @@ function DashboardContent() {
                             handleApproveReschedule(req.id, 'REJECT', note);
                           }
                         }}
-                        className="bg-zinc-200 hover:bg-zinc-300 text-zinc-800 text-xs font-bold px-3 py-2.5 rounded-xl transition cursor-pointer"
+                        className="flex-1 sm:flex-none bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-bold px-3 py-2.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-1"
                       >
-                        💬 RECONSIDER / REJECT
+                        💬 Reconsider / Reject
                       </button>
                     </div>
                   </div>
@@ -1237,18 +1245,19 @@ function DashboardContent() {
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1.5">
+                          {/* Action buttons: wrap so they never overflow on small screens */}
+                          <div className="flex flex-wrap items-center gap-1.5">
                             <button
                               onClick={() => handleUpdateStatus(token.id, 'SERVING')}
                               disabled={actionLoading}
-                              className="flex-1 border border-emerald-500/40 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 text-[11px] font-bold px-3 py-1.5 rounded-xl transition cursor-pointer"
+                              className="flex-1 min-w-[70px] border border-emerald-500/40 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 text-[11px] font-bold px-2 py-1.5 rounded-xl transition cursor-pointer text-center"
                             >
                               📣 Call
                             </button>
                             <button
                               onClick={() => handleWaitlist(token.id)}
                               disabled={actionLoading}
-                              className="flex-1 border border-amber-500/40 text-amber-700 bg-amber-50 hover:bg-amber-100 text-[11px] font-bold px-3 py-1.5 rounded-xl transition cursor-pointer"
+                              className="flex-1 min-w-[70px] border border-amber-500/40 text-amber-700 bg-amber-50 hover:bg-amber-100 text-[11px] font-bold px-2 py-1.5 rounded-xl transition cursor-pointer text-center"
                             >
                               ⏭ Skip
                             </button>
@@ -1260,7 +1269,7 @@ function DashboardContent() {
                                   setIsTransferModalOpen(true);
                                 }}
                                 disabled={actionLoading}
-                                className="border border-sky-500/40 text-sky-700 bg-sky-50 hover:bg-sky-100 text-[11px] font-bold px-3 py-1.5 rounded-xl transition cursor-pointer"
+                                className="border border-sky-500/40 text-sky-700 bg-sky-50 hover:bg-sky-100 text-[11px] font-bold px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0"
                               >
                                 🔄
                               </button>
@@ -1268,7 +1277,7 @@ function DashboardContent() {
                             <button
                               onClick={() => handleUpdateStatus(token.id, 'CANCELLED')}
                               disabled={actionLoading}
-                              className="ml-auto text-zinc-400 hover:text-red-500 text-[11px] font-medium px-2 py-1.5 transition cursor-pointer"
+                              className="text-zinc-400 hover:text-red-500 text-[11px] font-medium px-2 py-1.5 transition cursor-pointer shrink-0"
                             >
                               ✕
                             </button>
