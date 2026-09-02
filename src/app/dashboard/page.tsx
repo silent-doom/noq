@@ -161,28 +161,28 @@ function DashboardContent() {
     }
   };
 
-  // 1. Dynamic Stream Resolution
+  // 1. Dynamic Stream Resolution (Zero Stream ID entry for doctors)
   useEffect(() => {
     if (urlStreamId) {
       setStreamId(urlStreamId);
       return;
     }
 
-    async function resolveActiveStream() {
+    // Try to resolve from saved operator login session
+    const stored = localStorage.getItem('noq_business_auth');
+    if (stored) {
       try {
-        const res = await fetch('/api/queue/stream', { cache: 'no-store' });
-        if (!res.ok) return;
-        const data = await res.json();
-
-        if (data.success && Array.isArray(data.streams) && data.streams.length > 0) {
-          setStreamId(data.streams[0].id || data.streams[0].stream_id);
+        const parsed = JSON.parse(stored);
+        if (parsed.streamId) {
+          setStreamId(parsed.streamId);
+          window.history.replaceState({}, '', `/dashboard?streamId=${parsed.streamId}`);
+          return;
         }
-      } catch (err) {
-        console.error('Failed to resolve active queue stream:', err);
-      }
+      } catch {}
     }
 
-    resolveActiveStream();
+    // If no stream specified and no saved session, smoothly direct doctor to login
+    window.location.href = '/login';
   }, [urlStreamId]);
 
   // 2. Fetch Queue & Stream Data

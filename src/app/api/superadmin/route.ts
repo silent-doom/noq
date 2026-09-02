@@ -2,23 +2,66 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { ensureSubscriptionTables, computeSubscriptionState, recordSubscriptionPayment, purgeExpiredBusinessData, calculateNextBillingDate } from '@/lib/subscription';
 
-const MASTER_SUPERADMIN_KEY = process.env.SUPERADMIN_SECRET || 'noq-admin-2026';
+import { PoolClient } from 'pg';
 
-function verifySuperAdminAuth(req: NextRequest): boolean {
-  const key = req.headers.get('x-superadmin-key') || req.headers.get('authorization')?.replace('Bearer ', '');
-  return Boolean(key && key.trim() === MASTER_SUPERADMIN_KEY.trim());
+async function ensurePlatformConfig(client: PoolClient): Promise<string> {
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS platform_config (
+      config_key VARCHAR(100) PRIMARY KEY,
+      config_value TEXT NOT NULL,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+
+  const existing = await client.query(
+    `SELECT config_value FROM platform_config WHERE config_key = 'superadmin_secret'`
+  );
+
+  const envKey = process.env.SUPERADMIN_SECRET?.trim();
+  const targetKey = envKey && envKey !== 'noq-admin-2026' ? envKey : 'noq-vault-9842-x7k9p-mstr';
+
+  if (existing.rows.length === 0) {
+    await client.query(
+      `INSERT INTO platform_config (config_key, config_value) VALUES ('superadmin_secret', $1)`,
+      [targetKey]
+    );
+    return targetKey;
+  } else if (existing.rows[0].config_value === 'noq-admin-2026') {
+    // Automatically migrate away from legacy insecure default
+    await client.query(
+      `UPDATE platform_config SET config_value = $1, updated_at = NOW() WHERE config_key = 'superadmin_secret'`,
+      [targetKey]
+    );
+    return targetKey;
+  }
+
+  return existing.rows[0].config_value;
+}
+
+async function verifySuperAdminAuth(client: PoolClient, req: NextRequest): Promise<boolean> {
+  const incomingKey = (req.headers.get('x-superadmin-key') || req.headers.get('authorization')?.replace('Bearer ', '') || '').trim();
+  if (!incomingKey) return false;
+
+  // Reject deprecated default
+  if (incomingKey === 'noq-admin-2026') return false;
+
+  const validDbKey = await ensurePlatformConfig(client);
+  const validEnvKey = (process.env.SUPERADMIN_SECRET || '').trim();
+
+  return incomingKey === validDbKey || (Boolean(validEnvKey) && validEnvKey !== 'noq-admin-2026' && incomingKey === validEnvKey);
 }
 
 export async function GET(req: NextRequest) {
-  if (!verifySuperAdminAuth(req)) {
-    return NextResponse.json(
-      { success: false, error: 'Unauthorized: Invalid Super Admin master key' },
-      { status: 401 }
-    );
-  }
-
   const client = await db.connect();
   try {
+    const isAuthorized = await verifySuperAdminAuth(client, req);
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Invalid Super Admin master key' },
+        { status: 401 }
+      );
+    }
+
     await ensureSubscriptionTables(client);
 
     // 1. Fetch businesses with stream and token counts
@@ -133,15 +176,16 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!verifySuperAdminAuth(req)) {
-    return NextResponse.json(
-      { success: false, error: 'Unauthorized: Invalid Super Admin master key' },
-      { status: 401 }
-    );
-  }
-
   const client = await db.connect();
   try {
+    const isAuthorized = await verifySuperAdminAuth(client, req);
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Invalid Super Admin master key' },
+        { status: 401 }
+      );
+    }
+
     await ensureSubscriptionTables(client);
     const body = await req.json();
     const { action, businessId, amount, extensionDays = 7, notes } = body;

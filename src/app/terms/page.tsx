@@ -15,14 +15,14 @@ export default function TermsPage() {
             LEGAL
           </span>
         </Link>
-        <div className="flex items-center gap-4 text-xs">
-          <Link href="/privacy" className="text-zinc-400 hover:text-white transition">
+        <div className="flex items-center gap-2 sm:gap-4 text-xs flex-wrap justify-end">
+          <Link href="/privacy" className="hidden sm:inline-block text-zinc-400 hover:text-white transition">
             Privacy Policy
           </Link>
-          <Link href="/mou" className="text-zinc-400 hover:text-white transition">
+          <Link href="/mou" className="hidden sm:inline-block text-zinc-400 hover:text-white transition">
             Doctor MoU
           </Link>
-          <Link href="/signup" className="bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold px-4 py-2 rounded-full transition">
+          <Link href="/signup" className="bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-[11px] sm:text-xs transition">
             Create Account
           </Link>
         </div>

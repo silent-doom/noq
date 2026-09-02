@@ -217,8 +217,8 @@ export default function SuperAdminPage() {
             </button>
           </form>
 
-          <p className="text-[10px] text-zinc-400">
-            Default Key: <code className="text-zinc-300 font-mono">noq-admin-2026</code>
+          <p className="text-[10px] text-zinc-500 leading-tight">
+            Protected Platform Gateway • Key configured in database and environment.
           </p>
         </div>
       </div>

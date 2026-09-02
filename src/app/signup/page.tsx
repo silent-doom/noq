@@ -283,6 +283,66 @@ export default function SignupPage() {
                     )}
                   </button>
                 </div>
+
+                {/* Real-time Password Strength Meter */}
+                {password.length > 0 && (() => {
+                  const hasMin = password.length >= 8;
+                  const hasNum = /\d/.test(password);
+                  const hasUpper = /[A-Z]/.test(password);
+                  const hasSym = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password);
+                  let score = 0;
+                  if (password.length >= 6) score += 1;
+                  if (hasMin) score += 1;
+                  if (hasNum) score += 1;
+                  if (hasUpper) score += 1;
+                  if (hasSym) score += 1;
+
+                  const strength =
+                    score <= 1
+                      ? { label: 'Weak', barColor: 'bg-red-500', text: 'text-red-400', count: 1 }
+                      : score <= 2
+                      ? { label: 'Fair', barColor: 'bg-amber-500', text: 'text-amber-400', count: 2 }
+                      : score <= 4
+                      ? { label: 'Strong', barColor: 'bg-emerald-500', text: 'text-emerald-400', count: 3 }
+                      : { label: 'Very Strong', barColor: 'bg-teal-400', text: 'text-teal-300', count: 4 };
+
+                  return (
+                    <div className="mt-2.5 space-y-2 p-3 bg-zinc-950/60 border border-zinc-800 rounded-2xl animate-in fade-in">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-zinc-500 font-medium">Password Strength:</span>
+                        <span className={`font-mono font-bold ${strength.text}`}>{strength.label}</span>
+                      </div>
+
+                      {/* 4 Segment Meter */}
+                      <div className="grid grid-cols-4 gap-1.5 h-1.5 w-full">
+                        {[1, 2, 3, 4].map((stepNum) => (
+                          <div
+                            key={stepNum}
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              stepNum <= strength.count ? strength.barColor : 'bg-zinc-800'
+                            }`}
+                          />
+                        ))}
+                      </div>
+
+                      {/* Requirement Chips */}
+                      <div className="flex flex-wrap gap-1.5 pt-1 text-[10px]">
+                        <span className={`px-2 py-0.5 rounded-md border flex items-center gap-1 ${hasMin ? 'bg-emerald-950/70 border-emerald-800 text-emerald-300' : 'bg-zinc-900 border-zinc-800 text-zinc-500'}`}>
+                          {hasMin ? '✓' : '○'} 8+ Chars
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-md border flex items-center gap-1 ${hasNum ? 'bg-emerald-950/70 border-emerald-800 text-emerald-300' : 'bg-zinc-900 border-zinc-800 text-zinc-500'}`}>
+                          {hasNum ? '✓' : '○'} Number (0-9)
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-md border flex items-center gap-1 ${hasUpper ? 'bg-emerald-950/70 border-emerald-800 text-emerald-300' : 'bg-zinc-900 border-zinc-800 text-zinc-500'}`}>
+                          {hasUpper ? '✓' : '○'} Uppercase (A-Z)
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-md border flex items-center gap-1 ${hasSym ? 'bg-emerald-950/70 border-emerald-800 text-emerald-300' : 'bg-zinc-900 border-zinc-800 text-zinc-500'}`}>
+                          {hasSym ? '✓' : '○'} Special Symbol
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Confirm Password */}
@@ -340,7 +400,7 @@ export default function SignupPage() {
                   setError(null);
                   if (!username.trim() || username.trim().length < 3) { setError('Username must be at least 3 characters.'); return; }
                   if (/\s/.test(username.trim())) { setError('Username cannot contain spaces.'); return; }
-                  if (!password || password.length < 6) { setError('Password must be at least 6 characters.'); return; }
+                  if (!password || password.length < 6) { setError('Password must be at least 6 characters (8+ with numbers and symbols recommended).'); return; }
                   if (password !== confirmPassword) { setError('Passwords do not match.'); return; }
                   setStep(2);
                 }}

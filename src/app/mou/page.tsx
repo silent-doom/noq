@@ -19,17 +19,17 @@ export default function DoctorMOUPage() {
             HEALTHCARE MoU
           </span>
         </Link>
-        <div className="flex items-center gap-4 text-xs">
+        <div className="flex items-center gap-2 sm:gap-4 text-xs flex-wrap justify-end">
           <button
             onClick={handlePrint}
-            className="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+            className="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer text-[11px] sm:text-xs"
           >
-            <span>🖨️ Print Agreement</span>
+            <span>🖨️ Print</span>
           </button>
-          <Link href="/terms" className="text-zinc-400 hover:text-white transition">
+          <Link href="/terms" className="hidden sm:inline-block text-zinc-400 hover:text-white transition">
             Terms & Conditions
           </Link>
-          <Link href="/privacy" className="text-zinc-400 hover:text-white transition">
+          <Link href="/privacy" className="hidden sm:inline-block text-zinc-400 hover:text-white transition">
             Privacy Policy
           </Link>
         </div>

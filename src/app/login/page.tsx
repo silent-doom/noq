@@ -109,10 +109,10 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
-            {/* Username */}
+            {/* Username or Phone */}
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-2">
-                Username
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-2">
+                Username or Mobile Number
               </label>
               <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none">
@@ -125,18 +125,18 @@ export default function LoginPage() {
                   type="text"
                   required
                   autoComplete="username"
-                  placeholder="your-business-username"
+                  placeholder="e.g. 9876543210 or clinic username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3.5 bg-zinc-800/60 border border-zinc-700/60 rounded-2xl text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/20 transition font-medium"
+                  className="w-full pl-11 pr-4 py-3.5 bg-zinc-800/60 border border-zinc-700/60 rounded-2xl text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/20 transition font-medium"
                 />
               </div>
             </div>
 
-            {/* Password */}
+            {/* PIN or Password */}
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-2">
-                Password
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-2">
+                6-Digit PIN or Password
               </label>
               <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none">
@@ -149,10 +149,10 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   required
                   autoComplete="current-password"
-                  placeholder="••••••••"
+                  placeholder="6-digit PIN or password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-11 pr-12 py-3.5 bg-zinc-800/60 border border-zinc-700/60 rounded-2xl text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/20 transition font-medium"
+                  className="w-full pl-11 pr-12 py-3.5 bg-zinc-800/60 border border-zinc-700/60 rounded-2xl text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/20 transition font-medium"
                 />
                 <button
                   type="button"
@@ -224,19 +224,6 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Legacy Access Note */}
-        <div className="mt-4 bg-zinc-900/40 border border-zinc-800/60 rounded-2xl p-4 text-center">
-          <p className="text-[11px] text-zinc-600 leading-relaxed">
-            Existing business?{' '}
-            <Link
-              href="/dashboard"
-              className="text-zinc-400 hover:text-zinc-200 font-semibold underline underline-offset-2 transition-colors"
-            >
-              Access via Stream ID + PIN
-            </Link>
-          </p>
-        </div>
-
         {/* Footer */}
         <div className="text-center text-[11px] text-zinc-600 mt-6 space-y-2">
           <div className="flex items-center justify-center gap-4 text-zinc-500">
@@ -246,7 +233,13 @@ export default function LoginPage() {
             <span>•</span>
             <Link href="/mou" className="hover:text-zinc-300 transition">Doctor MoU</Link>
           </div>
-          <p>© 2026 noQ — Virtual Queue Management System</p>
+          <div className="flex items-center justify-center gap-2 text-zinc-600 text-[10px]">
+            <span>© 2026 noQ Virtual Queue Systems</span>
+            <span>•</span>
+            <Link href="/superadmin" className="hover:text-zinc-400 transition underline underline-offset-2">
+              Super Admin Portal
+            </Link>
+          </div>
         </div>
       </div>
     </div>

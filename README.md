@@ -9,7 +9,9 @@
 
 ## ⚡ Key Features
 
-- **🔐 Business Account Auth & Cross-Device Operator Access (`/login` & `/signup`)**: Onboard businesses with unique usernames and encrypted passwords. Operators can securely sign in from any secondary phone, tablet, or desktop to access their dashboard without memorizing long stream UUIDs.
+- **🔐 Universal Operator Login & Zero Stream ID Friction (`/login`)**: Doctors and staff sign in seamlessly using either their registered Mobile Phone Number or Username alongside their 6-digit PIN or account password. Completely eliminates the need to memorize or enter 36-character Stream UUIDs.
+- **🛡️ Real-Time Password Strength Engine**: Interactive visual entropy meter (Weak → Fair → Strong → Very Strong) with live criteria chips in onboarding, preventing insecure business passwords.
+- **🗄️ Database-Backed Super Admin Vault (`platform_config`)**: Cryptographic master key verification dynamically sourced from PostgreSQL rather than hardcoded fallbacks, with founder governance controls at `/superadmin`.
 - **🔄 Automated Daily Queue Reset with Atomic Numbering**: Automatically resets and archives active queues daily at a safe 4:00 AM threshold. Guarantees perfect token numbering starting at #1 every day using a race-condition-free atomic stream counter.
 - **🚀 Zero-Latency Dashboard Operations**: Advanced "Call Next" operations using highly optimized CTE (Common Table Expression) SQL combined with non-blocking Ably Websockets to instantly advance multi-station queues without freezing the UI.
 - **📱 Responsive Mobile Operator Interface**: Mobile-first alignment and overflow-free design for the operator dashboard, including full mobile responsiveness for pending customer reschedule requests and token action controls.

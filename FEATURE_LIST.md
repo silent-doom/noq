@@ -32,7 +32,7 @@
   - [Feature B11: Direct WhatsApp Messaging & Manual Walk-in Registry](#feature-b11-direct-whatsapp-messaging--manual-walk-in-registry)
   - [Feature B12: Operations Analytics, Heatmaps & CSV Data Export (`/dashboard/analytics`)](#feature-b12-operations-analytics-heatmaps--csv-data-export-dashboardanalytics)
   - [Feature B13: Dynamic Industry Lexicon & Domain Terminology Adapter](#feature-b13-dynamic-industry-lexicon--domain-terminology-adapter)
-  - [Feature B14: Terminal Security, PIN Locks & Cryptographic Session Tokens](#feature-b14-terminal-security-pin-locks--cryptographic-session-tokens)
+  - [Feature B14: Universal Authentication, Zero Stream ID Login & Terminal Security](#feature-b14-universal-authentication-zero-stream-id-login--terminal-security)
   - [Feature B15: Account Lifecycle, Soft-Delete Data Retention & Trial Protection](#feature-b15-account-lifecycle-soft-delete-data-retention--trial-protection)
   - [Feature B16: Automated Daily Queue Reset with Opening Buffer](#feature-b16-automated-daily-queue-reset-with-opening-buffer)
   - [Feature B17: Legal, Compliance & Healthcare Practice Agreement Suite (`/terms`, `/privacy`, `/mou`)](#feature-b17-legal-compliance--healthcare-practice-agreement-suite-terms-privacy-mou)
@@ -404,15 +404,20 @@ graph LR
 
 ---
 
-### Feature B14: Terminal Security, PIN Locks & Cryptographic Session Tokens
-*Enterprise protection for business operations.*
+### Feature B14: Universal Authentication, Zero Stream ID Login & Terminal Security
+*Frictionless operator sign-in, enterprise credential entropy, and cryptographic governance.*
 
-- **6-Digit Admin Passcode**:
-  - Prevents patients or visitors from tampering with queue controls.
+- **Universal Mobile & Username Authentication (`/login`)**:
+  - Operators and doctors log in using either their registered Mobile Phone Number (10 digits) or Username.
+  - Authenticates via their 6-digit Admin PIN or custom password.
+  - **Zero Stream ID Requirement:** Completely eliminates the need for operators to memorize or copy 36-character Stream UUIDs; active queue terminals are resolved automatically upon authentication.
+- **Real-Time Password Strength Engine (`/signup`)**:
+  - Interactive visual entropy progress bar (Weak → Fair → Strong → Very Strong) with live criteria chips.
+  - Enforces minimum security requirements (length, numeric digits, uppercase, special characters) to protect business accounts.
 - **HMAC Cryptographic Session Tokens**:
   - Secure, signed session tokens for privileged operations (calling next, skipping, changing settings).
-- **Multi-Branch Destination PIN Verification**:
-  - Linking clinics requires authorization from the destination branch administrator.
+- **Database-Backed Master Super Admin Vault (`platform_config`)**:
+  - Eliminates hardcoded fallbacks in source code; master platform keys are securely anchored and verified directly against PostgreSQL storage.
 
 ---
 

@@ -19,10 +19,12 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { username, password } = body;
+    const identifier = (username || '').trim();
+    const secret = (password || '').trim();
 
-    if (!username?.trim() || !password?.trim()) {
+    if (!identifier || !secret) {
       return NextResponse.json(
-        { success: false, error: 'Username and password are required.' },
+        { success: false, error: 'Username or phone number, and PIN or password are required.' },
         { status: 400 }
       );
     }
@@ -31,50 +33,56 @@ export async function POST(req: NextRequest) {
     await client.query(`
       ALTER TABLE businesses
         ADD COLUMN IF NOT EXISTS username VARCHAR(100),
-        ADD COLUMN IF NOT EXISTS password_hash TEXT;
+        ADD COLUMN IF NOT EXISTS password_hash TEXT,
+        ADD COLUMN IF NOT EXISTS admin_passcode VARCHAR(20) DEFAULT '123456';
     `);
 
-    // Look up business by username
+    // Clean phone number digits if entered as phone
+    const cleanDigits = identifier.replace(/[^0-9]/g, '');
+    const last10 = cleanDigits.length >= 10 ? cleanDigits.slice(-10) : '';
+
+    // Look up business by username, registered phone number, or QR slug
     const res = await client.query(
-      `SELECT b.id, b.name, b.username, b.password_hash, qs.id AS stream_id
+      `SELECT b.id, b.name, b.username, b.phone, b.password_hash, b.admin_passcode, qs.id AS stream_id
        FROM businesses b
        LEFT JOIN queue_streams qs ON qs.business_id = b.id
-       WHERE LOWER(b.username) = LOWER($1)
-       ORDER BY qs.created_at DESC
+       WHERE LOWER(COALESCE(b.username, '')) = LOWER($1)
+          OR ($2 <> '' AND b.phone LIKE '%' || $2)
+          OR LOWER(COALESCE(b.qr_code_slug, '')) = LOWER($1)
+       ORDER BY b.created_at DESC
        LIMIT 1`,
-      [username.trim()]
+      [identifier, last10]
     );
 
     if (res.rows.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'Invalid username or password.' },
+        { success: false, error: 'No business found matching this username or phone number.' },
         { status: 401 }
       );
     }
 
     const row = res.rows[0];
+    let isValid = false;
 
-    if (!row.password_hash) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            'This account was created before the login system was introduced. Please contact support or use your Stream ID + Admin PIN to access your dashboard.',
-        },
-        { status: 403 }
-      );
+    // 1. Verify hashed password if present
+    if (row.password_hash) {
+      isValid = await verifyPassword(secret, row.password_hash);
     }
 
-    const valid = await verifyPassword(password, row.password_hash);
-    if (!valid) {
+    // 2. Also check 6-digit admin passcode / PIN (for doctors logging in with their PIN)
+    if (!isValid && row.admin_passcode) {
+      isValid = row.admin_passcode.trim() === secret;
+    }
+
+    if (!isValid) {
       return NextResponse.json(
-        { success: false, error: 'Invalid username or password.' },
+        { success: false, error: 'Incorrect PIN or password. Please try again.' },
         { status: 401 }
       );
     }
 
     const streamId = row.stream_id;
-    const sessionToken = generateAdminSessionToken(streamId, password);
+    const sessionToken = generateAdminSessionToken(streamId, secret);
 
     return NextResponse.json({
       success: true,
