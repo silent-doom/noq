@@ -10,6 +10,11 @@
 ## ⚡ Key Features
 
 - **🔐 Universal Operator Login & Zero Stream ID Friction (`/login`)**: Doctors and staff sign in seamlessly using either their registered Mobile Phone Number or Username alongside their 6-digit PIN or account password. Completely eliminates the need to memorize or enter 36-character Stream UUIDs.
+- **🚨 Emergency STAT Clinical Call**: Dedicated operator button instantly triggers high-priority alerts across Lounge TV screens with flashing crimson modals and spoken Web Speech TTS announcements (*"Attention please: Emergency consultation in Doctor Room 1"*).
+- **🏃 Patient Self-Service Pass Controls (`/t/[tokenId]`)**: Visitors can tap *"Running Late (+15m)"* to inform reception and avoid losing their turn, or self-cancel their pass to free up the queue.
+- **🛡️ Brute-Force Rate Limiting**: Upstash Redis sliding-window rate limiting on `/api/auth/login`, temporarily locking out automated attacks after 5 failed attempts per 15 minutes.
+- **🔒 Clinical Terminal Inactivity Auto-Lock**: 15-minute idle timer automatically obscures the Operator Dashboard with a privacy shield, requiring the 6-digit PIN to prevent unauthorized snooping at reception.
+- **🛡️ Production HTTP Security Headers**: Strict security headers in `next.config.js` (`X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, `HSTS`, `Referrer-Policy`, `Permissions-Policy`).
 - **🛡️ Real-Time Password Strength Engine**: Interactive visual entropy meter (Weak → Fair → Strong → Very Strong) with live criteria chips in onboarding, preventing insecure business passwords.
 - **🗄️ Database-Backed Super Admin Vault (`platform_config`)**: Cryptographic master key verification dynamically sourced from PostgreSQL rather than hardcoded fallbacks, with founder governance controls at `/superadmin`.
 - **🔄 Automated Daily Queue Reset with Atomic Numbering**: Automatically resets and archives active queues daily at a safe 4:00 AM threshold. Guarantees perfect token numbering starting at #1 every day using a race-condition-free atomic stream counter.

@@ -14,6 +14,8 @@ async function verifyPassword(plain: string, stored: string): Promise<boolean> {
   return computed === hash;
 }
 
+import { checkLoginRateLimit, recordFailedLoginAttempt, clearLoginAttempts } from '@/lib/rateLimit';
+
 export async function POST(req: NextRequest) {
   const client = await db.connect();
   try {
@@ -26,6 +28,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Username or phone number, and PIN or password are required.' },
         { status: 400 }
+      );
+    }
+
+    // Extract client IP for rate limiting
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || '127.0.0.1';
+
+    // 1. Check brute force rate limit
+    const rateCheck = await checkLoginRateLimit(identifier, clientIp);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Too many failed attempts. Login locked for ${Math.ceil(rateCheck.retryAfterSeconds / 60)} minutes to protect your account.`,
+        },
+        { status: 429 }
       );
     }
 
@@ -55,9 +72,14 @@ export async function POST(req: NextRequest) {
     );
 
     if (res.rows.length === 0) {
+      const attempts = await recordFailedLoginAttempt(identifier, clientIp);
+      const remaining = Math.max(0, 5 - attempts);
+      const errorMsg = remaining > 0
+        ? `No business found matching this username or phone. (${remaining} attempt${remaining === 1 ? '' : 's'} remaining)`
+        : 'Too many failed login attempts. Terminal locked for 15 minutes.';
       return NextResponse.json(
-        { success: false, error: 'No business found matching this username or phone number.' },
-        { status: 401 }
+        { success: false, error: errorMsg },
+        { status: remaining > 0 ? 401 : 429 }
       );
     }
 
@@ -75,11 +97,19 @@ export async function POST(req: NextRequest) {
     }
 
     if (!isValid) {
+      const attempts = await recordFailedLoginAttempt(identifier, clientIp);
+      const remaining = Math.max(0, 5 - attempts);
+      const errorMsg = remaining > 0
+        ? `Incorrect PIN or password. (${remaining} attempt${remaining === 1 ? '' : 's'} remaining)`
+        : 'Too many failed login attempts. Terminal locked for 15 minutes.';
       return NextResponse.json(
-        { success: false, error: 'Incorrect PIN or password. Please try again.' },
-        { status: 401 }
+        { success: false, error: errorMsg },
+        { status: remaining > 0 ? 401 : 429 }
       );
     }
+
+    // Authentication succeeded: clear rate limit counter
+    await clearLoginAttempts(identifier, clientIp);
 
     const streamId = row.stream_id;
     const sessionToken = generateAdminSessionToken(streamId, secret);

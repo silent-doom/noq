@@ -150,6 +150,58 @@ export default function TokenPassPage() {
     }
   };
 
+  const [selfActionLoading, setSelfActionLoading] = useState<string | null>(null);
+
+  const handleRunningLate = async () => {
+    if (selfActionLoading || !tokenId) return;
+    if (!confirm('Are you running late? We will notify reception to hold your turn.')) return;
+    setSelfActionLoading('LATE');
+    try {
+      const res = await fetch(`/api/token/${tokenId}/reschedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'RUNNING_LATE', delayMinutes: 15 }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        alert(json.message || 'Reception notified that you are running late.');
+        fetchTokenStatus();
+      } else {
+        alert(json.error || 'Failed to update status.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error.');
+    } finally {
+      setSelfActionLoading(null);
+    }
+  };
+
+  const handleCancelSpot = async () => {
+    if (selfActionLoading || !tokenId) return;
+    if (!confirm('Are you sure you want to cancel your spot in the queue? This cannot be undone.')) return;
+    setSelfActionLoading('CANCEL');
+    try {
+      const res = await fetch(`/api/token/${tokenId}/reschedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'CANCEL_SPOT' }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        alert('Your queue pass has been cancelled.');
+        fetchTokenStatus();
+      } else {
+        alert(json.error || 'Failed to cancel spot.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error.');
+    } finally {
+      setSelfActionLoading(null);
+    }
+  };
+
   // Synthesize Web Audio Chime (Ding-Dong double tone)
   const playServingChime = () => {
     try {
@@ -746,13 +798,44 @@ export default function TokenPassPage() {
                   </button>
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsRescheduleOpen(true)}
-                  className="w-full bg-zinc-900 hover:bg-black text-white font-bold py-2.5 rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
-                >
-                  <span>📅 Request Future Reschedule</span>
-                </button>
+                <div className="space-y-2">
+                  {tokenData.reschedule_status === 'RUNNING_LATE' && (
+                    <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-center">
+                      <span className="text-xs font-bold text-amber-800">⏳ Notice Sent: Reception informed you are running late</span>
+                    </div>
+                  )}
+
+                  {/* Self-Service Quick Action Grid */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={handleRunningLate}
+                      disabled={selfActionLoading !== null || tokenData.reschedule_status === 'RUNNING_LATE'}
+                      className="w-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-900 font-bold py-2.5 px-2 rounded-xl text-[11px] uppercase tracking-wider transition flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                    >
+                      <span>🏃</span>
+                      <span>{selfActionLoading === 'LATE' ? 'Updating...' : 'Running Late'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleCancelSpot}
+                      disabled={selfActionLoading !== null}
+                      className="w-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-700 font-bold py-2.5 px-2 rounded-xl text-[11px] uppercase tracking-wider transition flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                    >
+                      <span>❌</span>
+                      <span>{selfActionLoading === 'CANCEL' ? 'Cancelling...' : 'Cancel Spot'}</span>
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsRescheduleOpen(true)}
+                    className="w-full bg-zinc-900 hover:bg-black text-white font-bold py-2.5 rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                  >
+                    <span>📅 Request Future Slot</span>
+                  </button>
+                </div>
               )}
             </div>
           )}

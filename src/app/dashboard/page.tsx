@@ -37,6 +37,7 @@ interface StreamInfo {
   closing_time?: string;
   operating_days?: string[];
   queue_structure?: string;
+  admin_passcode?: string;
 }
 
 interface LinkedBranch {
@@ -102,6 +103,84 @@ function DashboardContent() {
   const [isRenewModalOpen, setIsRenewModalOpen] = useState<boolean>(false);
   const [renewLoading, setRenewLoading] = useState<boolean>(false);
   const [showTrialModal, setShowTrialModal] = useState<boolean>(false);
+
+  // Emergency STAT Clinical Call State
+  const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState<boolean>(false);
+  const [emergencyStation, setEmergencyStation] = useState<string>('Doctor Room 1');
+  const [emergencyPatient, setEmergencyPatient] = useState<string>('Emergency Patient');
+  const [emergencyLoading, setEmergencyLoading] = useState<boolean>(false);
+  const [emergencySuccess, setEmergencySuccess] = useState<string | null>(null);
+
+  // Inactivity Auto-Lock (15m idle privacy shield)
+  const [isLockedByInactivity, setIsLockedByInactivity] = useState<boolean>(false);
+  const [inactivityPin, setInactivityPin] = useState<string>('');
+  const [inactivityError, setInactivityError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    let timeoutId: NodeJS.Timeout;
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      // 15 minutes = 15 * 60 * 1000
+      timeoutId = setTimeout(() => {
+        setIsLockedByInactivity(true);
+      }, 15 * 60 * 1000);
+    };
+
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+    events.forEach((evt) => window.addEventListener(evt, resetTimer, { passive: true }));
+    resetTimer();
+
+    return () => {
+      clearTimeout(timeoutId);
+      events.forEach((evt) => window.removeEventListener(evt, resetTimer));
+    };
+  }, [isAuthenticated]);
+
+  const handleUnlockInactivity = (e: React.FormEvent) => {
+    e.preventDefault();
+    setInactivityError(null);
+    const expected = streamInfo?.admin_passcode || '123456';
+    if (inactivityPin.trim() === expected.trim()) {
+      setIsLockedByInactivity(false);
+      setInactivityPin('');
+    } else {
+      setInactivityError('Incorrect PIN. Please re-enter.');
+    }
+  };
+
+  const handleTriggerEmergency = async () => {
+    if (!streamId) return;
+    setEmergencyLoading(true);
+    setEmergencySuccess(null);
+    try {
+      const res = await fetch(`/api/queue/stream/${streamId}/emergency`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          stationName:
+            emergencyStation ||
+            (Array.isArray(streamInfo?.stations) && streamInfo.stations[0]
+              ? streamInfo.stations[0]
+              : 'Doctor Room 1'),
+          patientName: emergencyPatient || 'Emergency Patient',
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setEmergencySuccess(`🚨 STAT Emergency alert broadcasted for ${emergencyStation}!`);
+        setTimeout(() => {
+          setIsEmergencyModalOpen(false);
+          setEmergencySuccess(null);
+        }, 2200);
+      }
+    } catch (err) {
+      console.error('Failed to trigger emergency call:', err);
+    } finally {
+      setEmergencyLoading(false);
+    }
+  };
 
   // Daily Trial Warning Modal auto-popup (once per day per session)
   useEffect(() => {
@@ -697,6 +776,15 @@ function DashboardContent() {
           <span className="text-base font-bold">+</span>
           <span>New Walk-in {terms.guestTerm}</span>
         </button>
+
+        {/* Action Button: Emergency STAT Call */}
+        <button
+          onClick={() => setIsEmergencyModalOpen(true)}
+          className="w-full mt-2 bg-red-950/40 hover:bg-red-900/60 border border-red-800/60 text-red-300 hover:text-red-100 font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
+        >
+          <span className="text-sm animate-pulse">🚨</span>
+          <span>STAT Emergency Call</span>
+        </button>
       </aside>
 
       {/* Main Screen Panel */}
@@ -823,6 +911,16 @@ function DashboardContent() {
               }`}
             >
               <span>{isAuthenticated ? '🔒 Unlocked' : '🔑 Locked'}</span>
+            </button>
+
+            {/* STAT Emergency Quick Button */}
+            <button
+              onClick={() => setIsEmergencyModalOpen(true)}
+              className="h-9 px-3 rounded-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-600 flex items-center gap-1.5 text-xs font-bold shadow-xs transition cursor-pointer"
+              title="Trigger Emergency STAT Call"
+            >
+              <span className="text-sm animate-pulse">🚨</span>
+              <span className="hidden sm:inline">Emergency STAT</span>
             </button>
 
             {/* Settings Gear */}
@@ -1036,6 +1134,119 @@ function DashboardContent() {
                   UNLOCK TERMINAL
                 </button>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* INACTIVITY PRIVACY AUTO-LOCK SHIELD */}
+        {isLockedByInactivity && (
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-4 animate-in fade-in">
+            <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-8 max-w-sm w-full text-center text-white shadow-2xl space-y-4">
+              <div className="w-14 h-14 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-2xl flex items-center justify-center mx-auto text-2xl">
+                🛡️
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">Terminal Inactivity Shield</h3>
+                <p className="text-xs text-zinc-400 mt-1">
+                  Terminal automatically obscured for patient privacy. Re-enter 6-digit PIN to resume session.
+                </p>
+              </div>
+              <form onSubmit={handleUnlockInactivity} className="space-y-3">
+                <input
+                  type="password"
+                  required
+                  maxLength={10}
+                  placeholder="Enter 6-Digit PIN"
+                  value={inactivityPin}
+                  onChange={(e) => setInactivityPin(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-700/80 rounded-2xl px-4 py-3 text-center text-sm font-mono tracking-widest text-white focus:outline-none focus:border-emerald-500"
+                />
+                {inactivityError && <p className="text-xs text-red-400 font-semibold">{inactivityError}</p>}
+                <button
+                  type="submit"
+                  className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold py-3.5 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer"
+                >
+                  Unlock Terminal 🔓
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* EMERGENCY STAT MODAL */}
+        {isEmergencyModalOpen && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in">
+            <div className="bg-zinc-950 border border-red-500/50 rounded-3xl max-w-md w-full p-6 text-white shadow-2xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-2xl animate-bounce">🚨</span>
+                  <div>
+                    <h3 className="text-base font-black text-white">STAT Clinical Emergency Call</h3>
+                    <p className="text-[11px] text-zinc-400">Broadcasts instant priority alert to Lounge TV and audio TTS</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsEmergencyModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-zinc-900 text-zinc-400 hover:text-white flex items-center justify-center text-sm cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {emergencySuccess ? (
+                <div className="p-4 bg-emerald-950/60 border border-emerald-800/60 rounded-2xl text-emerald-300 text-xs font-medium text-center space-y-2 animate-in zoom-in">
+                  <span className="text-2xl block">✅</span>
+                  <p>{emergencySuccess}</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
+                      Target Station / Room
+                    </label>
+                    <select
+                      value={emergencyStation}
+                      onChange={(e) => setEmergencyStation(e.target.value)}
+                      className="w-full bg-zinc-900 border border-zinc-700/60 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-red-500"
+                    >
+                      {Array.isArray(streamInfo?.stations) && streamInfo.stations.length > 0 ? (
+                        streamInfo.stations.map((stName: string) => (
+                          <option key={stName} value={stName}>
+                            {stName}
+                          </option>
+                        ))
+                      ) : (
+                        generateDomainStations(streamInfo?.category).map((stName: string) => (
+                          <option key={stName} value={stName}>
+                            {stName}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
+                      Clinical Note / Patient Identifier
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Acute Trauma / Chest Pain"
+                      value={emergencyPatient}
+                      onChange={(e) => setEmergencyPatient(e.target.value)}
+                      className="w-full bg-zinc-900 border border-zinc-700/60 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-500"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleTriggerEmergency}
+                    disabled={emergencyLoading}
+                    className="w-full mt-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-black py-3.5 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer shadow-lg shadow-red-600/30 flex items-center justify-center gap-2"
+                  >
+                    {emergencyLoading ? 'Broadcasting STAT...' : '🚨 Broadcast Emergency Call Now'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

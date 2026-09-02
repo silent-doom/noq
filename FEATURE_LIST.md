@@ -36,6 +36,7 @@
   - [Feature B15: Account Lifecycle, Soft-Delete Data Retention & Trial Protection](#feature-b15-account-lifecycle-soft-delete-data-retention--trial-protection)
   - [Feature B16: Automated Daily Queue Reset with Opening Buffer](#feature-b16-automated-daily-queue-reset-with-opening-buffer)
   - [Feature B17: Legal, Compliance & Healthcare Practice Agreement Suite (`/terms`, `/privacy`, `/mou`)](#feature-b17-legal-compliance--healthcare-practice-agreement-suite-terms-privacy-mou)
+  - [Feature B18: Emergency STAT Clinical Bypass & Patient Self-Service Controls](#feature-b18-emergency-stat-clinical-bypass--patient-self-service-controls)
   - [🏥 Business Provider Step-by-Step Operating Workflow](#-business-provider-step-by-step-operating-workflow)
 - [4. Super Admin Platform Governance & Storage Extraction (`/superadmin`)](#4-super-admin-platform-governance--storage-extraction-superadmin)
 - [5. Frequently Asked Questions (FAQ)](#5-frequently-asked-questions-faq)
@@ -416,8 +417,27 @@ graph LR
   - Enforces minimum security requirements (length, numeric digits, uppercase, special characters) to protect business accounts.
 - **HMAC Cryptographic Session Tokens**:
   - Secure, signed session tokens for privileged operations (calling next, skipping, changing settings).
+- **Brute-Force Rate Limiting Protection**:
+  - Redis sliding-window algorithm protecting login endpoints, locking out automated attacks after 5 failed attempts per 15-minute window.
+- **Terminal Inactivity Auto-Lock (Clinical Privacy)**:
+  - 15-minute idle detection automatically shields the Operator Dashboard to protect visitor PII, requiring the 6-digit Admin PIN to resume.
+- **Production HTTP Security Headers**:
+  - Enforces `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, `HSTS`, and `Permissions-Policy`.
 - **Database-Backed Master Super Admin Vault (`platform_config`)**:
   - Eliminates hardcoded fallbacks in source code; master platform keys are securely anchored and verified directly against PostgreSQL storage.
+
+---
+
+### Feature B18: Emergency STAT Clinical Bypass & Patient Self-Service Controls
+*Critical clinical emergency handling and zero-friction patient self-management.*
+
+- **🚨 STAT Emergency Clinical Call**:
+  - Immediate override button on Operator Dashboard that broadcasts high-priority alerts across connected Lounge TV Displays and customer terminals.
+  - Features pulsing crimson visual modals and synthesized Web Speech TTS audio announcements (*"Attention please: Emergency clinical consultation in Doctor Room X. Please clear corridors."*).
+- **🏃 Patient Self-Service "Running Late (+15m)" (`/t/[tokenId]`)**:
+  - Patients can tap a 1-click button on their mobile pass when stuck in traffic, automatically notifying clinic staff to hold their spot without calling reception.
+- **❌ Patient Self-Cancellation (`/t/[tokenId]`)**:
+  - Allows customers unable to attend to release their queue spot instantly, keeping clinic wait times accurate and preventing stagnant queues.
 
 ---
 

@@ -75,6 +75,13 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
     }
   };
 
+  const [emergencyAlert, setEmergencyAlert] = useState<{
+    active: boolean;
+    stationName: string;
+    patientName: string;
+    triggeredAt: string;
+  } | null>(null);
+
   useEffect(() => {
     if (!streamId) return;
 
@@ -88,7 +95,35 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
 
       const onRealtimeEvent = (msg: any) => {
         fetchDisplayData();
-        if (msg?.name === 'TOKEN_CALLED' && msg?.data?.serving_token && ttsEnabled) {
+        if (msg?.name === 'EMERGENCY_CALL') {
+          const data = msg.data;
+          const station = data?.stationName || 'Doctor Room 1';
+          setEmergencyAlert({
+            active: true,
+            stationName: station,
+            patientName: data?.patientName || 'Emergency Patient',
+            triggeredAt: new Date().toLocaleTimeString(),
+          });
+
+          // Play immediate emergency TTS announcement
+          if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+            try {
+              window.speechSynthesis.cancel();
+              const text = `Attention please. Emergency clinical consultation required immediately in ${station}. Please clear the way.`;
+              const utterance = new SpeechSynthesisUtterance(text);
+              utterance.rate = 0.95;
+              utterance.pitch = 1.1;
+              window.speechSynthesis.speak(utterance);
+            } catch (ttsErr) {
+              console.error('Emergency TTS error:', ttsErr);
+            }
+          }
+
+          // Auto-dismiss emergency modal after 30 seconds
+          setTimeout(() => {
+            setEmergencyAlert((prev) => (prev ? { ...prev, active: false } : null));
+          }, 30000);
+        } else if (msg?.name === 'TOKEN_CALLED' && msg?.data?.serving_token && ttsEnabled) {
           const st = msg.data.serving_token;
           const counter = st.assigned_station || st.counter_name || 'Counter 1';
           setServingCounter(counter);
@@ -317,6 +352,32 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
         </div>
 
       </main>
+
+      {/* EMERGENCY STAT FLASHING OVERLAY */}
+      {emergencyAlert?.active && (
+        <div className="fixed inset-0 z-50 bg-red-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in duration-300">
+          <div className="w-24 h-24 rounded-full bg-red-600/30 border-4 border-red-500 flex items-center justify-center text-5xl animate-bounce mb-6 shadow-2xl shadow-red-500/50">
+            🚨
+          </div>
+          <span className="px-5 py-1.5 rounded-full bg-red-900 border border-red-500 text-red-200 text-xs font-black uppercase tracking-widest mb-4 animate-pulse">
+            CRITICAL CLINICAL PRIORITY
+          </span>
+          <h2 className="text-4xl sm:text-6xl font-black text-white tracking-tight uppercase max-w-4xl leading-tight">
+            EMERGENCY CONSULTATION IN PROGRESS
+          </h2>
+          <div className="mt-6 p-6 rounded-3xl bg-black/60 border border-red-500/50 max-w-xl w-full text-center space-y-2">
+            <span className="text-xs text-red-400 uppercase font-mono tracking-widest font-bold block">Assigned Station</span>
+            <span className="text-3xl sm:text-4xl font-extrabold text-amber-300 block">{emergencyAlert.stationName}</span>
+            <p className="text-xs text-zinc-400 mt-2">Please clear the waiting lounge corridors immediately. Normal queue sequence will resume shortly.</p>
+          </div>
+          <button
+            onClick={() => setEmergencyAlert(null)}
+            className="mt-8 px-6 py-2.5 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-full text-xs font-bold border border-zinc-700 transition cursor-pointer"
+          >
+            Dismiss Alert Overlay ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 }
