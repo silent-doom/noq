@@ -9,10 +9,30 @@ interface NumberSliderProps {
   max: number;
   step?: number;
   unit?: string;
+  singularUnit?: string;
   presets?: number[];
   onChange: (val: number) => void;
   accentColor?: 'emerald' | 'amber' | 'sky' | 'purple';
   description?: string;
+}
+
+export function formatUnit(count: number, unit?: string, singularUnit?: string): string {
+  if (!unit && !singularUnit) return '';
+  if (count === 1) {
+    if (singularUnit) return singularUnit;
+    const lower = (unit || '').toLowerCase();
+    if (lower === 'rooms') return 'Room';
+    if (lower === 'beds') return 'Bed';
+    if (lower === 'chairs') return 'Chair';
+    if (lower === 'basins') return 'Basin';
+    if (lower === 'desks') return 'Desk';
+    if (lower === 'counters') return 'Counter';
+    if (lower === 'guests') return 'Guest';
+    if (lower === 'mins' || lower === 'minutes') return 'Min';
+    if (unit && unit.endsWith('s') && !unit.endsWith('ss')) return unit.slice(0, -1);
+    return unit || '';
+  }
+  return unit || (singularUnit ? `${singularUnit}s` : '');
 }
 
 export function NumberSlider({
@@ -22,6 +42,7 @@ export function NumberSlider({
   max,
   step = 1,
   unit = '',
+  singularUnit,
   presets,
   onChange,
   accentColor = 'emerald',
@@ -79,9 +100,13 @@ export function NumberSlider({
           )}
         </div>
 
-        <div className={`px-3 py-1 rounded-xl text-xs font-mono font-bold border flex items-center gap-1 ${colorStyles.badge}`}>
+        <div className={`px-3 py-1 rounded-xl text-xs font-mono font-bold border flex items-center gap-1.5 ${colorStyles.badge}`}>
           <span className="text-sm font-black">{value}</span>
-          {unit && <span className="text-[10px] uppercase">{unit}</span>}
+          {(unit || singularUnit) && (
+            <span className="text-[10px] uppercase tracking-wide">
+              {formatUnit(value, unit, singularUnit)}
+            </span>
+          )}
         </div>
       </div>
 
@@ -160,7 +185,7 @@ export function NumberSlider({
                     : 'bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800/80 hover:bg-zinc-850'
                 }`}
               >
-                {preset} {unit}
+                {preset} {formatUnit(preset, unit, singularUnit)}
               </button>
             );
           })}

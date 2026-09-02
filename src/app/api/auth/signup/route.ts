@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { generateDomainStations } from '@/lib/domain';
-import { ensureSubscriptionTables, calculateNextBillingDate } from '@/lib/subscription';
+import { ensureSubscriptionTables, calculateNextBillingDate, checkTrialEligibility, recordTrialRegistration } from '@/lib/subscription';
 
 // Salt + SHA-256 password hashing (no external deps)
 async function hashPassword(plain: string): Promise<string> {
@@ -124,24 +124,42 @@ export async function POST(req: NextRequest) {
     }
 
     const initialFee = Number(initialPaymentAmount) > 0 ? Number(initialPaymentAmount) : 1499.00;
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip')?.trim() || '';
 
     await client.query('BEGIN');
     await ensureSubscriptionTables(client);
+
+    // Free Trial Abuse Prevention Check
+    if (isTrial) {
+      const eligibility = await checkTrialEligibility(client, phoneVal, clientIp);
+      if (!eligibility.eligible) {
+        await client.query('ROLLBACK');
+        return NextResponse.json(
+          { success: false, error: eligibility.reason },
+          { status: 403 }
+        );
+      }
+    }
 
     const bRes = await client.query(
       `INSERT INTO businesses
        (name, category, phone, base_service_time_mins, max_daily_capacity, qr_code_slug, admin_passcode,
         google_maps_url, subscription_status, billing_anchor_day, subscription_start_date,
-        next_billing_date, last_payment_date, monthly_fee, username, password_hash)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), $11, NOW(), 499.00, $12, $13)
+        next_billing_date, last_payment_date, monthly_fee, username, password_hash, registration_ip)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), $11, NOW(), 499.00, $12, $13, $14)
        RETURNING *`,
       [
         name.trim(), businessCategory, phoneVal, paceMins, capacity, qrSlug, passcodeVal,
-        mapsUrlVal, initialStatus, anchorDay, nextBilling, username.trim(), passwordHash,
+        mapsUrlVal, initialStatus, anchorDay, nextBilling, username.trim(), passwordHash, clientIp,
       ]
     );
 
     const newBusiness = bRes.rows[0];
+
+    // Record free trial to prevent multi-account abuse
+    if (isTrial) {
+      await recordTrialRegistration(client, newBusiness.id, newBusiness.name, phoneVal, clientIp);
+    }
 
     if (!isTrial) {
       await client.query(

@@ -101,6 +101,26 @@ function DashboardContent() {
   const [subscription, setSubscription] = useState<any>(null);
   const [isRenewModalOpen, setIsRenewModalOpen] = useState<boolean>(false);
   const [renewLoading, setRenewLoading] = useState<boolean>(false);
+  const [showTrialModal, setShowTrialModal] = useState<boolean>(false);
+
+  // Daily Trial Warning Modal auto-popup (once per day per session)
+  useEffect(() => {
+    if (subscription?.isTrial && !subscription?.isLocked && streamId) {
+      const day = subscription?.trialDay || 1;
+      const dismissed = sessionStorage.getItem(`noq_dismissed_trial_day_${day}_${streamId}`);
+      if (!dismissed) {
+        setShowTrialModal(true);
+      }
+    }
+  }, [subscription, streamId]);
+
+  const handleDismissTrialModal = () => {
+    if (streamId) {
+      const day = subscription?.trialDay || 1;
+      sessionStorage.setItem(`noq_dismissed_trial_day_${day}_${streamId}`, 'true');
+    }
+    setShowTrialModal(false);
+  };
 
   const terms = getDomainTerminology(streamInfo?.category);
 
@@ -829,13 +849,77 @@ function DashboardContent() {
           </div>
         </header>
 
-        {/* FREE TRIAL BANNER */}
+        {/* DAILY TRIAL WARNING MODAL (Appears on Day 1, 2, and 3) */}
+        {showTrialModal && subscription?.isTrial && !subscription?.isLocked && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className="bg-zinc-950 border border-emerald-500/40 rounded-3xl max-w-md w-full p-7 text-center text-white shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+              <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto text-3xl">
+                {subscription.trialDay === 1 ? '🎉' : subscription.trialDay === 2 ? '⏳' : '⚠️'}
+              </div>
+
+              <div>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-full border border-emerald-800/60 inline-block mb-2">
+                  {subscription.trialDay === 1 ? 'Day 1 of 3 — Welcome' : subscription.trialDay === 2 ? 'Day 2 of 3 — 1 Day Left' : 'Day 3 of 3 — Final Day'}
+                </span>
+                <h3 className="text-xl font-black tracking-tight text-white">
+                  {subscription.trialDay === 1
+                    ? 'Your 3-Day Free Trial is Active'
+                    : subscription.trialDay === 2
+                    ? '1 Day Remaining on Free Trial'
+                    : 'Final Day of Free Trial!'}
+                </h3>
+                <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
+                  {subscription.trialDay === 1
+                    ? 'Explore full virtual queue capabilities with zero limits. Set up consultation rooms, test customer live passes, and try parallel calling. Activate anytime to ensure permanent continuity.'
+                    : subscription.trialDay === 2
+                    ? 'Your virtual queue is live and operational. Tomorrow is your final trial day. Activate your subscription today to ensure uninterrupted queue tracking for your visitors.'
+                    : 'Your free trial ends tonight at midnight. After today, an unpaid terminal enters a 3-day grace period before being deactivated. Settle your plan now to keep your live queue, links, and posters permanently active.'}
+                </p>
+              </div>
+
+              <div className="bg-zinc-900 border border-zinc-800 p-3.5 rounded-2xl text-left space-y-1.5 text-xs">
+                <div className="flex justify-between text-zinc-400">
+                  <span>Trial Progress</span>
+                  <span className="font-bold text-emerald-400 font-mono">Day {subscription.trialDay || 1} of 3</span>
+                </div>
+                <div className="flex justify-between text-zinc-400">
+                  <span>Setup + 1st Month Plan</span>
+                  <span className="font-bold text-white font-mono">₹1,499</span>
+                </div>
+                <div className="flex justify-between text-zinc-400">
+                  <span>Ongoing Monthly Renewal</span>
+                  <span className="font-bold text-zinc-300 font-mono">₹499 / mo</span>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-1">
+                <button
+                  onClick={() => {
+                    setShowTrialModal(false);
+                    setIsRenewModalOpen(true);
+                  }}
+                  className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold py-3.5 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer shadow-lg shadow-emerald-500/20"
+                >
+                  Activate 1st Month Plan (₹1,499) ↗
+                </button>
+                <button
+                  onClick={handleDismissTrialModal}
+                  className="w-full bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-400 hover:text-white font-bold py-2.5 rounded-2xl text-xs transition cursor-pointer"
+                >
+                  Continue Exploring Trial →
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* FREE TRIAL TOP BANNER */}
         {subscription?.isTrial && !subscription?.isLocked && (
           <div className="mx-4 sm:mx-8 mt-4 p-3 sm:p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-emerald-950 shadow-2xs animate-fade-in">
             <div className="flex items-center gap-2.5">
               <span className="text-lg">🌟</span>
               <div>
-                <span className="font-extrabold text-emerald-900">3-Day Free Trial Active: </span>
+                <span className="font-extrabold text-emerald-900">3-Day Free Trial (Day {subscription.trialDay || 1} of 3): </span>
                 <span className="text-emerald-700">{subscription.message}</span>
               </div>
             </div>
@@ -854,7 +938,7 @@ function DashboardContent() {
             <div className="flex items-center gap-2.5">
               <span className="text-lg">⚠️</span>
               <div>
-                <span className="font-extrabold text-amber-950">Subscription Renewal Due: </span>
+                <span className="font-extrabold text-amber-950">Post-Trial Grace Period: </span>
                 <span className="text-amber-800">{subscription.message}</span>
               </div>
             </div>
@@ -862,22 +946,26 @@ function DashboardContent() {
               onClick={() => setIsRenewModalOpen(true)}
               className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer shadow-2xs shrink-0"
             >
-              Pay Now (₹{subscription.monthlyFee || 499}) ↗
+              Settle Plan (₹{subscription.monthlyFee || 499}) ↗
             </button>
           </div>
         )}
 
-        {/* SUBSCRIPTION OVERDUE LOCK OVERLAY */}
-        {subscription?.isLocked && (
+        {/* SUBSCRIPTION OVERDUE OR DEACTIVATED LOCK OVERLAY */}
+        {(subscription?.isLocked || subscription?.isDeactivated) && (
           <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
             <div className="bg-zinc-950 border border-red-900/60 rounded-3xl max-w-md w-full p-8 text-center text-white shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
               <div className="w-16 h-16 bg-red-950/80 border border-red-800 text-red-400 rounded-3xl flex items-center justify-center mx-auto text-3xl font-black">
-                🔒
+                {subscription?.isDeactivated ? '🛑' : '🔒'}
               </div>
               <div>
-                <h3 className="text-xl font-black tracking-tight text-white">Terminal Temporarily Locked</h3>
-                <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-                  {subscription.message || 'Your subscription payment is overdue. Please renew to continue calling tokens.'}
+                <h3 className="text-xl font-black tracking-tight text-white">
+                  {subscription?.isDeactivated ? 'Business Terminal Deactivated' : 'Terminal Temporarily Locked'}
+                </h3>
+                <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
+                  {subscription?.isDeactivated
+                    ? 'Payment is overdue beyond the 3-day grace period. In accordance with our soft-delete policy, all your tokens, stream history, and venue QR links are safely preserved in our database. Settle your subscription fee to immediately reactivate this terminal.'
+                    : subscription?.message || 'Your subscription payment is overdue. Please renew to continue calling tokens.'}
                 </p>
               </div>
 
@@ -891,8 +979,10 @@ function DashboardContent() {
                   <span className="font-bold text-white font-mono">Day {subscription.billingAnchorDay || 'X'}</span>
                 </div>
                 <div className="flex justify-between text-zinc-400">
-                  <span>Days Overdue</span>
-                  <span className="font-bold text-red-400 font-mono">{subscription.daysOverdue || 4} Days</span>
+                  <span>Account Status</span>
+                  <span className="font-bold text-red-400 font-mono">
+                    {subscription?.isDeactivated ? 'DEACTIVATED (DATA PRESERVED)' : `${subscription.daysOverdue || 4} Days Overdue`}
+                  </span>
                 </div>
               </div>
 
@@ -900,7 +990,9 @@ function DashboardContent() {
                 onClick={() => setIsRenewModalOpen(true)}
                 className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold py-3.5 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer shadow-lg shadow-emerald-500/20"
               >
-                Renew Subscription & Unlock Now (₹{subscription.monthlyFee || 499}) ↗
+                {subscription?.isDeactivated
+                  ? `Reactivate Terminal & Restore Queue Now (₹${subscription.monthlyFee || 499}) ↗`
+                  : `Renew Subscription & Unlock Now (₹${subscription.monthlyFee || 499}) ↗`}
               </button>
             </div>
           </div>

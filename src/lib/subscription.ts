@@ -1,7 +1,7 @@
 import { PoolClient } from 'pg';
 
 export interface SubscriptionState {
-  status: 'ACTIVE' | 'TRIAL' | 'GRACE_PERIOD' | 'LOCKED' | 'EXPIRED';
+  status: 'ACTIVE' | 'TRIAL' | 'GRACE_PERIOD' | 'LOCKED' | 'DEACTIVATED' | 'EXPIRED';
   billingAnchorDay: number;
   nextBillingDate: Date | null;
   daysRemaining: number;
@@ -10,6 +10,8 @@ export interface SubscriptionState {
   isLocked: boolean;
   isGracePeriod: boolean;
   isTrial: boolean;
+  isDeactivated?: boolean;
+  trialDay?: number;
   message: string;
 }
 
@@ -26,7 +28,10 @@ export async function ensureSubscriptionTables(client: PoolClient): Promise<void
     ADD COLUMN IF NOT EXISTS next_billing_date TIMESTAMPTZ,
     ADD COLUMN IF NOT EXISTS last_payment_date TIMESTAMPTZ DEFAULT NOW(),
     ADD COLUMN IF NOT EXISTS plan_tier VARCHAR(50) DEFAULT 'STANDARD',
-    ADD COLUMN IF NOT EXISTS monthly_fee NUMERIC(10,2) DEFAULT 499.00;
+    ADD COLUMN IF NOT EXISTS monthly_fee NUMERIC(10,2) DEFAULT 499.00,
+    ADD COLUMN IF NOT EXISTS is_deactivated BOOLEAN DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS deactivated_at TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS registration_ip VARCHAR(50);
 
     CREATE TABLE IF NOT EXISTS subscription_payments (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -43,8 +48,19 @@ export async function ensureSubscriptionTables(client: PoolClient): Promise<void
       notes TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS trial_registrations (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      phone VARCHAR(50),
+      client_ip VARCHAR(50),
+      business_id UUID REFERENCES businesses(id) ON DELETE SET NULL,
+      business_name VARCHAR(200),
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
     CREATE INDEX IF NOT EXISTS idx_sub_payments_biz ON subscription_payments(business_id);
     CREATE INDEX IF NOT EXISTS idx_businesses_sub_status ON businesses(subscription_status);
+    CREATE INDEX IF NOT EXISTS idx_trial_reg_phone ON trial_registrations(phone);
+    CREATE INDEX IF NOT EXISTS idx_trial_reg_ip ON trial_registrations(client_ip);
   `);
 }
 
@@ -76,6 +92,7 @@ export function computeSubscriptionState(business: {
   next_billing_date?: string | Date;
   monthly_fee?: number | string;
   created_at?: string | Date;
+  is_deactivated?: boolean;
 }): SubscriptionState {
   const now = new Date();
   const createdDate = business.created_at ? new Date(business.created_at) : now;
@@ -91,10 +108,30 @@ export function computeSubscriptionState(business: {
 
   const diffMs = nextBillingDate.getTime() - now.getTime();
   const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  const daysOverdue = diffDays < 0 ? Math.abs(diffDays) : 0;
 
-  // If Free Trial is active
+  // 1. Explicitly deactivated (soft-deleted) or manual DEACTIVATED state
+  if (business.is_deactivated || business.subscription_status === 'DEACTIVATED') {
+    return {
+      status: 'DEACTIVATED',
+      billingAnchorDay: anchorDay,
+      nextBillingDate,
+      daysRemaining: 0,
+      daysOverdue: Math.max(4, daysOverdue),
+      monthlyFee,
+      isLocked: true,
+      isGracePeriod: false,
+      isTrial: false,
+      isDeactivated: true,
+      message: 'Business terminal deactivated due to unpaid subscription. All queue data and configurations are safely preserved. Settle payment to instantly reactivate.',
+    };
+  }
+
+  // 2. Free Trial Lifecycle
   if (business.subscription_status === 'TRIAL') {
     if (diffDays >= 0) {
+      // Within 3-day trial
+      const trialDay = Math.min(3, Math.max(1, 4 - diffDays));
       return {
         status: 'TRIAL',
         billingAnchorDay: anchorDay,
@@ -105,33 +142,53 @@ export function computeSubscriptionState(business: {
         isLocked: false,
         isGracePeriod: false,
         isTrial: true,
-        message: `Free Trial Active: ${diffDays} day${diffDays === 1 ? '' : 's'} remaining before plan activation is required.`,
+        trialDay,
+        message: `Free Trial Active: Day ${trialDay} of 3 (${diffDays} day${diffDays === 1 ? '' : 's'} remaining).`,
       };
     } else {
-      // Trial expired
-      return {
-        status: 'LOCKED',
-        billingAnchorDay: anchorDay,
-        nextBillingDate,
-        daysRemaining: 0,
-        daysOverdue: Math.abs(diffDays),
-        monthlyFee,
-        isLocked: true,
-        isGracePeriod: false,
-        isTrial: false,
-        message: '3-Day Free Trial Expired. Please activate your subscription to continue managing queues.',
-      };
+      // Past 3-day trial
+      if (daysOverdue <= 3) {
+        // 3-day post-trial grace period
+        const graceDaysLeft = 3 - daysOverdue;
+        return {
+          status: 'GRACE_PERIOD',
+          billingAnchorDay: anchorDay,
+          nextBillingDate,
+          daysRemaining: 0,
+          daysOverdue,
+          monthlyFee,
+          isLocked: false,
+          isGracePeriod: true,
+          isTrial: false,
+          message: `Trial ended. 3-day grace period active (${graceDaysLeft} day${graceDaysLeft === 1 ? '' : 's'} left before deactivation). Settle payment to keep your live queue uninterrupted.`,
+        };
+      } else {
+        // Beyond 3 days post-trial: DEACTIVATE ACCESS
+        return {
+          status: 'DEACTIVATED',
+          billingAnchorDay: anchorDay,
+          nextBillingDate,
+          daysRemaining: 0,
+          daysOverdue,
+          monthlyFee,
+          isLocked: true,
+          isGracePeriod: false,
+          isTrial: false,
+          isDeactivated: true,
+          message: 'Account Deactivated: Trial ended over 3 days ago. Pay subscription fee to restore full terminal access with your existing queue links.',
+        };
+      }
     }
   }
 
-  // If manual override to LOCKED or EXPIRED was set
+  // 3. Manual override to LOCKED or EXPIRED
   if (business.subscription_status === 'LOCKED') {
     return {
       status: 'LOCKED',
       billingAnchorDay: anchorDay,
       nextBillingDate,
       daysRemaining: 0,
-      daysOverdue: Math.max(4, Math.abs(diffDays)),
+      daysOverdue: Math.max(4, daysOverdue),
       monthlyFee,
       isLocked: true,
       isGracePeriod: false,
@@ -142,20 +199,21 @@ export function computeSubscriptionState(business: {
 
   if (business.subscription_status === 'EXPIRED') {
     return {
-      status: 'EXPIRED',
+      status: 'DEACTIVATED',
       billingAnchorDay: anchorDay,
       nextBillingDate,
       daysRemaining: 0,
-      daysOverdue: Math.max(11, Math.abs(diffDays)),
+      daysOverdue: Math.max(11, daysOverdue),
       monthlyFee,
       isLocked: true,
       isGracePeriod: false,
       isTrial: false,
-      message: 'Subscription expired and data scheduled for purge.',
+      isDeactivated: true,
+      message: 'Subscription expired. Terminal deactivated. Data preserved for instant reactivation.',
     };
   }
 
-  // Normal calculation
+  // 4. Standard Paid Subscription Lifecycle
   if (diffDays >= 0) {
     return {
       status: 'ACTIVE',
@@ -170,8 +228,6 @@ export function computeSubscriptionState(business: {
       message: `Active (Next renewal due in ${diffDays} day${diffDays === 1 ? '' : 's'})`,
     };
   }
-
-  const daysOverdue = Math.abs(diffDays);
 
   if (daysOverdue <= 3) {
     return {
@@ -188,7 +244,7 @@ export function computeSubscriptionState(business: {
     };
   }
 
-  if (daysOverdue <= 10) {
+  if (daysOverdue <= 7) {
     return {
       status: 'LOCKED',
       billingAnchorDay: anchorDay,
@@ -203,8 +259,9 @@ export function computeSubscriptionState(business: {
     };
   }
 
+  // Past 7 days overdue: Soft-Deactivated
   return {
-    status: 'EXPIRED',
+    status: 'DEACTIVATED',
     billingAnchorDay: anchorDay,
     nextBillingDate,
     daysRemaining: 0,
@@ -213,12 +270,102 @@ export function computeSubscriptionState(business: {
     isLocked: true,
     isGracePeriod: false,
     isTrial: false,
-    message: `Subscription Expired: Overdue by ${daysOverdue} days. Historical queue data is queued for storage purge.`,
+    isDeactivated: true,
+    message: `Account Deactivated: Payment is ${daysOverdue} days overdue. Historical queue data is safely preserved. Settle fee to reactivate instantly.`,
   };
 }
 
 /**
+ * Checks if a phone number or client IP address is eligible for a 3-day free trial.
+ * Prevents trial abuse where a business repeatedly creates new trial accounts.
+ */
+export async function checkTrialEligibility(
+  client: PoolClient,
+  phone?: string,
+  clientIp?: string
+): Promise<{ eligible: boolean; reason?: string }> {
+  await ensureSubscriptionTables(client);
+
+  const cleanPhone = (phone || '').replace(/[^0-9]/g, '');
+  const cleanIp = (clientIp || '').trim();
+
+  // 1. Phone number check (last 10 digits)
+  if (cleanPhone && cleanPhone.length >= 10) {
+    const last10 = cleanPhone.slice(-10);
+
+    // Check trial_registrations registry
+    const regCheck = await client.query(
+      `SELECT id, created_at FROM trial_registrations 
+       WHERE phone LIKE '%' || $1 
+       LIMIT 1`,
+      [last10]
+    );
+    if (regCheck.rows.length > 0) {
+      return {
+        eligible: false,
+        reason: 'This phone number has already utilized a 3-day free trial. Please choose standard activation to proceed.',
+      };
+    }
+
+    // Check existing businesses table for prior trial
+    const bizCheck = await client.query(
+      `SELECT id FROM businesses 
+       WHERE phone LIKE '%' || $1 AND subscription_status IN ('TRIAL', 'GRACE_PERIOD', 'DEACTIVATED', 'LOCKED')
+       LIMIT 1`,
+      [last10]
+    );
+    if (bizCheck.rows.length > 0) {
+      return {
+        eligible: false,
+        reason: 'A business registered with this phone number has already redeemed a free trial. Please choose standard activation.',
+      };
+    }
+  }
+
+  // 2. Client IP address check (within 90 days)
+  const isLocalIp = !cleanIp || cleanIp === '127.0.0.1' || cleanIp === '::1' || cleanIp === 'localhost' || cleanIp.startsWith('192.168.');
+  if (!isLocalIp) {
+    const ipCheck = await client.query(
+      `SELECT id FROM trial_registrations 
+       WHERE client_ip = $1 AND created_at > NOW() - INTERVAL '90 days'
+       LIMIT 1`,
+      [cleanIp]
+    );
+    if (ipCheck.rows.length > 0) {
+      return {
+        eligible: false,
+        reason: 'A 3-day free trial has already been initiated from this network or device. Please select standard activation to continue.',
+      };
+    }
+  }
+
+  return { eligible: true };
+}
+
+/**
+ * Records a newly granted free trial in the trial_registrations registry.
+ */
+export async function recordTrialRegistration(
+  client: PoolClient,
+  businessId: string,
+  businessName: string,
+  phone?: string,
+  clientIp?: string
+): Promise<void> {
+  await ensureSubscriptionTables(client);
+  const cleanPhone = (phone || '').replace(/[^0-9]/g, '');
+  const cleanIp = (clientIp || '').trim();
+
+  await client.query(
+    `INSERT INTO trial_registrations (phone, client_ip, business_id, business_name)
+     VALUES ($1, $2, $3, $4)`,
+    [cleanPhone || null, cleanIp || null, businessId, businessName]
+  );
+}
+
+/**
  * Records a successful payment and rolls forward the next billing cycle.
+ * Automatically reactivates soft-deleted / deactivated businesses with identical queue links.
  */
 export async function recordSubscriptionPayment(
   client: PoolClient,
@@ -260,41 +407,56 @@ export async function recordSubscriptionPayment(
     ]
   );
 
+  // Reactivate business: reset deactivation flag, set status ACTIVE, restore queue streams
   await client.query(
     `UPDATE businesses 
      SET subscription_status = 'ACTIVE',
+         is_deactivated = false,
+         deactivated_at = NULL,
          last_payment_date = NOW(),
          next_billing_date = $1
      WHERE id = $2`,
     [newNextBillingDate, businessId]
   );
 
+  // Restore active status on queue stream so same link & QR works seamlessly
+  await client.query(
+    `UPDATE queue_streams 
+     SET is_active = true, updated_at = NOW() 
+     WHERE business_id = $1`,
+    [businessId]
+  );
+
   return { payment: pRes.rows[0], nextBillingDate: newNextBillingDate };
 }
 
 /**
- * Purges inactive waiting/completed tokens of an expired business to free database storage.
+ * Performs a SOFT DELETE on an expired/unpaid business.
+ * NEVER deletes tokens or records; preserves 100% of historical data, queue logs, and QR links.
  */
-export async function purgeExpiredBusinessData(client: PoolClient, businessId: string): Promise<{ purgedTokens: number }> {
-  // Find streams belonging to business
-  const sRes = await client.query(`SELECT id FROM queue_streams WHERE business_id = $1`, [businessId]);
-  const streamIds = sRes.rows.map((r: any) => r.id);
+export async function purgeExpiredBusinessData(
+  client: PoolClient,
+  businessId: string
+): Promise<{ softDeleted: boolean; preservedData: boolean; purgedTokens: number }> {
+  await ensureSubscriptionTables(client);
 
-  if (streamIds.length === 0) return { purgedTokens: 0 };
-
-  const delRes = await client.query(
-    `DELETE FROM tokens 
-     WHERE stream_id = ANY($1::uuid[]) 
-       AND status IN ('COMPLETED', 'CANCELLED', 'SKIPPED')`,
-    [streamIds]
-  );
-
+  // 1. Mark business as deactivated (soft delete)
   await client.query(
     `UPDATE businesses 
-     SET subscription_status = 'EXPIRED' 
+     SET subscription_status = 'DEACTIVATED',
+         is_deactivated = true,
+         deactivated_at = NOW() 
      WHERE id = $1`,
     [businessId]
   );
 
-  return { purgedTokens: delRes.rowCount || 0 };
+  // 2. Mark queue streams as inactive without deleting tokens
+  await client.query(
+    `UPDATE queue_streams 
+     SET is_active = false, updated_at = NOW() 
+     WHERE business_id = $1`,
+    [businessId]
+  );
+
+  return { softDeleted: true, preservedData: true, purgedTokens: 0 };
 }

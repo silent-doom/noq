@@ -32,8 +32,11 @@
   - **Restaurants & Hotels**: Diners / Guests, Table / Server, Table Turn Pace, Dining Waiting List, Host Desks.
   - **Salons & Spas**: Clients, Stylist / Specialist, Service Duration, Styling Queue, Stylist Chairs, Wash Stations.
   - **Retail & Banking**: Customers, Service Counter, Service Pace, Main Queue, Service Counters.
-- **💳 Subscription Monetization & Grace Lock Policy**: Automated monthly billing anchored to registration day ($X$). Features 3-day grace period, interactive terminal lock screen with instant renewal checkout, and 10-day storage data retention purges.
-- **🛡️ Super Admin Platform Governance & Storage Extraction (`/superadmin`)**: Master dashboard for founders to monitor MRR, total platform revenue, tenant statuses, PostgreSQL storage consumption in KB/MB per client, and execute administrative grace extensions or storage purges with strict PII security.
+- **🛡️ Soft-Delete Data Preservation & Instant Reactivation**: Overdue accounts undergo a non-destructive soft delete. Zero tokens, analytics, or stream records are permanently deleted, allowing businesses to reactivate seamlessly with their exact original QR links and customer history upon subscription renewal.
+- **🚫 Multi-Factor Trial Abuse Prevention**: Restricts trial access via dual-factor verification (normalized phone and client network IP registry), blocking repeated trial redemptions.
+- **📜 Complete Legal & Healthcare Compliance Suite (`/terms`, `/privacy`, `/mou`)**: Dedicated Terms & Conditions, Privacy Policy with public PII redaction, and an official Doctor & Polyclinic Memorandum of Understanding (MoU) with non-clinical boundary definitions and signable blocks.
+- **🔤 Dynamic Singular/Plural Grammar Engine**: Real-time grammatical inflection on sliders and configuration forms (e.g. `1 Room` vs `2 Rooms`, `1 Bed` vs `2 Beds`, `1 Counter` vs `3 Counters`).
+- **🛡️ Super Admin Platform Governance (`/superadmin`)**: Master dashboard for platform founders to oversee tenant lifecycle, database storage allocation per tenant, and administrative status management with strict PII security.
 - **📢 Real-Time Broadcast Tickers**: Push live delay alerts or announcements across all connected customer passes and displays.
 - **📺 Lounge TV Display Board**: Full-screen TV display (`/display/[streamId]`) showing active serving tokens in a Multi-Station grid, station banners, and upcoming waitlists.
 

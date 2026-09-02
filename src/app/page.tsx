@@ -148,25 +148,33 @@ export default function LandingPage() {
       {/* NAVIGATION BAR */}
       <nav className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between border-b border-zinc-900">
         <div className="flex items-center gap-3">
-          <span className="text-3xl font-black tracking-tight text-white">noQ</span>
+          <Link href="/" className="text-3xl font-black tracking-tight text-white hover:text-emerald-400 transition">
+            noQ
+          </Link>
           <span className="bg-emerald-950 text-emerald-400 border border-emerald-800/60 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
             ENTERPRISE QUEUE PLATFORM
           </span>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           <Link
             href="/dashboard?streamId=c65dacd2-03e1-4737-b7b2-8d9502ec5ca1"
-            className="text-xs font-semibold text-zinc-400 hover:text-white transition hidden sm:block"
+            className="text-xs font-semibold text-zinc-400 hover:text-white transition hidden md:block"
           >
-            Live Demo Terminal
+            Live Demo
           </Link>
-          <button
-            onClick={() => setIsRegisterOpen(true)}
-            className="bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs px-5 py-2.5 rounded-full transition shadow-lg shadow-emerald-500/20 cursor-pointer"
+          <Link
+            href="/login"
+            className="text-xs font-bold text-zinc-300 hover:text-white px-3.5 py-2 rounded-full border border-zinc-800 hover:border-zinc-700 transition"
           >
-            Register Business Free
-          </button>
+            Operator Sign In
+          </Link>
+          <Link
+            href="/signup"
+            className="bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs px-4 sm:px-5 py-2 sm:py-2.5 rounded-full transition shadow-lg shadow-emerald-500/20"
+          >
+            Get Started Free
+          </Link>
         </div>
       </nav>
 
@@ -187,17 +195,23 @@ export default function LandingPage() {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-          <button
-            onClick={() => setIsRegisterOpen(true)}
+          <Link
+            href="/signup"
             className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-sm px-8 py-4 rounded-2xl transition shadow-xl shadow-emerald-500/20 cursor-pointer"
           >
-            ONBOARD YOUR BUSINESS NOW ↗
-          </button>
+            ONBOARD WITH 3-DAY FREE TRIAL ↗
+          </Link>
           <Link
-            href="/dashboard?streamId=c65dacd2-03e1-4737-b7b2-8d9502ec5ca1"
+            href="/login"
             className="w-full sm:w-auto bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 text-sm font-bold px-8 py-4 rounded-2xl transition cursor-pointer"
           >
-            EXPLORE OPERATOR DASHBOARD
+            OPERATOR LOGIN ➔
+          </Link>
+          <Link
+            href="/dashboard?streamId=c65dacd2-03e1-4737-b7b2-8d9502ec5ca1"
+            className="w-full sm:w-auto bg-zinc-950 hover:bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-900 text-xs font-semibold px-6 py-4 rounded-2xl transition cursor-pointer hidden md:block"
+          >
+            VIEW LIVE DEMO
           </Link>
         </div>
       </section>
@@ -399,6 +413,7 @@ export default function LandingPage() {
                       min={1}
                       max={10}
                       unit="Rooms"
+                      singularUnit="Room"
                       presets={[1, 2, 3, 4, 6]}
                       onChange={setCountA}
                       accentColor="emerald"
@@ -410,6 +425,7 @@ export default function LandingPage() {
                       min={0}
                       max={10}
                       unit="Beds"
+                      singularUnit="Bed"
                       presets={[0, 1, 2, 4]}
                       onChange={setCountB}
                       accentColor="sky"
@@ -423,6 +439,7 @@ export default function LandingPage() {
                       min={1}
                       max={12}
                       unit="Chairs"
+                      singularUnit="Chair"
                       presets={[2, 3, 5, 8]}
                       onChange={setCountA}
                       accentColor="emerald"
@@ -433,6 +450,7 @@ export default function LandingPage() {
                       min={0}
                       max={6}
                       unit="Basins"
+                      singularUnit="Basin"
                       presets={[1, 2, 3]}
                       onChange={setCountB}
                       accentColor="sky"
@@ -446,6 +464,7 @@ export default function LandingPage() {
                       min={1}
                       max={15}
                       unit="Desks"
+                      singularUnit="Desk"
                       presets={[2, 4, 6, 10]}
                       onChange={setCountA}
                       accentColor="emerald"
@@ -456,6 +475,7 @@ export default function LandingPage() {
                       min={0}
                       max={6}
                       unit="Counters"
+                      singularUnit="Counter"
                       presets={[0, 1, 2]}
                       onChange={setCountB}
                       accentColor="amber"
@@ -468,6 +488,7 @@ export default function LandingPage() {
                     min={1}
                     max={15}
                     unit="Counters"
+                    singularUnit="Counter"
                     presets={[2, 3, 5, 8]}
                     onChange={setCountA}
                     accentColor="emerald"
@@ -632,11 +653,120 @@ export default function LandingPage() {
                 >
                   <span>⚡ Start 3-Day Free Trial (No Card Required) ➔</span>
                 </button>
+
+                <p className="text-[10px] text-zinc-500 text-center leading-relaxed pt-1">
+                  By proceeding, you agree to our{' '}
+                  <Link href="/terms" className="text-emerald-400 hover:underline">
+                    Terms & Conditions
+                  </Link>
+                  ,{' '}
+                  <Link href="/privacy" className="text-emerald-400 hover:underline">
+                    Privacy Policy
+                  </Link>
+                  , and{' '}
+                  <Link href="/mou" className="text-emerald-400 hover:underline">
+                    Healthcare MoU
+                  </Link>
+                  .
+                </p>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* COMPREHENSIVE FOOTER */}
+      <footer className="border-t border-zinc-900 bg-black/60 text-zinc-400 text-xs py-12 px-6 mt-20">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-black tracking-tight text-white">noQ</span>
+              <span className="bg-emerald-950 text-emerald-400 border border-emerald-800/60 text-[9px] font-mono font-bold px-2 py-0.5 rounded-full uppercase">
+                VIRTUAL QUEUES
+              </span>
+            </div>
+            <p className="text-xs text-zinc-500 leading-relaxed">
+              Enterprise-grade virtual queue and crowd orchestration engine. Zero hardware required. Masked PII security and sub-millisecond real-time sync.
+            </p>
+          </div>
+
+          <div>
+            <h4 className="font-bold text-white uppercase tracking-wider text-[11px] mb-3">Operator Access</h4>
+            <ul className="space-y-2 text-zinc-500">
+              <li>
+                <Link href="/login" className="hover:text-emerald-400 transition">
+                  Operator Sign In (/login)
+                </Link>
+              </li>
+              <li>
+                <Link href="/signup" className="hover:text-emerald-400 transition">
+                  Register Business (/signup)
+                </Link>
+              </li>
+              <li>
+                <Link href="/dashboard?streamId=c65dacd2-03e1-4737-b7b2-8d9502ec5ca1" className="hover:text-emerald-400 transition">
+                  Live Terminal Demo
+                </Link>
+              </li>
+              <li>
+                <Link href="/superadmin" className="hover:text-emerald-400 transition">
+                  Superadmin Portal
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-bold text-white uppercase tracking-wider text-[11px] mb-3">Customer Portals</h4>
+            <ul className="space-y-2 text-zinc-500">
+              <li>
+                <Link href="/scan/c65dacd2-03e1-4737-b7b2-8d9502ec5ca1" className="hover:text-emerald-400 transition">
+                  QR Venue Check-In
+                </Link>
+              </li>
+              <li>
+                <Link href="/book/c65dacd2-03e1-4737-b7b2-8d9502ec5ca1" className="hover:text-emerald-400 transition">
+                  Remote Web Booking
+                </Link>
+              </li>
+              <li>
+                <Link href="/display/c65dacd2-03e1-4737-b7b2-8d9502ec5ca1" className="hover:text-emerald-400 transition">
+                  Lounge TV Display Board
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-bold text-white uppercase tracking-wider text-[11px] mb-3">Legal & Compliance</h4>
+            <ul className="space-y-2 text-zinc-500">
+              <li>
+                <Link href="/terms" className="hover:text-emerald-400 transition">
+                  Terms & Conditions
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="hover:text-emerald-400 transition">
+                  Privacy Policy & PII Protection
+                </Link>
+              </li>
+              <li>
+                <Link href="/mou" className="hover:text-emerald-400 transition">
+                  Doctor & Clinic MoU Agreement
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto border-t border-zinc-900 mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-zinc-600 text-[11px]">
+          <p>© 2026 noQ Virtual Queue Systems. All rights reserved.</p>
+          <p className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+            Zero-Hardware • Zero App Install • HIPAA & PII Compliant
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -33,8 +33,9 @@
   - [Feature B12: Operations Analytics, Heatmaps & CSV Data Export (`/dashboard/analytics`)](#feature-b12-operations-analytics-heatmaps--csv-data-export-dashboardanalytics)
   - [Feature B13: Dynamic Industry Lexicon & Domain Terminology Adapter](#feature-b13-dynamic-industry-lexicon--domain-terminology-adapter)
   - [Feature B14: Terminal Security, PIN Locks & Cryptographic Session Tokens](#feature-b14-terminal-security-pin-locks--cryptographic-session-tokens)
-  - [Feature B15: Subscription Monetization, Grace Policy & Auto-Lock](#feature-b15-subscription-monetization-grace-policy--auto-lock)
+  - [Feature B15: Account Lifecycle, Soft-Delete Data Retention & Trial Protection](#feature-b15-account-lifecycle-soft-delete-data-retention--trial-protection)
   - [Feature B16: Automated Daily Queue Reset with Opening Buffer](#feature-b16-automated-daily-queue-reset-with-opening-buffer)
+  - [Feature B17: Legal, Compliance & Healthcare Practice Agreement Suite (`/terms`, `/privacy`, `/mou`)](#feature-b17-legal-compliance--healthcare-practice-agreement-suite-terms-privacy-mou)
   - [🏥 Business Provider Step-by-Step Operating Workflow](#-business-provider-step-by-step-operating-workflow)
 - [4. Super Admin Platform Governance & Storage Extraction (`/superadmin`)](#4-super-admin-platform-governance--storage-extraction-superadmin)
 - [5. Frequently Asked Questions (FAQ)](#5-frequently-asked-questions-faq)
@@ -415,23 +416,22 @@ graph LR
 
 ---
 
-### Feature B15: Subscription Monetization, Grace Policy & Auto-Lock
-*Predictable billing lifecycle with 3-day free trial, automated grace reminders, and space conservation.*
+### Feature B15: Account Lifecycle, Soft-Delete Data Retention & Trial Protection
+*Fair-use trial protection, progressive daily warning notifications, and zero data-loss soft-delete architecture.*
 
-- **3-Day Free Trial (Skip Paywall Option)**:
-  - Businesses can start immediately with zero card details required. Unlocks 3 days of full queue terminal functionality.
-- **Initial Setup + 1st Month Plan (₹1,499)**:
-  - Covers instant business onboarding, physical station configuration, and first 30 days of unlimited virtual queue access.
-- **Monthly Recurring Renewal (₹499 / month)**:
-  - Billed on the business's monthly Anchor Day ($X$).
-- **Billing Anchor Day ($X$)**:
-  - Automatically pegged to the day of the month the business registered or finished trial (e.g. Day 14 of every month).
-- **3-Day Grace Period ($X$ to $X + 3$ Days)**:
-  - If renewal is unpaid on day $X$, the terminal displays a non-blocking top amber warning bar with days remaining before lock.
-- **Automatic Terminal Lock ($X + 3$ to $X + 10$ Days)**:
-  - If unpaid after 3 days of grace, the Operator Dashboard locks with an interactive checkout modal (*"Renew Subscription & Unlock (₹499)"*).
-- **Database Space Retention Cleanup ($X + 10$ Days)**:
-  - If unpaid for 7 days after lock (10 days total overdue), historical tokens and inactive queues are automatically purged to reclaim PostgreSQL database storage.
+- **Multi-Factor Free Trial Abuse Prevention**:
+  - Validates eligibility via dual-factor registry checking (normalized phone number and client network IP address).
+  - Strictly prevents multi-account trial cycling, ensuring fair access while protecting platform infrastructure.
+- **Daily In-Trial Warning Modals**:
+  - Day 1: Welcome modal with complete feature exploration guide.
+  - Day 2: Operational status update with 1-day remaining countdown.
+  - Day 3: Final-day alert with instant activation pathway.
+- **Post-Trial Grace Window**:
+  - Provides a 3-day grace period following trial expiration with prominent countdown indicators, preventing abrupt queue service interruptions.
+- **Soft-Delete Data Retention & Instant Reactivation**:
+  - When an account is deactivated due to unpaid status, zero records are permanently purged.
+  - All historical queue records, analytics logs, station layouts, and venue QR slugs are safely retained.
+  - Reactivating an account instantly restores the exact same queue URL and printed QR poster codes without re-configuration.
 
 ---
 
@@ -443,6 +443,22 @@ graph LR
   - Resets the internal `current_serving_token` counter to 0 so new guests start with fresh sequential numbers.
 - **Preservation of Waitlisted / Skipped Guests**:
   - Tokens with status `SKIPPED` (waitlisted guests) are strictly preserved across day boundaries and never auto-cancelled, allowing staff to re-queue them if needed.
+
+---
+
+### Feature B17: Legal, Compliance & Healthcare Practice Agreement Suite (`/terms`, `/privacy`, `/mou`)
+*Enterprise legal governance, patient data ownership, and healthcare compliance documentation.*
+
+- **Terms and Conditions (`/terms`)**:
+  - Explicit provisions defining advance subscription periods, next-cycle cancellation policies, advance price revision notices, and trial fair-use enforcement.
+- **Privacy Policy & PII Protection (`/privacy`)**:
+  - Strict zero third-party data selling policy, automatic public phone redaction (`+91 •••••• 4512`), and transactional messaging consent.
+- **Healthcare Practice MoU (`/mou`)**:
+  - Formal Memorandum of Understanding tailored for Doctors, Polyclinics, and Hospitals.
+  - Explicit non-clinical boundary definitions: zero diagnostic/EMR storage.
+  - 100% exclusive clinic ownership of patient relationships and records.
+  - Non-medical triage disclaimer requiring clinical personnel to override virtual queues during acute emergencies.
+  - Official signable and printable execution blocks for clinic representatives and platform directors.
 - **Configurable Opening Time Buffer**:
   - The reset executes at a safe, fixed threshold of **4:00 AM**, protecting late-night or overtime business hours from premature mid-shift queue resets while ensuring early morning customers are placed in the correct day's queue.
 - **Idempotent Execution & Atomic Numbering**:

@@ -75,7 +75,7 @@ export async function POST(
       return NextResponse.json({
         success: true,
         resetPerformed: false,
-        message: `Reset window starts at ${resetWindowStart.toLocaleTimeString()} (${bufferMinutes} min before opening). Too early to reset.`,
+        message: `Reset window starts at ${resetWindowStart.toLocaleTimeString()} (4:00 AM fixed threshold). Too early to reset.`,
         resetWindowStart: resetWindowStart.toISOString(),
       });
     }

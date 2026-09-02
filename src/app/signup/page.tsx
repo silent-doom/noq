@@ -405,21 +405,21 @@ export default function SignupPage() {
                 <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Physical Station Setup</p>
                 {category === 'clinic' ? (
                   <div className="space-y-3">
-                    <NumberSlider label="Doctor Consultation Rooms" value={countA} min={1} max={10} unit="Rooms" presets={[1, 2, 3, 4, 6]} onChange={setCountA} accentColor="emerald" />
-                    <NumberSlider label="Exam Beds / Observation Units" value={countB} min={0} max={10} unit="Beds" presets={[0, 1, 2, 4]} onChange={setCountB} accentColor="sky" />
+                    <NumberSlider label="Doctor Consultation Rooms" value={countA} min={1} max={10} unit="Rooms" singularUnit="Room" presets={[1, 2, 3, 4, 6]} onChange={setCountA} accentColor="emerald" />
+                    <NumberSlider label="Exam Beds / Observation Units" value={countB} min={0} max={10} unit="Beds" singularUnit="Bed" presets={[0, 1, 2, 4]} onChange={setCountB} accentColor="sky" />
                   </div>
                 ) : category === 'salon' ? (
                   <div className="space-y-3">
-                    <NumberSlider label="Stylist Chairs & Stations" value={countA} min={1} max={12} unit="Chairs" presets={[2, 3, 5, 8]} onChange={setCountA} accentColor="emerald" />
-                    <NumberSlider label="Wash Basins / Treatment Beds" value={countB} min={0} max={6} unit="Basins" presets={[1, 2, 3]} onChange={setCountB} accentColor="sky" />
+                    <NumberSlider label="Stylist Chairs & Stations" value={countA} min={1} max={12} unit="Chairs" singularUnit="Chair" presets={[2, 3, 5, 8]} onChange={setCountA} accentColor="emerald" />
+                    <NumberSlider label="Wash Basins / Treatment Beds" value={countB} min={0} max={6} unit="Basins" singularUnit="Basin" presets={[1, 2, 3]} onChange={setCountB} accentColor="sky" />
                   </div>
                 ) : category === 'restaurant' ? (
                   <div className="space-y-3">
-                    <NumberSlider label="Host Desks & Seating Sections" value={countA} min={1} max={15} unit="Desks" presets={[2, 4, 6, 10]} onChange={setCountA} accentColor="emerald" />
-                    <NumberSlider label="Express Takeaway / Bar Counters" value={countB} min={0} max={6} unit="Counters" presets={[0, 1, 2]} onChange={setCountB} accentColor="amber" />
+                    <NumberSlider label="Host Desks & Seating Sections" value={countA} min={1} max={15} unit="Desks" singularUnit="Desk" presets={[2, 4, 6, 10]} onChange={setCountA} accentColor="emerald" />
+                    <NumberSlider label="Express Takeaway / Bar Counters" value={countB} min={0} max={6} unit="Counters" singularUnit="Counter" presets={[0, 1, 2]} onChange={setCountB} accentColor="amber" />
                   </div>
                 ) : (
-                  <NumberSlider label="Active Service Counters" value={countA} min={1} max={15} unit="Counters" presets={[2, 3, 5, 8]} onChange={setCountA} accentColor="emerald" />
+                  <NumberSlider label="Active Service Counters" value={countA} min={1} max={15} unit="Counters" singularUnit="Counter" presets={[2, 3, 5, 8]} onChange={setCountA} accentColor="emerald" />
                 )}
               </div>
 
@@ -559,6 +559,7 @@ export default function SignupPage() {
                   max={500}
                   step={5}
                   unit="Guests"
+                  singularUnit="Guest"
                   presets={[25, 50, 100, 200, 300]}
                   onChange={setCapacity}
                   accentColor="amber"
@@ -619,15 +620,38 @@ export default function SignupPage() {
                 >
                   ⚡ Start 3-Day Free Trial (No Card Required) →
                 </button>
+
+                <p className="text-[11px] text-zinc-500 text-center leading-relaxed pt-2">
+                  By proceeding, you agree to our{' '}
+                  <Link href="/terms" className="text-emerald-400 hover:underline">
+                    Terms & Conditions
+                  </Link>
+                  ,{' '}
+                  <Link href="/privacy" className="text-emerald-400 hover:underline">
+                    Privacy Policy
+                  </Link>
+                  , and{' '}
+                  <Link href="/mou" className="text-emerald-400 hover:underline">
+                    Healthcare MoU
+                  </Link>
+                  .
+                </p>
               </div>
             </div>
           )}
         </form>
 
         {/* Footer */}
-        <p className="text-center text-[11px] text-zinc-700 mt-8">
-          © 2026 noQ — Virtual Queue Management System
-        </p>
+        <div className="text-center text-[11px] text-zinc-600 mt-8 space-y-2">
+          <div className="flex items-center justify-center gap-4 text-zinc-500">
+            <Link href="/terms" className="hover:text-zinc-300 transition">Terms & Conditions</Link>
+            <span>•</span>
+            <Link href="/privacy" className="hover:text-zinc-300 transition">Privacy Policy</Link>
+            <span>•</span>
+            <Link href="/mou" className="hover:text-zinc-300 transition">Doctor MoU</Link>
+          </div>
+          <p>© 2026 noQ — Virtual Queue Management System</p>
+        </div>
       </div>
     </div>
   );

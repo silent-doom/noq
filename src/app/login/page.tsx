@@ -238,9 +238,16 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-[11px] text-zinc-700 mt-6">
-          © 2026 noQ — Virtual Queue Management System
-        </p>
+        <div className="text-center text-[11px] text-zinc-600 mt-6 space-y-2">
+          <div className="flex items-center justify-center gap-4 text-zinc-500">
+            <Link href="/terms" className="hover:text-zinc-300 transition">Terms & Conditions</Link>
+            <span>•</span>
+            <Link href="/privacy" className="hover:text-zinc-300 transition">Privacy Policy</Link>
+            <span>•</span>
+            <Link href="/mou" className="hover:text-zinc-300 transition">Doctor MoU</Link>
+          </div>
+          <p>© 2026 noQ — Virtual Queue Management System</p>
+        </div>
       </div>
     </div>
   );
