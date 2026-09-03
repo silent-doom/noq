@@ -679,7 +679,21 @@ function DashboardContent() {
 
   const safeTokens = Array.isArray(tokens) ? tokens : [];
   const allWaitingTokens = safeTokens.filter((t) => t?.status === 'WAITING');
-  const currentServingTokenObj = safeTokens.find((t) => t?.status === 'SERVING');
+  const allServingTokens = safeTokens.filter((t) => t?.status === 'SERVING');
+
+  // Station-aware serving token: Match token serving at the currently active station (activeCounter)
+  const currentStationServingToken = safeTokens.find(
+    (t) =>
+      t?.status === 'SERVING' &&
+      (t?.assigned_station === activeCounter ||
+        (!t?.assigned_station && (activeCounter === 'Counter 1' || activeCounter === streamInfo?.stations?.[0])))
+  );
+
+  const currentServingTokenObj =
+    currentStationServingToken ||
+    (allServingTokens.length === 1 && !allServingTokens[0]?.assigned_station
+      ? allServingTokens[0]
+      : null);
 
   const displayedWaitingTokens = allWaitingTokens.filter(
     (t) =>
@@ -1430,11 +1444,31 @@ function DashboardContent() {
 
             {/* Current Token Card — centred on all screen sizes */}
             <div className="bg-black text-white rounded-[2rem] p-6 sm:p-7 flex flex-col items-center text-center shadow-xl">
-              <div className="w-full flex items-center justify-between">
+              <div className="w-full flex items-center justify-between gap-2 flex-wrap">
                 <span className={`inline-flex items-center gap-1.5 ${currentServingTokenObj ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-zinc-800 text-zinc-400 border-zinc-700'} border text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${currentServingTokenObj ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-500'}`} />
-                  {currentServingTokenObj ? 'SERVING NOW' : 'COUNTER AT REST'}
+                  {currentServingTokenObj ? `${activeCounter} • SERVING NOW` : `${activeCounter} • AT REST`}
                 </span>
+
+                {allServingTokens.length > 1 && (
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {allServingTokens.map((st) => (
+                      <button
+                        key={st.id}
+                        type="button"
+                        onClick={() => st.assigned_station && setActiveCounter(st.assigned_station)}
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition cursor-pointer ${
+                          st.assigned_station === activeCounter
+                            ? 'bg-emerald-500 text-black border-emerald-400 font-extrabold'
+                            : 'bg-zinc-900 text-zinc-400 border-zinc-700 hover:text-white'
+                        }`}
+                        title={`Switch to ${st.assigned_station || 'Station'} (Serving #${st.token_number})`}
+                      >
+                        {st.assigned_station || 'STN'}: #{st.token_number}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <span className="text-[11px] font-bold text-zinc-400 tracking-widest uppercase mt-6">
