@@ -8,6 +8,7 @@ import { AccessChannelBadge } from '@/components/AccessChannelBadge';
 import { NumberSlider } from '@/components/NumberSlider';
 import { getDomainTerminology, formatWaitTime, generateDomainStations } from '@/lib/domain';
 import { openRazorpayCheckout } from '@/lib/razorpayClient';
+import { playChimeAndAnnounce } from '@/lib/audioAnnouncement';
 
 interface Token {
   id: string;
@@ -110,6 +111,10 @@ function DashboardContent() {
   const [emergencyPatient, setEmergencyPatient] = useState<string>('Emergency Patient');
   const [emergencyLoading, setEmergencyLoading] = useState<boolean>(false);
   const [emergencySuccess, setEmergencySuccess] = useState<string | null>(null);
+
+  // TTS & Chime Announcement Toggle
+  const [ttsVoiceEnabled, setTtsVoiceEnabled] = useState<boolean>(true);
+  const [activeCounter, setActiveCounter] = useState<string>('Counter 1');
 
   // Inactivity Auto-Lock (15m idle privacy shield)
   const [isLockedByInactivity, setIsLockedByInactivity] = useState<boolean>(false);
@@ -465,8 +470,13 @@ function DashboardContent() {
       ably = new Ably.Realtime({ key });
       const channel = ably.channels.get(`queue:${streamId}`);
 
-      const onRealtimeEvent = () => {
+      const onRealtimeEvent = (msg?: any) => {
         fetchQueueData();
+        if (msg?.name === 'TOKEN_CALLED' && msg?.data?.serving_token && ttsVoiceEnabled) {
+          const st = msg.data.serving_token;
+          const counter = st.assigned_station || st.counter_name || activeCounter || 'Counter 1';
+          playChimeAndAnnounce(st.token_number, counter);
+        }
       };
 
       channel.subscribe(onRealtimeEvent);
@@ -482,7 +492,7 @@ function DashboardContent() {
     } catch (err) {
       console.error('Ably client connection error in Dashboard:', err);
     }
-  }, [streamId, fetchQueueData]);
+  }, [streamId, fetchQueueData, ttsVoiceEnabled, activeCounter]);
 
   // 4. Update Token Status Action
   const handleUpdateStatus = async (
@@ -491,11 +501,15 @@ function DashboardContent() {
   ) => {
     setActionLoading(true);
     try {
+      const targetToken = tokens.find((t) => t.id === tokenId);
       await fetch(`/api/token/${tokenId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, assigned_station: activeCounter }),
       });
+      if (status === 'SERVING' && targetToken && ttsVoiceEnabled) {
+        playChimeAndAnnounce(targetToken.token_number, activeCounter);
+      }
       await fetchQueueData();
     } catch (err) {
       console.error(`Failed to update token status:`, err);
@@ -524,8 +538,6 @@ function DashboardContent() {
     }
   };
 
-  const [activeCounter, setActiveCounter] = useState<string>('Counter 1');
-
   // 5. CALL NEXT Action
   const handleNextToken = async () => {
     if (!streamId || actionLoading) return;
@@ -537,6 +549,11 @@ function DashboardContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ counter_name: activeCounter }),
       });
+
+      const data = await res.json();
+      if (data.success && data.serving_token && ttsVoiceEnabled) {
+        playChimeAndAnnounce(data.serving_token.token_number, activeCounter);
+      }
 
       if (!res.ok) {
         const activeServing = tokens.find((t) => t.status === 'SERVING');
@@ -556,6 +573,9 @@ function DashboardContent() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 'SERVING' }),
           });
+          if (ttsVoiceEnabled) {
+            playChimeAndAnnounce(nextWaiting.token_number, activeCounter);
+          }
         }
       }
 
@@ -564,6 +584,13 @@ function DashboardContent() {
       console.error('Failed to call next token:', err);
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleRecallToken = () => {
+    if (!currentServingTokenObj) return;
+    if (ttsVoiceEnabled) {
+      playChimeAndAnnounce(currentServingTokenObj.token_number, activeCounter);
     }
   };
 
@@ -937,6 +964,26 @@ function DashboardContent() {
             >
               <span className="text-sm animate-pulse">🚨</span>
               <span className="hidden sm:inline">Emergency STAT</span>
+            </button>
+
+            {/* Audio Chime & TTS Toggle */}
+            <button
+              onClick={() => {
+                const nextVal = !ttsVoiceEnabled;
+                setTtsVoiceEnabled(nextVal);
+                if (nextVal && currentServingTokenObj) {
+                  playChimeAndAnnounce(currentServingTokenObj.token_number, activeCounter);
+                }
+              }}
+              className={`h-9 px-2.5 sm:px-3 rounded-full border text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5 ${
+                ttsVoiceEnabled
+                  ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/30'
+                  : 'bg-zinc-100 text-zinc-400 border-zinc-200 hover:bg-zinc-200'
+              }`}
+              title={ttsVoiceEnabled ? 'Audio Chime & TTS Voice Active (Click to mute)' : 'Audio Muted (Click to enable)'}
+            >
+              <span>{ttsVoiceEnabled ? '🔊' : '🔇'}</span>
+              <span className="hidden md:inline">{ttsVoiceEnabled ? 'Voice ON' : 'Mute'}</span>
             </button>
 
             {/* Settings Gear */}
@@ -1413,9 +1460,18 @@ function DashboardContent() {
                 <button
                   onClick={() => currentServingTokenObj && handleWaitlist(currentServingTokenObj.id)}
                   disabled={!currentServingTokenObj || actionLoading}
-                  className="py-3 px-4 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-xs font-semibold text-zinc-400 rounded-xl transition border border-zinc-800 cursor-pointer"
+                  className="py-3 px-3 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-xs font-semibold text-zinc-400 rounded-xl transition border border-zinc-800 cursor-pointer"
                 >
                   Skip
+                </button>
+                <button
+                  onClick={handleRecallToken}
+                  disabled={!currentServingTokenObj || actionLoading}
+                  className="py-3 px-3 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-xs font-bold text-sky-400 rounded-xl transition border border-zinc-800 cursor-pointer flex items-center justify-center gap-1"
+                  title="Play audio chime and repeat voice announcement"
+                >
+                  <span>🔊</span>
+                  <span className="hidden sm:inline">Recall</span>
                 </button>
               </div>
             </div>

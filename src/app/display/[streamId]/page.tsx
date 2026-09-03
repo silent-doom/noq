@@ -23,6 +23,8 @@ interface StreamInfo {
   current_serving_token: number;
 }
 
+import { playChimeAndAnnounce } from '@/lib/audioAnnouncement';
+
 export default function DisplayPage({ params }: { params: { streamId: string } }) {
   const streamId = params.streamId;
 
@@ -54,26 +56,15 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
   // Real-time updates via Ably Pub/Sub & 10s fallback polling
   useEffect(() => {
     fetchDisplayData();
-    const interval = setInterval(fetchDisplayData, 10000);
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchDisplayData();
+    }, 10000);
     return () => clearInterval(interval);
   }, [fetchDisplayData]);
 
   const [ttsEnabled, setTtsEnabled] = useState<boolean>(true);
   const [servingCounter, setServingCounter] = useState<string>('Counter 1');
-
-  const speakAnnouncement = (tokenNum: number, counter: string) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    try {
-      window.speechSynthesis.cancel();
-      const text = `Attention please. Token number ${tokenNum}, please proceed to ${counter}.`;
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.9;
-      utterance.pitch = 1.0;
-      window.speechSynthesis.speak(utterance);
-    } catch (err) {
-      console.error('Speech synthesis error:', err);
-    }
-  };
 
   const [emergencyAlert, setEmergencyAlert] = useState<{
     active: boolean;
@@ -123,11 +114,13 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
           setTimeout(() => {
             setEmergencyAlert((prev) => (prev ? { ...prev, active: false } : null));
           }, 30000);
-        } else if (msg?.name === 'TOKEN_CALLED' && msg?.data?.serving_token && ttsEnabled) {
+        } else if (msg?.name === 'TOKEN_CALLED' && msg?.data?.serving_token) {
           const st = msg.data.serving_token;
           const counter = st.assigned_station || st.counter_name || 'Counter 1';
           setServingCounter(counter);
-          speakAnnouncement(st.token_number, counter);
+          if (ttsEnabled) {
+            playChimeAndAnnounce(st.token_number, counter);
+          }
         }
       };
 

@@ -29,7 +29,7 @@
 - **📲 httpSMS Android SIM Cellular Gateway**: Dispatches real SMS text messages directly from an Android phone SIM card at local plan rates.
 - **⚡ Ably Real-Time Pub/Sub Synchronization**: Zero-polling, sub-millisecond state updates across Operator Dashboards, Customer Passes, and TV Screens.
 - **🔔 Native Web Push Notifications (VAPID Service Worker)**: Sends OS lock-screen push alerts to iOS (Safari 16.4+) and Android devices when a customer's turn is called.
-- **🔊 Text-to-Speech (TTS) Voice Announcements**: Web Speech API audio announcements on Lounge TV Displays (*"Attention please. Token #15 proceed to Doctor Room 2"*).
+- **🔊 Crystal Audio Chime + Text-to-Speech (TTS) Voice Engine**: Synthesizes a dual-tone airport/clinical chime (Ding-Dong via Web Audio API) followed by natural Web Speech voice announcements calling out the token number and assigned station (*"Attention please. Token #15, please proceed to Doctor Room 2"*), active across both Lounge TV Displays and the Operator Dashboard with 1-click mute toggles.
 - **🏢 Physical Layout & Station Customization**: Configures physical rooms, beds, chairs, and counters during onboarding and extrapolates them to the Operator Dashboard.
 - **🖨️ Printable QR Code Poster Generator**: Generates print-ready A4 venue posters (`/dashboard/poster`) with high-resolution venue QR codes.
 - **📅 Slot-Based Advance Booking**: Supports both *"⚡ Join Live Queue"* and *"📅 Advance Time Slot"* booking (`10:00 AM`, `10:30 AM`, `11:00 AM`, etc.).

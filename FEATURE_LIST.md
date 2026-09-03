@@ -335,12 +335,14 @@ graph LR
   - Full-screen high-visibility board showing active tokens and their assigned rooms/counters.
 - **Upcoming Next 5 Tokens Waitlist**:
   - Compact sidebar showing who is up next.
+- **Dual-Tone Web Audio Chime (Ding-Dong)**:
+  - Synthesizes a crisp clinical/airport-style dual-tone chime (G5 783.99 Hz → C6 1046.50 Hz) via native Web Audio API immediately preceding each voice announcement.
 - **Browser Web Speech API Voice (TTS) Announcements**:
-  - Automatically speaks announcements in natural English:
+  - Automatically speaks announcements in natural voice:
     > *"Attention please. Token number 15, please proceed to Doctor Room 2."*
-  - Requires zero additional software or hardware—runs directly inside any Smart TV browser.
-- **Fullscreen & High-Contrast Mode**:
-  - 1-click borderless TV presentation mode.
+  - Requires zero additional software or hardware—runs directly inside any Smart TV or computer browser.
+- **Operator Dashboard Sync & Manual Recall**:
+  - Voice chime announcements trigger across both the Lounge TV Display and the Operator Dashboard, with 1-click mute toggles (`🔊 Voice ON / 🔇 Mute`) and manual **"🔊 Recall"** buttons.
 
 ---
 
