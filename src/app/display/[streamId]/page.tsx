@@ -23,7 +23,7 @@ interface StreamInfo {
   current_serving_token: number;
 }
 
-import { playChimeAndAnnounce, VoiceLanguage } from '@/lib/audioAnnouncement';
+import { playChimeAndAnnounce, playTestAnnouncement, VoiceLanguage } from '@/lib/audioAnnouncement';
 
 export default function DisplayPage({ params }: { params: { streamId: string } }) {
   const streamId = params.streamId;
@@ -74,10 +74,13 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
     }
   }, []);
 
-  const handleSetVoiceLang = (lang: VoiceLanguage) => {
+  const handleSetVoiceLang = (lang: VoiceLanguage, shouldPreview: boolean = true) => {
     setVoiceLang(lang);
     if (typeof window !== 'undefined') {
       localStorage.setItem('noq_voice_lang', lang);
+    }
+    if (shouldPreview && ttsEnabled) {
+      playTestAnnouncement(lang, servingCounter);
     }
   };
 

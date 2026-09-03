@@ -124,10 +124,13 @@ function DashboardContent() {
     }
   }, []);
 
-  const handleSetVoiceLang = (lang: VoiceLanguage) => {
+  const handleSetVoiceLang = (lang: VoiceLanguage, shouldPreview: boolean = true) => {
     setVoiceLang(lang);
     if (typeof window !== 'undefined') {
       localStorage.setItem('noq_voice_lang', lang);
+    }
+    if (shouldPreview && ttsVoiceEnabled) {
+      playTestAnnouncement(lang, activeCounter);
     }
   };
 

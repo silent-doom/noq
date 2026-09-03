@@ -9,63 +9,81 @@ function findBestFemaleVoice(voices: SpeechSynthesisVoice[], lang: 'hi' | 'en'):
   if (!voices || voices.length === 0) return null;
 
   if (lang === 'hi') {
-    // 1. Prioritize natural/neural Hindi female voices across platforms (Apple, Google, Microsoft, Android)
-    const hindiFemaleNames = ['lekha', 'google हिन्दी', 'kalpana', 'swara', 'neerja', 'natural', 'neural', 'female'];
-    
-    // Exact Hindi voices matching female priority
-    const matchedHindiFemale = voices.find((v) => {
-      const isHindi = v.lang.toLowerCase().startsWith('hi') || v.lang.toLowerCase().includes('hi-in');
-      if (!isHindi) return false;
-      const lowerName = v.name.toLowerCase();
-      return hindiFemaleNames.some((keyword) => lowerName.includes(keyword));
+    // 1. Strict Hindi voice filtering
+    const hindiVoices = voices.filter((v) => {
+      const l = v.lang.toLowerCase();
+      const n = v.name.toLowerCase();
+      return (
+        l.startsWith('hi') ||
+        l.includes('hi-in') ||
+        l.includes('hi_in') ||
+        n.includes('hindi') ||
+        n.includes('हिन्दी') ||
+        n.includes('lekha')
+      );
     });
-    if (matchedHindiFemale) return matchedHindiFemale;
 
-    // Any available Hindi voice
-    const anyHindi = voices.find((v) => v.lang.toLowerCase().startsWith('hi') || v.lang.toLowerCase().includes('hi-in'));
-    if (anyHindi) return anyHindi;
+    if (hindiVoices.length > 0) {
+      // Prioritize verified Hindi female voices
+      const femaleKeywords = ['lekha', 'google हिन्दी', 'kalpana', 'swara', 'neerja', 'female', 'natural', 'neural'];
+      const matched = hindiVoices.find((v) => {
+        const lowerName = v.name.toLowerCase();
+        return femaleKeywords.some((k) => lowerName.includes(k));
+      });
+      if (matched) return matched;
+      return hindiVoices[0];
+    }
 
-    // Indian English female voice as smooth phonetic fallback
-    const indianEnglishFemale = voices.find((v) => {
-      const isIndianEng = v.lang.toLowerCase().includes('en-in');
-      const lowerName = v.name.toLowerCase();
-      return isIndianEng && (lowerName.includes('veena') || lowerName.includes('sangeeta') || lowerName.includes('heera') || lowerName.includes('female'));
-    });
-    if (indianEnglishFemale) return indianEnglishFemale;
+    // Strictly DO NOT fallback to English voices for Hindi text,
+    // so the browser's native Hindi speech engine handles Devnagari properly.
+    return null;
   }
 
-  // English Female Voices (Indian English Female > Natural/Neural Female > Standard Apple/Google Female)
-  const englishFemaleNames = [
-    'veena',
-    'sangeeta',
-    'heera',
-    'google uk english female',
-    'google us english',
-    'samantha',
-    'karen',
-    'moira',
-    'tessa',
-    'fiona',
-    'victoria',
-    'jenny',
-    'aria',
-    'zira',
-    'natural',
-    'neural',
-    'female',
-  ];
-
-  const matchedEngFemale = voices.find((v) => {
-    const isEng = v.lang.toLowerCase().startsWith('en');
-    if (!isEng) return false;
-    const lowerName = v.name.toLowerCase();
-    return englishFemaleNames.some((keyword) => lowerName.includes(keyword));
+  // 2. English Language Female Voices
+  const englishVoices = voices.filter((v) => {
+    const l = v.lang.toLowerCase();
+    return l.startsWith('en');
   });
 
-  if (matchedEngFemale) return matchedEngFemale;
+  if (englishVoices.length > 0) {
+    // Known male voices to strictly exclude
+    const maleKeywords = ['rishi', 'daniel', 'alex', 'fred', 'oliver', 'george', 'david', 'male', 'guy', 'mark', 'tom'];
+    const nonMaleVoices = englishVoices.filter((v) => {
+      const lowerName = v.name.toLowerCase();
+      return !maleKeywords.some((m) => lowerName.includes(m));
+    });
 
-  // Generic English fallback
-  return voices.find((v) => v.lang.toLowerCase().startsWith('en')) || voices[0] || null;
+    // Prioritize natural English female voices
+    const femaleKeywords = [
+      'veena',
+      'samantha',
+      'google uk english female',
+      'google us english',
+      'karen',
+      'moira',
+      'victoria',
+      'tessa',
+      'fiona',
+      'jenny',
+      'aria',
+      'zira',
+      'sangeeta',
+      'heera',
+      'female',
+      'natural',
+      'neural',
+    ];
+
+    const pool = nonMaleVoices.length > 0 ? nonMaleVoices : englishVoices;
+    const matchedFemale = pool.find((v) => {
+      const lowerName = v.name.toLowerCase();
+      return femaleKeywords.some((k) => lowerName.includes(k));
+    });
+    if (matchedFemale) return matchedFemale;
+    return pool[0];
+  }
+
+  return null;
 }
 
 // Global shared AudioContext to prevent hitting browser limit & ensure smooth resume on user action
@@ -92,37 +110,42 @@ export async function playChimeAudio(): Promise<void> {
     if (!ctx) return;
 
     if (ctx.state === 'suspended') {
-      await ctx.resume();
+      try {
+        await ctx.resume();
+      } catch (e) {
+        console.warn('AudioContext resume error:', e);
+      }
     }
 
-    const now = ctx.currentTime;
+    // Use current time + 0.05s buffer to prevent any audio clipping
+    const startTime = ctx.currentTime + 0.05;
 
     // Tone 1: High Bell Tone (G5 - 783.99 Hz)
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
     osc1.type = 'sine';
-    osc1.frequency.setValueAtTime(783.99, now);
-    gain1.gain.setValueAtTime(0.4, now);
-    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+    osc1.frequency.setValueAtTime(783.99, startTime);
+    gain1.gain.setValueAtTime(0.45, startTime);
+    gain1.gain.exponentialRampToValueAtTime(0.001, startTime + 0.38);
     osc1.connect(gain1);
     gain1.connect(ctx.destination);
-    osc1.start(now);
-    osc1.stop(now + 0.4);
+    osc1.start(startTime);
+    osc1.stop(startTime + 0.4);
 
     // Tone 2: Harmonious Chime (C6 - 1046.50 Hz)
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
     osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(1046.5, now + 0.22);
-    gain2.gain.setValueAtTime(0.5, now + 0.22);
-    gain2.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
+    osc2.frequency.setValueAtTime(1046.5, startTime + 0.22);
+    gain2.gain.setValueAtTime(0.55, startTime + 0.22);
+    gain2.gain.exponentialRampToValueAtTime(0.001, startTime + 1.1);
     osc2.connect(gain2);
     gain2.connect(ctx.destination);
-    osc2.start(now + 0.22);
-    osc2.stop(now + 1.0);
+    osc2.start(startTime + 0.22);
+    osc2.stop(startTime + 1.1);
 
     return new Promise((resolve) => {
-      setTimeout(resolve, 550);
+      setTimeout(resolve, 600);
     });
   } catch (err) {
     console.warn('Web Audio chime playback error:', err);
@@ -150,7 +173,7 @@ function speakPhrase(
     const utterance = new SpeechSynthesisUtterance(text);
     // Natural female voice cadence & pitch
     utterance.rate = langCode === 'hi' ? 0.88 : 0.92;
-    utterance.pitch = 1.1; // Smooth, pleasant female pitch inflection
+    utterance.pitch = 1.15; // Smooth, pleasant female pitch inflection
     utterance.lang = langCode === 'hi' ? 'hi-IN' : 'en-US';
 
     const allVoices = window.speechSynthesis.getVoices();
@@ -202,7 +225,6 @@ export async function playChimeAndAnnounce(
       ? (localStorage.getItem('noq_voice_lang') as VoiceLanguage) || 'bilingual'
       : 'bilingual');
 
-  // Cancel previous speech only if active, avoiding chromium drop bugs
   if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
     try {
       window.speechSynthesis.cancel();
@@ -220,13 +242,13 @@ export async function playChimeAndAnnounce(
 
   // 2. Play Voice Announcement according to selected language
   if (language === 'hi') {
-    // Pure Hindi Natural Female Voice
+    // Pure Hindi Female Voice
     speakPhrase(hindiText, 'hi', options?.onEnd);
   } else if (language === 'en') {
-    // Pure English Natural Female Voice
+    // Pure English Female Voice
     speakPhrase(englishText, 'en', options?.onEnd);
   } else {
-    // Bilingual: English announcement followed immediately by Hindi announcement
+    // Bilingual: English female voice followed immediately by Hindi female voice
     speakPhrase(englishText, 'en', () => {
       setTimeout(() => {
         speakPhrase(hindiText, 'hi', options?.onEnd);
@@ -264,10 +286,13 @@ export async function playTestAnnouncement(
   const englishTest = `Attention please. This is a voice test. Token number 1, please proceed to ${targetStation}.`;
 
   if (lang === 'hi') {
+    // Strictly speaks Hindi Test in Hindi Female Voice
     speakPhrase(hindiTest, 'hi', onEnd);
   } else if (lang === 'en') {
+    // Strictly speaks English Test in English Female Voice
     speakPhrase(englishTest, 'en', onEnd);
   } else {
+    // Bilingual: Speaks English first, then Hindi
     speakPhrase(englishTest, 'en', () => {
       setTimeout(() => {
         speakPhrase(hindiTest, 'hi', onEnd);
