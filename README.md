@@ -29,7 +29,7 @@
 - **📲 httpSMS Android SIM Cellular Gateway**: Dispatches real SMS text messages directly from an Android phone SIM card at local plan rates.
 - **⚡ Ably Real-Time Pub/Sub Synchronization**: Zero-polling, sub-millisecond state updates across Operator Dashboards, Customer Passes, and TV Screens.
 - **🔔 Native Web Push Notifications (VAPID Service Worker)**: Sends OS lock-screen push alerts to iOS (Safari 16.4+) and Android devices when a customer's turn is called.
-- **🔊 Crystal Audio Chime + Text-to-Speech (TTS) Voice Engine**: Synthesizes a dual-tone airport/clinical chime (Ding-Dong via Web Audio API) followed by natural Web Speech voice announcements calling out the token number and assigned station (*"Attention please. Token #15, please proceed to Doctor Room 2"*), active across both Lounge TV Displays and the Operator Dashboard with 1-click mute toggles.
+- **🔊 Neural Multi-Language Female Voice Engine & Audio Chime (`/api/tts`)**: Synthesizes a crisp airport/clinical dual-tone bell chime (G5 → C6 via Web Audio API) followed by studio-quality neural female voice announcements in **Hindi (`🇮🇳 हिन्दी`)**, **English (`🇬🇧 English`)**, or **Bilingual (`🌐 EN+HI`)** calling out the token number and assigned room/station (*"कृपया ध्यान दें। टोकन नंबर 15, कृपया डॉक्टर रूम 2 पर जाएं"*), active across both Lounge TV Displays and the Operator Dashboard with instant test controls and mute toggles.
 - **🏢 Physical Layout & Station Customization**: Configures physical rooms, beds, chairs, and counters during onboarding and extrapolates them to the Operator Dashboard.
 - **🖨️ Printable QR Code Poster Generator**: Generates print-ready A4 venue posters (`/dashboard/poster`) with high-resolution venue QR codes.
 - **📅 Slot-Based Advance Booking**: Supports both *"⚡ Join Live Queue"* and *"📅 Advance Time Slot"* booking (`10:00 AM`, `10:30 AM`, `11:00 AM`, etc.).
@@ -136,8 +136,9 @@ noq/
 │   │       ├── branch/transfer/         # Cross-Branch Patient Transfer API
 │   │       ├── business/register/       # Business Onboarding & Station Generator
 │   │       ├── queue/stream/            # Live Queue State & PII Masking
+│   │       ├── queue/stream/[id]/next   # Parallel Token Calling with Counter Isolation
 │   │       ├── queue/stream/[id]/reset  # Daily Queue Reset API (Opening Buffer)
-│   │       ├── queue/next/              # Scoped Parallel Next Token Calling
+│   │       ├── tts/                     # Studio Neural Female Voice Stream API (Hindi/English)
 │   │       ├── token/[tokenId]/         # Token Live Pass, Status & Feedback
 │   │       └── push/subscribe/          # Web Push VAPID Subscription
 │   ├── components/
@@ -145,6 +146,7 @@ noq/
 │   │   └── NumberSlider.tsx             # Tactile Gradient Drag Number Slider
 │   └── lib/
 │       ├── ably.ts                      # Ably Pub/Sub Real-Time Engine
+│       ├── audioAnnouncement.ts         # Dual-Tone Chime & Multi-Language Voice Engine
 │       ├── db.ts                        # PostgreSQL Connection Pool
 │       ├── domain.ts                    # Dynamic Domain Lexicon, PII Masking & Auth
 │       ├── httpsms.ts                   # httpSMS Android Gateway Client

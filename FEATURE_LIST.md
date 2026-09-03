@@ -283,8 +283,9 @@ graph LR
 - **Parallel Non-Blocking Queues**:
   - Doctor Room 1 and Doctor Room 2 can call and serve Token `#10` and Token `#11` simultaneously.
   - Calling a token at one station will **not** cancel or override the active session at another station.
-- **Station-Specific Routing**:
+- **Station-Specific Routing & Dashboard Synchronization**:
   - Tokens are explicitly tagged with their destination (e.g. `Doctor Room 1`, `Exam Bed 2`, `Stylist Chair 3`, `Counter 4`).
+  - The Operator Dashboard hero card automatically syncs with the active station selected in the dropdown (*"Doctor Room 1 • SERVING NOW"*, *"Exam Bed 1 • SERVING NOW"*), with quick-switcher pills to jump between concurrent active stations in 1 tap.
   - Synchronized across the Customer Pass, Lounge TV, Voice TTS, and Admin Dashboard.
 
 ---
@@ -337,12 +338,14 @@ graph LR
   - Compact sidebar showing who is up next.
 - **Dual-Tone Web Audio Chime (Ding-Dong)**:
   - Synthesizes a crisp clinical/airport-style dual-tone chime (G5 783.99 Hz → C6 1046.50 Hz) via native Web Audio API immediately preceding each voice announcement.
-- **Browser Web Speech API Voice (TTS) Announcements**:
-  - Automatically speaks announcements in natural voice:
-    > *"Attention please. Token number 15, please proceed to Doctor Room 2."*
-  - Requires zero additional software or hardware—runs directly inside any Smart TV or computer browser.
+- **Studio Neural Female Voice Engine (`/api/tts`)**:
+  - Delivers studio-grade neural female speech announcements with zero reliance on client device voice packs.
+  - Supports **`🇮🇳 हिन्दी (Hindi)`**, **`🇬🇧 English`**, and **`🌐 Bilingual (EN+HI)`** with natural clinic station transliteration:
+    > **Hindi:** *"कृपया ध्यान दें। टोकन नंबर 15, कृपया डॉक्टर रूम 2 पर जाएं।"*  
+    > **English:** *"Attention please. Token number 15, please proceed to Doctor Room 2."*  
+    > **Bilingual:** Sequences the English announcement followed immediately by the Hindi announcement.
 - **Operator Dashboard Sync & Manual Recall**:
-  - Voice chime announcements trigger across both the Lounge TV Display and the Operator Dashboard, with 1-click mute toggles (`🔊 Voice ON / 🔇 Mute`) and manual **"🔊 Recall"** buttons.
+  - Voice chime announcements trigger across both the Lounge TV Display and the Operator Dashboard, with 1-click language selectors, instant test buttons, and manual **"🔊 Recall / Test Voice"** controls.
 
 ---
 
@@ -605,8 +608,7 @@ In the **Smart Waitlist** tab, tap **"Re-Queue Fairly"**. noQ's mathematical alg
 - **httpSMS**: A cellular gateway service connecting Android SIM cards to web applications for local-rate SMS dispatch.
 - **PII (Personally Identifiable Information)**: Sensitive customer data (phone numbers and full names) protected and masked by noQ.
 - **Queue Stream**: The central virtual queue instance for a specific clinic, restaurant, or business branch.
-- **Station / Counter**: The designated service area (e.g. *Doctor Room 1*, *Stylist Chair 2*, *Table 4*, *Counter 3*).
-- **TTS (Text-to-Speech)**: The browser speech synthesis engine that converts token callouts into spoken English audio announcements on lounge TVs.
+- **TTS (Text-to-Speech)**: The studio neural voice engine (`/api/tts`) and Web Speech fallback that converts token callouts into spoken Hindi, English, or Bilingual female audio announcements on lounge TVs and operator dashboards.
 - **VAPID Web Push**: The standardized web protocol for sending push alerts directly to smartphone lock screens without requiring an installed native app.
 
 ---
