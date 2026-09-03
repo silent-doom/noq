@@ -66,11 +66,20 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Ambient glow background */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-emerald-600/8 rounded-full blur-[100px]" />
-        <div className="absolute top-[40%] left-[60%] w-[300px] h-[300px] bg-teal-500/6 rounded-full blur-[80px]" />
+      {/* Ambient glow background (GPU-friendly radial gradients) */}
+      <div className="absolute inset-0 pointer-events-none transform-gpu overflow-hidden">
+        <div
+          className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px]"
+          style={{
+            background: 'radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, transparent 70%)',
+          }}
+        />
+        <div
+          className="absolute bottom-[-10%] right-[-10%] w-[450px] h-[450px]"
+          style={{
+            background: 'radial-gradient(circle, rgba(13, 148, 136, 0.10) 0%, transparent 70%)',
+          }}
+        />
       </div>
 
       {/* Subtle grid overlay */}

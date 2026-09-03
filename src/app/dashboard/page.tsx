@@ -275,9 +275,6 @@ function DashboardContent() {
         headers['x-admin-token'] = adminToken;
       }
 
-      // Trigger daily queue reset check (runs once per calendar day, safe to call every load)
-      fetch(`/api/queue/stream/${streamId}/reset`, { method: 'POST' }).catch(() => {});
-
       const res = await fetch(`/api/queue/stream/${streamId}`, {
         headers,
         cache: 'no-store',
@@ -431,14 +428,30 @@ function DashboardContent() {
     }
   };
 
-  // 3. Real-time updates via Ably Pub/Sub & 10s fallback polling
+  // 3. Real-time updates via Ably Pub/Sub & 10s fallback polling with tab visibility guard
   useEffect(() => {
     if (!streamId) return;
 
     fetchQueueData();
-    const interval = setInterval(fetchQueueData, 10000);
+    // Trigger daily queue reset check once on mount
+    fetch(`/api/queue/stream/${streamId}/reset`, { method: 'POST' }).catch(() => {});
 
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchQueueData();
+    }, 10000);
+
+    const handleVisibility = () => {
+      if (!document.hidden) {
+        fetchQueueData();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [streamId, fetchQueueData]);
 
   useEffect(() => {

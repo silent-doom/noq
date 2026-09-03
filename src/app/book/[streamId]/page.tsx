@@ -46,7 +46,10 @@ export default function RemoteBookingPage({ params }: { params: { streamId: stri
     }
 
     loadStreamInfo();
-    const interval = setInterval(loadStreamInfo, 3000);
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      loadStreamInfo();
+    }, 10000);
     return () => clearInterval(interval);
   }, [params.streamId]);
 

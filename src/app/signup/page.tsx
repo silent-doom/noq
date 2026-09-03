@@ -144,10 +144,20 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans">
-      {/* Ambient glow */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-15%] right-[-5%] w-[500px] h-[500px] bg-emerald-500/8 rounded-full blur-[100px]" />
-        <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-teal-600/6 rounded-full blur-[90px]" />
+      {/* Ambient glow (GPU-friendly radial gradients) */}
+      <div className="fixed inset-0 pointer-events-none transform-gpu overflow-hidden">
+        <div
+          className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px]"
+          style={{
+            background: 'radial-gradient(circle, rgba(16, 185, 129, 0.10) 0%, transparent 70%)',
+          }}
+        />
+        <div
+          className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px]"
+          style={{
+            background: 'radial-gradient(circle, rgba(13, 148, 136, 0.08) 0%, transparent 70%)',
+          }}
+        />
       </div>
 
       {/* Nav */}

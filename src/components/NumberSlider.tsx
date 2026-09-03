@@ -125,9 +125,9 @@ export function NumberSlider({
         {/* Custom Range Slider */}
         <div className="relative flex-1 flex items-center py-2">
           {/* Background Track */}
-          <div className="w-full h-2 bg-zinc-900 rounded-full overflow-hidden relative">
+          <div className="w-full h-2 bg-zinc-900 rounded-full overflow-hidden relative transform-gpu">
             <div
-              className={`h-full bg-gradient-to-r ${colorStyles.track} transition-all duration-75`}
+              className={`h-full bg-gradient-to-r ${colorStyles.track}`}
               style={{ width: `${percentage}%` }}
             />
           </div>
@@ -145,12 +145,12 @@ export function NumberSlider({
             aria-valuenow={value}
             aria-valuemin={min}
             aria-valuemax={max}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer touch-none"
           />
 
           {/* Draggable Custom Thumb Overlay */}
           <div
-            className={`absolute pointer-events-none w-4 h-4 rounded-full bg-white border-2 ${colorStyles.thumb} shadow-md -ml-2 transition-all duration-75`}
+            className={`absolute pointer-events-none w-4 h-4 rounded-full bg-white border-2 ${colorStyles.thumb} shadow-md -ml-2 transform-gpu`}
             style={{ left: `${percentage}%` }}
           />
         </div>
