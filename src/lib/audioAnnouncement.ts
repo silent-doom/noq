@@ -3,87 +3,30 @@
 export type VoiceLanguage = 'hi' | 'en' | 'bilingual';
 
 /**
- * Finds the best natural female voice available in the browser for a given language.
+ * Transliterates common English clinical and venue station names into fluent Hindi Devnagari.
  */
-function findBestFemaleVoice(voices: SpeechSynthesisVoice[], lang: 'hi' | 'en'): SpeechSynthesisVoice | null {
-  if (!voices || voices.length === 0) return null;
+export function formatStationForHindi(stationName: string): string {
+  if (!stationName) return 'काउंटर 1';
 
-  if (lang === 'hi') {
-    // 1. Strict Hindi voice filtering
-    const hindiVoices = voices.filter((v) => {
-      const l = v.lang.toLowerCase();
-      const n = v.name.toLowerCase();
-      return (
-        l.startsWith('hi') ||
-        l.includes('hi-in') ||
-        l.includes('hi_in') ||
-        n.includes('hindi') ||
-        n.includes('हिन्दी') ||
-        n.includes('lekha')
-      );
-    });
+  let s = stationName;
+  s = s.replace(/Doctor Room\s*(\d+)/gi, 'डॉक्टर रूम $1');
+  s = s.replace(/Doctor\s*(\d+)/gi, 'डॉक्टर $1');
+  s = s.replace(/Doctor/gi, 'डॉक्टर');
+  s = s.replace(/Consultation Room\s*(\d+)/gi, 'परामर्श कक्ष $1');
+  s = s.replace(/Room\s*(\d+)/gi, 'कमरा $1');
+  s = s.replace(/Counter\s*(\d+)/gi, 'काउंटर $1');
+  s = s.replace(/Counter/gi, 'काउंटर');
+  s = s.replace(/Billing Counter/gi, 'बिलिंग काउंटर');
+  s = s.replace(/Billing/gi, 'बिलिंग');
+  s = s.replace(/Pharmacy/gi, 'फार्मेसी');
+  s = s.replace(/Lab\s*(\d+)/gi, 'लैब $1');
+  s = s.replace(/Lab/gi, 'लैब');
+  s = s.replace(/Reception/gi, 'रिसेप्शन');
+  s = s.replace(/Desk\s*(\d+)/gi, 'डेस्क $1');
+  s = s.replace(/Station\s*(\d+)/gi, 'स्टेशन $1');
+  s = s.replace(/Chair\s*(\d+)/gi, 'कुर्सी $1');
 
-    if (hindiVoices.length > 0) {
-      // Prioritize verified Hindi female voices
-      const femaleKeywords = ['lekha', 'google हिन्दी', 'kalpana', 'swara', 'neerja', 'female', 'natural', 'neural'];
-      const matched = hindiVoices.find((v) => {
-        const lowerName = v.name.toLowerCase();
-        return femaleKeywords.some((k) => lowerName.includes(k));
-      });
-      if (matched) return matched;
-      return hindiVoices[0];
-    }
-
-    // Strictly DO NOT fallback to English voices for Hindi text,
-    // so the browser's native Hindi speech engine handles Devnagari properly.
-    return null;
-  }
-
-  // 2. English Language Female Voices
-  const englishVoices = voices.filter((v) => {
-    const l = v.lang.toLowerCase();
-    return l.startsWith('en');
-  });
-
-  if (englishVoices.length > 0) {
-    // Known male voices to strictly exclude
-    const maleKeywords = ['rishi', 'daniel', 'alex', 'fred', 'oliver', 'george', 'david', 'male', 'guy', 'mark', 'tom'];
-    const nonMaleVoices = englishVoices.filter((v) => {
-      const lowerName = v.name.toLowerCase();
-      return !maleKeywords.some((m) => lowerName.includes(m));
-    });
-
-    // Prioritize natural English female voices
-    const femaleKeywords = [
-      'veena',
-      'samantha',
-      'google uk english female',
-      'google us english',
-      'karen',
-      'moira',
-      'victoria',
-      'tessa',
-      'fiona',
-      'jenny',
-      'aria',
-      'zira',
-      'sangeeta',
-      'heera',
-      'female',
-      'natural',
-      'neural',
-    ];
-
-    const pool = nonMaleVoices.length > 0 ? nonMaleVoices : englishVoices;
-    const matchedFemale = pool.find((v) => {
-      const lowerName = v.name.toLowerCase();
-      return femaleKeywords.some((k) => lowerName.includes(k));
-    });
-    if (matchedFemale) return matchedFemale;
-    return pool[0];
-  }
-
-  return null;
+  return s;
 }
 
 // Global shared AudioContext to prevent hitting browser limit & ensure smooth resume on user action
@@ -100,7 +43,7 @@ function getAudioContext(): AudioContext | null {
 }
 
 /**
- * Synthesizes a crisp airport/clinical dual-tone chime (Ding-Dong) using the Web Audio API.
+ * Synthesizes a crisp airport/clinical dual-tone chime (Ding-Dong: G5 783.99 Hz -> C6 1046.50 Hz).
  */
 export async function playChimeAudio(): Promise<void> {
   if (typeof window === 'undefined') return;
@@ -117,7 +60,6 @@ export async function playChimeAudio(): Promise<void> {
       }
     }
 
-    // Use current time + 0.05s buffer to prevent any audio clipping
     const startTime = ctx.currentTime + 0.05;
 
     // Tone 1: High Bell Tone (G5 - 783.99 Hz)
@@ -125,7 +67,7 @@ export async function playChimeAudio(): Promise<void> {
     const gain1 = ctx.createGain();
     osc1.type = 'sine';
     osc1.frequency.setValueAtTime(783.99, startTime);
-    gain1.gain.setValueAtTime(0.45, startTime);
+    gain1.gain.setValueAtTime(0.5, startTime);
     gain1.gain.exponentialRampToValueAtTime(0.001, startTime + 0.38);
     osc1.connect(gain1);
     gain1.connect(ctx.destination);
@@ -137,7 +79,7 @@ export async function playChimeAudio(): Promise<void> {
     const gain2 = ctx.createGain();
     osc2.type = 'sine';
     osc2.frequency.setValueAtTime(1046.5, startTime + 0.22);
-    gain2.gain.setValueAtTime(0.55, startTime + 0.22);
+    gain2.gain.setValueAtTime(0.6, startTime + 0.22);
     gain2.gain.exponentialRampToValueAtTime(0.001, startTime + 1.1);
     osc2.connect(gain2);
     gain2.connect(ctx.destination);
@@ -145,17 +87,68 @@ export async function playChimeAudio(): Promise<void> {
     osc2.stop(startTime + 1.1);
 
     return new Promise((resolve) => {
-      setTimeout(resolve, 600);
+      setTimeout(resolve, 550);
     });
   } catch (err) {
     console.warn('Web Audio chime playback error:', err);
   }
 }
 
+// Keep reference to active HTML5 audio to prevent overlapping speech
+let currentTtsAudio: HTMLAudioElement | null = null;
+
 /**
- * Executes a single natural voice announcement utterance with female pitch modulation.
+ * Plays neural female voice speech audio using the dedicated /api/tts server stream.
+ * Automatically falls back to Web Speech API if network is unavailable.
  */
-function speakPhrase(
+export function playNaturalVoiceAudio(text: string, lang: 'hi' | 'en'): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') return resolve();
+
+    // Stop any previously playing announcement
+    if (currentTtsAudio) {
+      try {
+        currentTtsAudio.pause();
+        currentTtsAudio.currentTime = 0;
+      } catch {}
+      currentTtsAudio = null;
+    }
+
+    const url = `/api/tts?text=${encodeURIComponent(text)}&lang=${encodeURIComponent(lang)}`;
+    const audio = new Audio(url);
+    currentTtsAudio = audio;
+
+    let finished = false;
+    const finish = () => {
+      if (!finished) {
+        finished = true;
+        if (currentTtsAudio === audio) {
+          currentTtsAudio = null;
+        }
+        resolve();
+      }
+    };
+
+    audio.onended = finish;
+    audio.onerror = (e) => {
+      console.warn('Neural TTS stream error, falling back to Web Speech API:', e);
+      speakPhraseWebSpeech(text, lang, finish);
+    };
+
+    // Safety timeout in case playback stalls
+    setTimeout(finish, 14000);
+
+    audio.play().catch((err) => {
+      console.warn('HTML5 audio play blocked, falling back to Web Speech:', err);
+      speakPhraseWebSpeech(text, lang, finish);
+    });
+  });
+}
+
+/**
+ * Offline / Emergency Web Speech API fallback.
+ */
+function speakPhraseWebSpeech(
   text: string,
   langCode: 'hi' | 'en',
   onComplete?: () => void
@@ -171,15 +164,27 @@ function speakPhrase(
     }
 
     const utterance = new SpeechSynthesisUtterance(text);
-    // Natural female voice cadence & pitch
     utterance.rate = langCode === 'hi' ? 0.88 : 0.92;
-    utterance.pitch = 1.15; // Smooth, pleasant female pitch inflection
+    utterance.pitch = 1.15;
     utterance.lang = langCode === 'hi' ? 'hi-IN' : 'en-US';
 
-    const allVoices = window.speechSynthesis.getVoices();
-    const femaleVoice = findBestFemaleVoice(allVoices, langCode);
-    if (femaleVoice) {
-      utterance.voice = femaleVoice;
+    const voices = window.speechSynthesis.getVoices();
+    if (voices && voices.length > 0) {
+      if (langCode === 'hi') {
+        const hindiVoice = voices.find((v) => {
+          const l = v.lang.toLowerCase();
+          const n = v.name.toLowerCase();
+          return l.startsWith('hi') || n.includes('hindi') || n.includes('lekha');
+        });
+        if (hindiVoice) utterance.voice = hindiVoice;
+      } else {
+        const engVoice = voices.find((v) => {
+          const l = v.lang.toLowerCase();
+          const n = v.name.toLowerCase();
+          return l.startsWith('en') && (n.includes('samantha') || n.includes('veena') || n.includes('female'));
+        });
+        if (engVoice) utterance.voice = engVoice;
+      }
     }
 
     let completed = false;
@@ -192,19 +197,16 @@ function speakPhrase(
 
     utterance.onend = finish;
     utterance.onerror = finish;
-
-    // Safety timeout in case browser synthesis drops event
     setTimeout(finish, 8000);
 
     window.speechSynthesis.speak(utterance);
-  } catch (err) {
-    console.warn('Speech synthesis playback error:', err);
+  } catch {
     if (onComplete) onComplete();
   }
 }
 
 /**
- * Plays the dual-tone chime and speaks the token number in natural Hindi, English, or Bilingual voice.
+ * Plays the dual-tone chime and speaks the token number in natural Hindi, English, or Bilingual female voice.
  */
 export async function playChimeAndAnnounce(
   tokenNumber: number,
@@ -225,40 +227,41 @@ export async function playChimeAndAnnounce(
       ? (localStorage.getItem('noq_voice_lang') as VoiceLanguage) || 'bilingual'
       : 'bilingual');
 
+  // Cancel any lingering speech synthesis
   if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
     try {
       window.speechSynthesis.cancel();
     } catch {}
   }
 
-  // 1. Play crystal dual-tone chime
+  // 1. Play crystal dual-tone airport chime
   await playChimeAudio();
 
   if (options?.onStart) options.onStart();
 
-  // Hindi text & English text formulations
-  const hindiText = `कृपया ध्यान दें। टोकन नंबर ${tokenNumber}, कृपया ${targetStation} पर जाएं।`;
+  const hindiStation = formatStationForHindi(targetStation);
+  const hindiText = `कृपया ध्यान दें। टोकन नंबर ${tokenNumber}, कृपया ${hindiStation} पर जाएं।`;
   const englishText = `Attention please. Token number ${tokenNumber}, please proceed to ${targetStation}.`;
 
   // 2. Play Voice Announcement according to selected language
   if (language === 'hi') {
-    // Pure Hindi Female Voice
-    speakPhrase(hindiText, 'hi', options?.onEnd);
+    // Pure Natural Hindi Female Voice
+    await playNaturalVoiceAudio(hindiText, 'hi');
   } else if (language === 'en') {
-    // Pure English Female Voice
-    speakPhrase(englishText, 'en', options?.onEnd);
+    // Pure Natural English Female Voice
+    await playNaturalVoiceAudio(englishText, 'en');
   } else {
-    // Bilingual: English female voice followed immediately by Hindi female voice
-    speakPhrase(englishText, 'en', () => {
-      setTimeout(() => {
-        speakPhrase(hindiText, 'hi', options?.onEnd);
-      }, 350);
-    });
+    // Bilingual: English Female Voice followed by Hindi Female Voice
+    await playNaturalVoiceAudio(englishText, 'en');
+    await new Promise((r) => setTimeout(r, 400));
+    await playNaturalVoiceAudio(hindiText, 'hi');
   }
+
+  if (options?.onEnd) options.onEnd();
 }
 
 /**
- * Plays a test chime and voice announcement so operators or venue staff can calibrate and hear sound immediately.
+ * Plays a test chime and full descriptive sample announcement in Hindi, English, or Bilingual female voice.
  */
 export async function playTestAnnouncement(
   language?: VoiceLanguage,
@@ -280,23 +283,25 @@ export async function playTestAnnouncement(
     } catch {}
   }
 
+  // 1. Play dual-tone airport chime
   await playChimeAudio();
 
-  const hindiTest = `कृपया ध्यान दें। यह परीक्षण उद्घोषणा है। टोकन नंबर 1, कृपया ${targetStation} पर जाएं।`;
+  const hindiStation = formatStationForHindi(targetStation);
+  const hindiTest = `कृपया ध्यान दें। यह परीक्षण उद्घोषणा है। टोकन नंबर 1, कृपया ${hindiStation} पर जाएं।`;
   const englishTest = `Attention please. This is a voice test. Token number 1, please proceed to ${targetStation}.`;
 
   if (lang === 'hi') {
-    // Strictly speaks Hindi Test in Hindi Female Voice
-    speakPhrase(hindiTest, 'hi', onEnd);
+    // Pure Natural Hindi Female Voice
+    await playNaturalVoiceAudio(hindiTest, 'hi');
   } else if (lang === 'en') {
-    // Strictly speaks English Test in English Female Voice
-    speakPhrase(englishTest, 'en', onEnd);
+    // Pure Natural English Female Voice
+    await playNaturalVoiceAudio(englishTest, 'en');
   } else {
-    // Bilingual: Speaks English first, then Hindi
-    speakPhrase(englishTest, 'en', () => {
-      setTimeout(() => {
-        speakPhrase(hindiTest, 'hi', onEnd);
-      }, 350);
-    });
+    // Bilingual: English first, then Hindi
+    await playNaturalVoiceAudio(englishTest, 'en');
+    await new Promise((r) => setTimeout(r, 400));
+    await playNaturalVoiceAudio(hindiTest, 'hi');
   }
+
+  if (onEnd) onEnd();
 }
