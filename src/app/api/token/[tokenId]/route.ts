@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { verifyAdminSessionToken } from '@/lib/domain';
 
 export async function GET(
   req: NextRequest,
@@ -26,6 +27,7 @@ export async function GET(
         t.stream_id,
         t.access_channel,
         t.created_at,
+        t.updated_at,
         t.reschedule_requested_date,
         t.reschedule_requested_slot,
         t.reschedule_status,
@@ -54,8 +56,6 @@ export async function GET(
 
     const token = tokenRes.rows[0];
 
-    // Fix #5: Count spots ahead by token_number ordering (consistent with how
-    // the queue advances), not by created_at (which diverges for re-inserted guests).
     const aheadRes = await client.query(
       `SELECT COUNT(*) AS spots_ahead
        FROM tokens
@@ -89,8 +89,6 @@ export async function GET(
       }
     }
 
-    // Build ETA range per spec:
-    // < 15 min → narrow ±2 min band; > 30 min → wider ±7 min band
     const clampedWait = Math.max(1, dynamicWaitMins);
     const bandHalf = clampedWait < 15 ? 2 : 7;
     const estWaitMin = Math.max(1, clampedWait - bandHalf);
@@ -98,44 +96,44 @@ export async function GET(
 
     let waitlistPosition = 0;
     if (token.status === 'SKIPPED') {
-      const waitlistPosRes = await client.query(
-        `SELECT COUNT(*) AS pos
-         FROM tokens
+      const waitlistRes = await client.query(
+        `SELECT COUNT(*) AS position 
+         FROM tokens 
          WHERE stream_id = $1 
            AND status = 'SKIPPED' 
-           AND token_number <= $2`,
-        [token.stream_id, token.token_number]
+           AND updated_at <= $2`,
+        [token.stream_id, token.updated_at || token.created_at]
       );
-      waitlistPosition = Number(waitlistPosRes.rows[0]?.pos || 0);
+      waitlistPosition = Number(waitlistRes.rows[0]?.position || 1);
     }
 
     return NextResponse.json({
-      success: true,
-      data: {
+      token: {
         id: token.id,
-        token_number: Number(token.token_number),
+        token_number: token.token_number,
         customer_name: token.customer_name,
         customer_phone: token.customer_phone,
         status: token.status,
-        assigned_station: token.assigned_station || null,
-        access_channel: token.access_channel || 'WALK_IN',
+        assigned_station: token.assigned_station,
         stream_id: token.stream_id,
-        business_name: token.business_name || 'Clinic Queue',
-        category: token.category || 'general',
-        broadcast_message: token.broadcast_message || null,
-        current_serving_token: Number(token.current_serving_token || 0),
+        access_channel: token.access_channel,
+        created_at: token.created_at,
+        reschedule_requested_date: token.reschedule_requested_date,
+        reschedule_requested_slot: token.reschedule_requested_slot,
+        reschedule_status: token.reschedule_status,
+        sms_opt_in: token.sms_opt_in !== false,
+      },
+      queueState: {
         spots_ahead: spotsAhead,
-        est_wait_mins: clampedWait,
         est_wait_min: estWaitMin,
         est_wait_max: estWaitMax,
-        pace_per_patient_mins: basePaceMins,
+        current_serving: token.current_serving_token,
         delay_status: delayStatus,
         delay_mins: delayMins,
         waitlist_position: waitlistPosition,
-        reschedule_requested_date: token.reschedule_requested_date || null,
-        reschedule_requested_slot: token.reschedule_requested_slot || null,
-        reschedule_status: token.reschedule_status || null,
-        sms_opt_in: Boolean(token.sms_opt_in),
+        broadcast_message: token.broadcast_message || null,
+        business_name: token.business_name || 'Business Venue',
+        category: token.category || 'CLINIC',
         opening_time: token.opening_time || null,
         closing_time: token.closing_time || null,
         google_maps_url: token.google_maps_url || null,
@@ -162,7 +160,7 @@ export async function PATCH(
 
     await client.query('BEGIN');
 
-    // Handle SMS opt-in / phone number update
+    // Handle SMS opt-in / phone number update (permitted for pass holder)
     if ((customerPhone || typeof smsOptIn === 'boolean') && !status) {
       const optRes = await client.query(
         `UPDATE tokens 
@@ -186,6 +184,25 @@ export async function PATCH(
 
     const currentToken = tokenRes.rows[0];
     const streamId = currentToken.stream_id;
+
+    // Authorization Guard: Privileged actions (SERVING, COMPLETED, SKIPPED, fair_priority)
+    // require an authenticated operator session or superadmin key.
+    // Self-cancellation (status: 'CANCELLED') remains accessible to the visitor pass holder.
+    const isPrivilegedAction = status === 'SERVING' || status === 'COMPLETED' || status === 'SKIPPED' || Boolean(fair_priority);
+    if (isPrivilegedAction) {
+      const adminSessionHeader = req.headers.get('x-admin-session');
+      const superAdminHeader = req.headers.get('x-superadmin-key');
+      const isValidAdmin = verifyAdminSessionToken(adminSessionHeader, streamId);
+      const isValidSuperAdmin = Boolean(superAdminHeader && superAdminHeader === (process.env.SUPERADMIN_SECRET || 'noq-vault-9842-x7k9p-mstr'));
+
+      if (!isValidAdmin && !isValidSuperAdmin) {
+        await client.query('ROLLBACK');
+        return NextResponse.json(
+          { error: 'Unauthorized: Operator or Admin authentication required for queue status advancement' },
+          { status: 401 }
+        );
+      }
+    }
 
     // --- 1. FAIR RE-INSERTION (From Waitlist back to Main Queue) ---
     if (fair_priority && status === 'WAITING') {

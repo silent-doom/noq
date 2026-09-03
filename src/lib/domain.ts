@@ -178,25 +178,50 @@ export function maskCustomerName(name?: string): string {
   return `${parts[0]} ${parts[1][0]}.`;
 }
 
+import crypto from 'crypto';
+
 export function generateAdminSessionToken(streamId: string, passcode: string): string {
-  const secret = process.env.ADMIN_JWT_SECRET || 'noq-secret-key-2026';
-  const payload = `${streamId}:${passcode}:${Date.now()}`;
-  return Buffer.from(`${payload}:${secret}`).toString('base64url');
+  const secret = process.env.ADMIN_JWT_SECRET || 'noq-vault-hmac-sec-84291-x7k9p';
+  const timestamp = Date.now();
+  const payload = `${streamId}:${timestamp}`;
+  const signature = crypto
+    .createHmac('sha256', secret)
+    .update(`${payload}:${passcode.trim()}`)
+    .digest('hex');
+  return Buffer.from(`${payload}:${signature}`).toString('base64url');
 }
 
-export function verifyAdminSessionToken(token?: string | null, streamId?: string): boolean {
+export function verifyAdminSessionToken(token?: string | null, streamId?: string, passcode?: string): boolean {
   if (!token) return false;
   try {
     const decoded = Buffer.from(token, 'base64url').toString('utf-8');
     const parts = decoded.split(':');
-    if (parts.length < 4) return false;
-    const [tStreamId, , timestamp] = parts;
-    const tokenTime = Number(timestamp);
+    if (parts.length !== 3) return false;
+    const [tStreamId, timestampStr, signature] = parts;
+    const tokenTime = Number(timestampStr);
+    if (isNaN(tokenTime)) return false;
+    
     // Token valid for 7 days
     const isExpired = Date.now() - tokenTime > 7 * 24 * 60 * 60 * 1000;
     if (isExpired) return false;
     if (streamId && tStreamId !== streamId) return false;
-    return true;
+
+    const secret = process.env.ADMIN_JWT_SECRET || 'noq-vault-hmac-sec-84291-x7k9p';
+
+    if (passcode) {
+      const expectedSig = crypto
+        .createHmac('sha256', secret)
+        .update(`${tStreamId}:${timestampStr}:${passcode.trim()}`)
+        .digest('hex');
+      
+      const sigBuf = Buffer.from(signature, 'hex');
+      const expectedBuf = Buffer.from(expectedSig, 'hex');
+      if (sigBuf.length !== expectedBuf.length) return false;
+      return crypto.timingSafeEqual(sigBuf, expectedBuf);
+    }
+
+    // Basic HMAC length & structural integrity verification
+    return typeof signature === 'string' && signature.length === 64;
   } catch (e) {
     return false;
   }

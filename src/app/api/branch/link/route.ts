@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { checkRateLimit, recordRateLimitHit, clearRateLimit } from '@/lib/rateLimit';
 
 export async function GET(req: NextRequest) {
   const client = await db.connect();
@@ -67,6 +68,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const forwarded = req.headers.get('x-forwarded-for');
+    const clientIp = forwarded ? forwarded.split(',')[0].trim() : '127.0.0.1';
+    const rateKey = `branch:link:${clientIp}:${targetStreamId}`;
+
+    const rateCheck = await checkRateLimit(rateKey, 5, 15 * 60);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { success: false, error: 'Too many incorrect branch pairing attempts. Action locked for 15 minutes.' },
+        { status: 429 }
+      );
+    }
+
     // 1. Verify target stream & target passcode
     const targetCheck = await client.query(
       `SELECT qs.id AS stream_id, qs.stream_name, b.id AS business_id, b.name AS business_name, b.admin_passcode
@@ -77,6 +90,7 @@ export async function POST(req: NextRequest) {
     );
 
     if (targetCheck.rows.length === 0) {
+      await recordRateLimitHit(rateKey, 15 * 60);
       return NextResponse.json(
         { success: false, error: 'Target branch / clinic stream ID not found' },
         { status: 404 }
@@ -87,11 +101,15 @@ export async function POST(req: NextRequest) {
     const expectedPasscode = targetBiz.admin_passcode || '123456';
 
     if (targetPasscode.trim() !== expectedPasscode.trim()) {
+      const failedCount = await recordRateLimitHit(rateKey, 15 * 60);
+      const remaining = Math.max(0, 5 - failedCount);
       return NextResponse.json(
-        { success: false, error: 'Incorrect Admin PIN for target branch' },
+        { success: false, error: `Incorrect Admin PIN for target branch. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.` },
         { status: 401 }
       );
     }
+
+    await clearRateLimit(rateKey);
 
     // 2. Ensure table exists
     await client.query(`

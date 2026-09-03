@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { ensureSubscriptionTables, computeSubscriptionState, recordSubscriptionPayment, purgeExpiredBusinessData, calculateNextBillingDate } from '@/lib/subscription';
+import { checkRateLimit, recordRateLimitHit, clearRateLimit } from '@/lib/rateLimit';
 
 import { PoolClient } from 'pg';
 
@@ -52,20 +53,35 @@ async function verifySuperAdminAuth(client: PoolClient, req: NextRequest): Promi
 }
 
 export async function GET(req: NextRequest) {
+  const forwarded = req.headers.get('x-forwarded-for');
+  const clientIp = forwarded ? forwarded.split(',')[0].trim() : '127.0.0.1';
+  const rateKey = `superadmin:auth:${clientIp}`;
+
+  const rateCheck = await checkRateLimit(rateKey, 5, 15 * 60);
+  if (!rateCheck.allowed) {
+    return NextResponse.json(
+      { success: false, error: 'Too many unauthorized superadmin attempts. Access blocked for 15 minutes.' },
+      { status: 429 }
+    );
+  }
+
   const client = await db.connect();
   try {
     const isAuthorized = await verifySuperAdminAuth(client, req);
     if (!isAuthorized) {
+      await recordRateLimitHit(rateKey, 15 * 60);
       return NextResponse.json(
         { success: false, error: 'Unauthorized: Invalid Super Admin master key' },
         { status: 401 }
       );
     }
 
+    await clearRateLimit(rateKey);
+
     await ensureSubscriptionTables(client);
 
-    // 1. Fetch businesses with stream and token counts
-    const bizRes = await client.query(`
+    // 1. Fetch all businesses with subscription metrics and storage calculation
+    const bRes = await client.query(`
       SELECT 
         b.id,
         b.name,
@@ -74,41 +90,35 @@ export async function GET(req: NextRequest) {
         b.created_at,
         b.subscription_status,
         b.billing_anchor_day,
-        b.subscription_start_date,
         b.next_billing_date,
-        b.last_payment_date,
         b.monthly_fee,
-        COUNT(DISTINCT s.id) AS stream_count,
-        COUNT(DISTINCT t.id) AS total_tokens,
-        COUNT(DISTINCT CASE WHEN t.status = 'COMPLETED' THEN t.id END) AS completed_tokens,
-        COUNT(DISTINCT CASE WHEN t.status = 'WAITING' THEN t.id END) AS waiting_tokens,
-        COUNT(DISTINCT f.id) AS feedback_count
+        b.total_tokens_served,
+        (SELECT COUNT(*) FROM queue_streams WHERE business_id = b.id) AS stream_count,
+        (SELECT COUNT(*) FROM tokens t JOIN queue_streams qs ON t.stream_id = qs.id WHERE qs.business_id = b.id) AS total_tokens,
+        (SELECT COUNT(*) FROM tokens t JOIN queue_streams qs ON t.stream_id = qs.id WHERE qs.business_id = b.id AND t.status = 'COMPLETED') AS completed_tokens,
+        (SELECT COUNT(*) FROM tokens t JOIN queue_streams qs ON t.stream_id = qs.id WHERE qs.business_id = b.id AND t.status = 'WAITING') AS waiting_tokens,
+        (SELECT COUNT(*) FROM token_feedback tf JOIN tokens t ON tf.token_id = t.id JOIN queue_streams qs ON t.stream_id = qs.id WHERE qs.business_id = b.id) AS feedback_count
       FROM businesses b
-      LEFT JOIN queue_streams s ON s.business_id = b.id
-      LEFT JOIN tokens t ON t.stream_id = s.id
-      LEFT JOIN feedbacks f ON f.stream_id = s.id
-      GROUP BY b.id
       ORDER BY b.created_at DESC
     `);
 
-    // 2. Fetch total platform revenue
+    // 2. Fetch revenue summary from subscription_payments ledger
     const revRes = await client.query(`
       SELECT 
         COALESCE(SUM(amount), 0) AS total_revenue,
         COUNT(*) AS total_transactions
       FROM subscription_payments
-      WHERE payment_status = 'SUCCESS'
+      WHERE status = 'PAID'
     `);
 
-    // 3. Process clientele details and calculate storage estimates
-    const businesses = bizRes.rows.map((b: any) => {
+    const businesses = bRes.rows.map((b) => {
       const subState = computeSubscriptionState(b);
       const totalTokens = Number(b.total_tokens || 0);
       const streamCount = Number(b.stream_count || 0);
       const feedbackCount = Number(b.feedback_count || 0);
 
-      // Estimated storage footprint: ~1.2 KB per token record + ~0.8 KB per feedback + ~2 KB per stream + ~1 KB base biz
-      const estimatedBytes = Math.round(1024 + (streamCount * 2048) + (totalTokens * 1228) + (feedbackCount * 819));
+      // Approximate PostgreSQL row storage footprint (B: 1.2KB base, Token: 450B, Feedback: 300B)
+      const estimatedBytes = (1200 * streamCount) + (totalTokens * 450) + (feedbackCount * 300) + 2048;
       const estimatedKB = (estimatedBytes / 1024).toFixed(1);
 
       return {
@@ -176,15 +186,30 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const forwarded = req.headers.get('x-forwarded-for');
+  const clientIp = forwarded ? forwarded.split(',')[0].trim() : '127.0.0.1';
+  const rateKey = `superadmin:auth:${clientIp}`;
+
+  const rateCheck = await checkRateLimit(rateKey, 5, 15 * 60);
+  if (!rateCheck.allowed) {
+    return NextResponse.json(
+      { success: false, error: 'Too many unauthorized superadmin attempts. Access blocked for 15 minutes.' },
+      { status: 429 }
+    );
+  }
+
   const client = await db.connect();
   try {
     const isAuthorized = await verifySuperAdminAuth(client, req);
     if (!isAuthorized) {
+      await recordRateLimitHit(rateKey, 15 * 60);
       return NextResponse.json(
         { success: false, error: 'Unauthorized: Invalid Super Admin master key' },
         { status: 401 }
       );
     }
+
+    await clearRateLimit(rateKey);
 
     await ensureSubscriptionTables(client);
     const body = await req.json();
