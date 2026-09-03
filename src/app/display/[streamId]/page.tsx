@@ -23,7 +23,7 @@ interface StreamInfo {
   current_serving_token: number;
 }
 
-import { playChimeAndAnnounce } from '@/lib/audioAnnouncement';
+import { playChimeAndAnnounce, VoiceLanguage } from '@/lib/audioAnnouncement';
 
 export default function DisplayPage({ params }: { params: { streamId: string } }) {
   const streamId = params.streamId;
@@ -64,7 +64,22 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
   }, [fetchDisplayData]);
 
   const [ttsEnabled, setTtsEnabled] = useState<boolean>(true);
+  const [voiceLang, setVoiceLang] = useState<VoiceLanguage>('hi');
   const [servingCounter, setServingCounter] = useState<string>('Counter 1');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('noq_voice_lang') as VoiceLanguage;
+      if (saved) setVoiceLang(saved);
+    }
+  }, []);
+
+  const handleSetVoiceLang = (lang: VoiceLanguage) => {
+    setVoiceLang(lang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('noq_voice_lang', lang);
+    }
+  };
 
   const [emergencyAlert, setEmergencyAlert] = useState<{
     active: boolean;
@@ -100,10 +115,14 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
           if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
             try {
               window.speechSynthesis.cancel();
-              const text = `Attention please. Emergency clinical consultation required immediately in ${station}. Please clear the way.`;
+              const text =
+                voiceLang === 'hi'
+                  ? `कृपया ध्यान दें। ${station} में आपातकालीन डॉक्टर परामर्श की आवश्यकता है। रास्ता साफ़ करें।`
+                  : `Attention please. Emergency clinical consultation required immediately in ${station}. Please clear the way.`;
               const utterance = new SpeechSynthesisUtterance(text);
-              utterance.rate = 0.95;
+              utterance.rate = 0.92;
               utterance.pitch = 1.1;
+              utterance.lang = voiceLang === 'hi' ? 'hi-IN' : 'en-US';
               window.speechSynthesis.speak(utterance);
             } catch (ttsErr) {
               console.error('Emergency TTS error:', ttsErr);
@@ -119,7 +138,7 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
           const counter = st.assigned_station || st.counter_name || 'Counter 1';
           setServingCounter(counter);
           if (ttsEnabled) {
-            playChimeAndAnnounce(st.token_number, counter);
+            playChimeAndAnnounce(st.token_number, counter, { language: voiceLang });
           }
         }
       };
@@ -192,7 +211,53 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
           </span>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {/* Language Selector Pills */}
+          <div className="flex items-center bg-zinc-900/90 border border-zinc-800 rounded-full p-1 text-xs">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSetVoiceLang('hi');
+              }}
+              className={`px-3 py-1 rounded-full font-bold transition cursor-pointer ${
+                voiceLang === 'hi'
+                  ? 'bg-emerald-500 text-black shadow-xs'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+              title="Regional Hindi Female Voice"
+            >
+              🇮🇳 हिन्दी
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSetVoiceLang('bilingual');
+              }}
+              className={`px-3 py-1 rounded-full font-bold transition cursor-pointer ${
+                voiceLang === 'bilingual'
+                  ? 'bg-emerald-500 text-black shadow-xs'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+              title="Bilingual: English followed by Hindi announcement"
+            >
+              🌐 EN + HI
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSetVoiceLang('en');
+              }}
+              className={`px-3 py-1 rounded-full font-bold transition cursor-pointer ${
+                voiceLang === 'en'
+                  ? 'bg-emerald-500 text-black shadow-xs'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+              title="English Female Voice"
+            >
+              🇬🇧 English
+            </button>
+          </div>
+
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -205,7 +270,7 @@ export default function DisplayPage({ params }: { params: { streamId: string } }
                 : 'bg-zinc-900 text-zinc-500 border border-zinc-800'
             }`}
           >
-            <span>{ttsEnabled ? '🔊 VOICE ANNOUNCEMENTS ON' : '🔇 VOICE MUTED'}</span>
+            <span>{ttsEnabled ? '🔊 VOICE ON' : '🔇 MUTED'}</span>
           </button>
 
           <div className="text-right">

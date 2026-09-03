@@ -8,7 +8,7 @@ import { AccessChannelBadge } from '@/components/AccessChannelBadge';
 import { NumberSlider } from '@/components/NumberSlider';
 import { getDomainTerminology, formatWaitTime, generateDomainStations } from '@/lib/domain';
 import { openRazorpayCheckout } from '@/lib/razorpayClient';
-import { playChimeAndAnnounce } from '@/lib/audioAnnouncement';
+import { playChimeAndAnnounce, VoiceLanguage } from '@/lib/audioAnnouncement';
 
 interface Token {
   id: string;
@@ -112,9 +112,24 @@ function DashboardContent() {
   const [emergencyLoading, setEmergencyLoading] = useState<boolean>(false);
   const [emergencySuccess, setEmergencySuccess] = useState<string | null>(null);
 
-  // TTS & Chime Announcement Toggle
+  // TTS & Chime Announcement Toggle & Regional Voice Settings
   const [ttsVoiceEnabled, setTtsVoiceEnabled] = useState<boolean>(true);
+  const [voiceLang, setVoiceLang] = useState<VoiceLanguage>('hi');
   const [activeCounter, setActiveCounter] = useState<string>('Counter 1');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('noq_voice_lang') as VoiceLanguage;
+      if (saved) setVoiceLang(saved);
+    }
+  }, []);
+
+  const handleSetVoiceLang = (lang: VoiceLanguage) => {
+    setVoiceLang(lang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('noq_voice_lang', lang);
+    }
+  };
 
   // Inactivity Auto-Lock (15m idle privacy shield)
   const [isLockedByInactivity, setIsLockedByInactivity] = useState<boolean>(false);
@@ -475,7 +490,7 @@ function DashboardContent() {
         if (msg?.name === 'TOKEN_CALLED' && msg?.data?.serving_token && ttsVoiceEnabled) {
           const st = msg.data.serving_token;
           const counter = st.assigned_station || st.counter_name || activeCounter || 'Counter 1';
-          playChimeAndAnnounce(st.token_number, counter);
+          playChimeAndAnnounce(st.token_number, counter, { language: voiceLang });
         }
       };
 
@@ -492,7 +507,7 @@ function DashboardContent() {
     } catch (err) {
       console.error('Ably client connection error in Dashboard:', err);
     }
-  }, [streamId, fetchQueueData, ttsVoiceEnabled, activeCounter]);
+  }, [streamId, fetchQueueData, ttsVoiceEnabled, voiceLang, activeCounter]);
 
   // 4. Update Token Status Action
   const handleUpdateStatus = async (
@@ -508,7 +523,7 @@ function DashboardContent() {
         body: JSON.stringify({ status, assigned_station: activeCounter }),
       });
       if (status === 'SERVING' && targetToken && ttsVoiceEnabled) {
-        playChimeAndAnnounce(targetToken.token_number, activeCounter);
+        playChimeAndAnnounce(targetToken.token_number, activeCounter, { language: voiceLang });
       }
       await fetchQueueData();
     } catch (err) {
@@ -552,7 +567,7 @@ function DashboardContent() {
 
       const data = await res.json();
       if (data.success && data.serving_token && ttsVoiceEnabled) {
-        playChimeAndAnnounce(data.serving_token.token_number, activeCounter);
+        playChimeAndAnnounce(data.serving_token.token_number, activeCounter, { language: voiceLang });
       }
 
       if (!res.ok) {
@@ -574,7 +589,7 @@ function DashboardContent() {
             body: JSON.stringify({ status: 'SERVING' }),
           });
           if (ttsVoiceEnabled) {
-            playChimeAndAnnounce(nextWaiting.token_number, activeCounter);
+            playChimeAndAnnounce(nextWaiting.token_number, activeCounter, { language: voiceLang });
           }
         }
       }
@@ -590,7 +605,7 @@ function DashboardContent() {
   const handleRecallToken = () => {
     if (!currentServingTokenObj) return;
     if (ttsVoiceEnabled) {
-      playChimeAndAnnounce(currentServingTokenObj.token_number, activeCounter);
+      playChimeAndAnnounce(currentServingTokenObj.token_number, activeCounter, { language: voiceLang });
     }
   };
 
@@ -1825,6 +1840,56 @@ function DashboardContent() {
                 />
                 <p className="text-[10px] text-zinc-400 mt-1">
                   After service completion, customers who submit 5-star ratings will be automatically redirected to your Google Maps review page.
+                </p>
+              </div>
+
+              {/* Voice Announcement Language Settings */}
+              <div className="bg-zinc-50 border border-zinc-200 p-4 rounded-2xl space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-bold text-zinc-700 uppercase tracking-wider">
+                    🔊 Regional Voice Announcement Engine
+                  </p>
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-md">
+                    🌸 Female Natural Voice
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSetVoiceLang('hi')}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold transition border text-center cursor-pointer ${
+                      voiceLang === 'hi'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
+                        : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                    }`}
+                  >
+                    🇮🇳 हिन्दी (Hindi)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSetVoiceLang('bilingual')}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold transition border text-center cursor-pointer ${
+                      voiceLang === 'bilingual'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
+                        : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                    }`}
+                  >
+                    🌐 Bilingual (EN+HI)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSetVoiceLang('en')}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold transition border text-center cursor-pointer ${
+                      voiceLang === 'en'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
+                        : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                    }`}
+                  >
+                    🇬🇧 English
+                  </button>
+                </div>
+                <p className="text-[10px] text-zinc-400">
+                  Plays dual-tone chime followed by natural female speech synthesis calling out the token number and station.
                 </p>
               </div>
 
