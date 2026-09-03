@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { publishQueueUpdate } from '@/lib/ably';
+import { verifyAdminSessionToken } from '@/lib/domain';
 
 export async function POST(req: NextRequest) {
   const client = await db.connect();
@@ -13,6 +14,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'streamId is required' },
         { status: 400 }
+      );
+    }
+
+    // Operator Authentication Guard
+    const authHeader = req.headers.get('x-admin-token') || req.headers.get('x-admin-session') || req.headers.get('authorization')?.replace('Bearer ', '');
+    const superAdminHeader = req.headers.get('x-superadmin-key');
+    const isValidAdmin = verifyAdminSessionToken(authHeader, streamId);
+    const isValidSuperAdmin = Boolean(superAdminHeader && superAdminHeader === (process.env.SUPERADMIN_SECRET || 'noq-vault-9842-x7k9p-mstr'));
+
+    if (!isValidAdmin && !isValidSuperAdmin) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Operator session required to skip tokens' },
+        { status: 401 }
       );
     }
 

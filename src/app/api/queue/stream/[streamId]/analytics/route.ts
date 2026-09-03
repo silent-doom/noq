@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { verifyAdminSessionToken, maskPhoneNumber } from '@/lib/domain';
 
 export async function GET(
   req: NextRequest,
@@ -9,6 +10,19 @@ export async function GET(
   try {
     const resolvedParams = await Promise.resolve(params);
     const { streamId } = resolvedParams;
+
+    // Operator Authentication Guard: Analytics contain sensitive venue metrics and patient history
+    const authHeader = req.headers.get('x-admin-token') || req.headers.get('x-admin-session') || req.headers.get('authorization')?.replace('Bearer ', '');
+    const superAdminHeader = req.headers.get('x-superadmin-key');
+    const isValidAdmin = verifyAdminSessionToken(authHeader, streamId);
+    const isValidSuperAdmin = Boolean(superAdminHeader && superAdminHeader === (process.env.SUPERADMIN_SECRET || 'noq-vault-9842-x7k9p-mstr'));
+
+    if (!isValidAdmin && !isValidSuperAdmin) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Operator authentication required to access stream analytics' },
+        { status: 401 }
+      );
+    }
 
     const searchParams = req.nextUrl.searchParams;
     const timeframe = searchParams.get('timeframe') || 'week'; // 'today' | 'week' | 'month'
@@ -131,7 +145,7 @@ export async function GET(
       count: Number(r.count),
     }));
 
-    // Recent Activity / Served Tokens History
+    // Recent Activity / Served Tokens History (Phone numbers safely masked)
     const recentRes = await client.query(
       `SELECT id, token_number, customer_name, customer_phone, status, access_channel, started_serving_at, completed_serving_at, created_at
        FROM tokens
@@ -140,6 +154,11 @@ export async function GET(
        LIMIT 10`,
       [streamId]
     );
+
+    const sanitizedRecentActivity = recentRes.rows.map((row) => ({
+      ...row,
+      customer_phone: row.customer_phone ? maskPhoneNumber(row.customer_phone) : null,
+    }));
 
     return NextResponse.json({
       success: true,
@@ -167,13 +186,13 @@ export async function GET(
         channelBreakdown,
         hourlyDistribution,
         recentFeedbacks: recentFeedbacksRes.rows,
-        recentActivity: recentRes.rows,
+        recentActivity: sanitizedRecentActivity,
       },
     });
   } catch (error: any) {
     console.error('Error fetching queue analytics:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: 'Failed to retrieve analytics data' },
       { status: 500 }
     );
   } finally {

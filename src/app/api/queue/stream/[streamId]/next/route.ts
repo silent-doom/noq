@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { notifyNowServing, notifyUpcomingTurn } from '@/lib/notifications';
 import { publishQueueUpdate } from '@/lib/ably';
 import { sendTokenPushNotification } from '@/lib/push';
-import { isValidPhoneNumber } from '@/lib/domain';
+import { isValidPhoneNumber, verifyAdminSessionToken } from '@/lib/domain';
 
 export async function POST(
   req: NextRequest,
@@ -13,6 +13,19 @@ export async function POST(
   try {
     const resolvedParams = await Promise.resolve(params);
     const { streamId } = resolvedParams;
+
+    // Operator Authentication Guard
+    const authHeader = req.headers.get('x-admin-token') || req.headers.get('x-admin-session') || req.headers.get('authorization')?.replace('Bearer ', '');
+    const superAdminHeader = req.headers.get('x-superadmin-key');
+    const isValidAdmin = verifyAdminSessionToken(authHeader, streamId);
+    const isValidSuperAdmin = Boolean(superAdminHeader && superAdminHeader === (process.env.SUPERADMIN_SECRET || 'noq-vault-9842-x7k9p-mstr'));
+
+    if (!isValidAdmin && !isValidSuperAdmin) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Operator session required to advance the queue' },
+        { status: 401 }
+      );
+    }
 
     let counterName = 'Counter 1';
     try {

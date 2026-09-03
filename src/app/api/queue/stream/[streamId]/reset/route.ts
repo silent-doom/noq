@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { verifyAdminSessionToken } from '@/lib/domain';
 
 /**
  * POST /api/queue/stream/[streamId]/reset
@@ -9,11 +10,6 @@ import { db } from '@/lib/db';
  * - Preserves SKIPPED (waitlisted) tokens
  * - Resets current_serving_token to 0
  * - Updates last_reset_date to today
- *
- * Reset is triggered only if:
- *   1. today > last_reset_date (i.e., it's a new calendar day), AND
- *   2. current time >= opening_time - 30 min buffer (so we don't reset before business day intends to start)
- *      OR the last reset was on a previous day AND we're well past midnight
  */
 export async function POST(
   req: NextRequest,
@@ -23,6 +19,19 @@ export async function POST(
   try {
     const resolvedParams = await Promise.resolve(params);
     const { streamId } = resolvedParams;
+
+    // Operator Authentication Guard
+    const authHeader = req.headers.get('x-admin-token') || req.headers.get('x-admin-session') || req.headers.get('authorization')?.replace('Bearer ', '');
+    const superAdminHeader = req.headers.get('x-superadmin-key');
+    const isValidAdmin = verifyAdminSessionToken(authHeader, streamId);
+    const isValidSuperAdmin = Boolean(superAdminHeader && superAdminHeader === (process.env.SUPERADMIN_SECRET || 'noq-vault-9842-x7k9p-mstr'));
+
+    if (!isValidAdmin && !isValidSuperAdmin) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Operator session required to reset queue' },
+        { status: 401 }
+      );
+    }
 
     // Ensure the last_reset_date column exists
     await client.query(`

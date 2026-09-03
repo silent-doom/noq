@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { verifyAdminSessionToken } from '@/lib/domain';
+import { verifyAdminSessionToken, maskPhoneNumber } from '@/lib/domain';
 
 export async function GET(
   req: NextRequest,
@@ -107,12 +107,16 @@ export async function GET(
       waitlistPosition = Number(waitlistRes.rows[0]?.position || 1);
     }
 
+    // Check if operator is requesting or public visitor
+    const authHeader = req.headers.get('x-admin-token') || req.headers.get('x-admin-session') || req.headers.get('authorization')?.replace('Bearer ', '');
+    const isAdmin = verifyAdminSessionToken(authHeader, token.stream_id);
+
     return NextResponse.json({
       token: {
         id: token.id,
         token_number: token.token_number,
         customer_name: token.customer_name,
-        customer_phone: token.customer_phone,
+        customer_phone: isAdmin ? token.customer_phone : (token.customer_phone ? maskPhoneNumber(token.customer_phone) : null),
         status: token.status,
         assigned_station: token.assigned_station,
         stream_id: token.stream_id,
@@ -141,7 +145,7 @@ export async function GET(
     });
   } catch (error: any) {
     console.error('Error fetching token pass:', error);
-    return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to retrieve digital pass' }, { status: 500 });
   } finally {
     client.release();
   }

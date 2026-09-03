@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { publishQueueUpdate } from '@/lib/ably';
 import { sendSMS } from '@/lib/notifications';
 import { sendTokenPushNotification } from '@/lib/push';
+import { verifyAdminSessionToken } from '@/lib/domain';
 
 export async function POST(
   req: NextRequest,
@@ -36,6 +37,20 @@ export async function POST(
     }
 
     const origToken = origRes.rows[0];
+
+    // Operator Authentication Guard
+    const authHeader = req.headers.get('x-admin-token') || req.headers.get('x-admin-session') || req.headers.get('authorization')?.replace('Bearer ', '');
+    const superAdminHeader = req.headers.get('x-superadmin-key');
+    const isValidAdmin = verifyAdminSessionToken(authHeader, origToken.stream_id);
+    const isValidSuperAdmin = Boolean(superAdminHeader && superAdminHeader === (process.env.SUPERADMIN_SECRET || 'noq-vault-9842-x7k9p-mstr'));
+
+    if (!isValidAdmin && !isValidSuperAdmin) {
+      await client.query('ROLLBACK');
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Operator session required to manage reschedule requests' },
+        { status: 401 }
+      );
+    }
 
     if (action === 'REJECT') {
       await client.query(

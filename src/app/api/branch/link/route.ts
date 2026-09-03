@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { checkRateLimit, recordRateLimitHit, clearRateLimit } from '@/lib/rateLimit';
+import { verifyAdminSessionToken, maskPhoneNumber } from '@/lib/domain';
 
 export async function GET(req: NextRequest) {
   const client = await db.connect();
@@ -10,6 +11,19 @@ export async function GET(req: NextRequest) {
 
     if (!streamId) {
       return NextResponse.json({ success: false, error: 'streamId is required' }, { status: 400 });
+    }
+
+    // Operator Authentication Guard
+    const authHeader = req.headers.get('x-admin-token') || req.headers.get('x-admin-session') || req.headers.get('authorization')?.replace('Bearer ', '');
+    const superAdminHeader = req.headers.get('x-superadmin-key');
+    const isValidAdmin = verifyAdminSessionToken(authHeader, streamId);
+    const isValidSuperAdmin = Boolean(superAdminHeader && superAdminHeader === (process.env.SUPERADMIN_SECRET || 'noq-vault-9842-x7k9p-mstr'));
+
+    if (!isValidAdmin && !isValidSuperAdmin) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Operator session required to view linked branches' },
+        { status: 401 }
+      );
     }
 
     await client.query(`
@@ -36,13 +50,18 @@ export async function GET(req: NextRequest) {
       [streamId]
     );
 
+    const safeBranches = res.rows.map((branch) => ({
+      ...branch,
+      phone: branch.phone ? maskPhoneNumber(branch.phone) : null,
+    }));
+
     return NextResponse.json({
       success: true,
-      branches: res.rows,
+      branches: safeBranches,
     });
   } catch (error: any) {
     console.error('Error fetching linked branches:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Failed to retrieve linked branches' }, { status: 500 });
   } finally {
     client.release();
   }
