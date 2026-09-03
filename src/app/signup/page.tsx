@@ -520,30 +520,30 @@ export default function SignupPage() {
               </div>
 
               {/* Working hours */}
-              <div className="bg-zinc-800/40 border border-zinc-700/50 p-4 rounded-2xl space-y-3">
+              <div className="bg-zinc-800/40 border border-zinc-700/50 p-4 rounded-2xl space-y-3 min-w-0">
                 <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Working Hours</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-zinc-500 mb-1.5">Opening Time</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0">
+                  <div className="min-w-0">
+                    <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">Opening Time</label>
                     <input
                       type="time"
                       value={openingTime}
                       onChange={(e) => setOpeningTime(e.target.value)}
-                      className="w-full bg-zinc-900/60 border border-zinc-700/50 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/60 cursor-pointer"
+                      className="w-full min-w-0 bg-zinc-900/80 border border-zinc-700/60 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/60 cursor-pointer [color-scheme:dark]"
                     />
                   </div>
-                  <div>
-                    <label className="block text-[11px] font-semibold text-zinc-500 mb-1.5">Closing Time</label>
+                  <div className="min-w-0">
+                    <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">Closing Time</label>
                     <input
                       type="time"
                       value={closingTime}
                       onChange={(e) => setClosingTime(e.target.value)}
-                      className="w-full bg-zinc-900/60 border border-zinc-700/50 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/60 cursor-pointer"
+                      className="w-full min-w-0 bg-zinc-900/80 border border-zinc-700/60 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/60 cursor-pointer [color-scheme:dark]"
                     />
                   </div>
                 </div>
-                <p className="text-[10px] text-zinc-600">
-                  The daily queue will auto-reset 30 minutes before your opening time each day.
+                <p className="text-[10px] text-zinc-500">
+                  The daily queue will automatically archive and reset for the new operational day at 4:00 AM.
                 </p>
               </div>
 
