@@ -55,8 +55,8 @@ export async function POST(req: NextRequest) {
     let anchorDay: number;
 
     if (isTrial) {
-      // 3-Day Free Trial
-      nextBilling = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+      // 7-Day Free Trial
+      nextBilling = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       anchorDay = nextBilling.getDate();
     } else {
       anchorDay = now.getDate();

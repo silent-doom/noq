@@ -89,10 +89,10 @@ export default function TermsPage() {
         {/* Section 3: Trial Fair Use */}
         <section className="space-y-3 bg-zinc-900/40 border border-zinc-800/80 p-6 rounded-2xl">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <span className="text-emerald-400 font-mono text-sm">03.</span> 3-Day Free Trial & Abuse Prevention
+            <span className="text-emerald-400 font-mono text-sm">03.</span> 7-Day Free Trial & Abuse Prevention
           </h2>
           <p className="text-xs text-zinc-400 leading-relaxed">
-            Eligible businesses may activate a single, 3-calendar-day free trial without submitting credit card details. Free trials are strictly limited to one redemption per business entity, phone number, and network/IP address.
+            Eligible businesses may activate a single, 7-calendar-day free trial without submitting credit card details. Free trials are strictly limited to one redemption per business entity, phone number, and network/IP address.
           </p>
           <p className="text-xs text-zinc-400 leading-relaxed">
             Attempting to circumvent this policy by repeatedly registering temporary businesses, cycling phone numbers, or leveraging dynamic IP addresses constitutes a material breach of these Terms. Accounts suspected of trial abuse will be immediately suspended with all automated access revoked.

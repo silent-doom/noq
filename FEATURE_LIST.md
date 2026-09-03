@@ -450,9 +450,8 @@ graph LR
   - Validates eligibility via dual-factor registry checking (normalized phone number and client network IP address).
   - Strictly prevents multi-account trial cycling, ensuring fair access while protecting platform infrastructure.
 - **Daily In-Trial Warning Modals**:
-  - Day 1: Welcome modal with complete feature exploration guide.
-  - Day 2: Operational status update with 1-day remaining countdown.
-  - Day 3: Final-day alert with instant activation pathway.
+  - 7-day free trial lifecycle with progressive countdown notifications and non-disruptive exploration modals.
+  - Final-day alert with instant 1-click subscription activation pathway.
 - **Post-Trial Grace Window**:
   - Provides a 3-day grace period following trial expiration with prominent countdown indicators, preventing abrupt queue service interruptions.
 - **Soft-Delete Data Retention & Instant Reactivation**:

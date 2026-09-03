@@ -130,8 +130,8 @@ export function computeSubscriptionState(business: {
   // 2. Free Trial Lifecycle
   if (business.subscription_status === 'TRIAL') {
     if (diffDays >= 0) {
-      // Within 3-day trial
-      const trialDay = Math.min(3, Math.max(1, 4 - diffDays));
+      // Within 7-day trial
+      const trialDay = Math.min(7, Math.max(1, 8 - diffDays));
       return {
         status: 'TRIAL',
         billingAnchorDay: anchorDay,
@@ -143,7 +143,7 @@ export function computeSubscriptionState(business: {
         isGracePeriod: false,
         isTrial: true,
         trialDay,
-        message: `Free Trial Active: Day ${trialDay} of 3 (${diffDays} day${diffDays === 1 ? '' : 's'} remaining).`,
+        message: `Free Trial Active: Day ${trialDay} of 7 (${diffDays} day${diffDays === 1 ? '' : 's'} remaining).`,
       };
     } else {
       // Past 3-day trial
@@ -276,7 +276,7 @@ export function computeSubscriptionState(business: {
 }
 
 /**
- * Checks if a phone number or client IP address is eligible for a 3-day free trial.
+ * Checks if a phone number or client IP address is eligible for a 7-day free trial.
  * Prevents trial abuse where a business repeatedly creates new trial accounts.
  */
 export async function checkTrialEligibility(
@@ -303,7 +303,7 @@ export async function checkTrialEligibility(
     if (regCheck.rows.length > 0) {
       return {
         eligible: false,
-        reason: 'This phone number has already utilized a 3-day free trial. Please choose standard activation to proceed.',
+        reason: 'This phone number has already utilized a 7-day free trial. Please choose standard activation to proceed.',
       };
     }
 
@@ -334,7 +334,7 @@ export async function checkTrialEligibility(
     if (ipCheck.rows.length > 0) {
       return {
         eligible: false,
-        reason: 'A 3-day free trial has already been initiated from this network or device. Please select standard activation to continue.',
+        reason: 'A 7-day free trial has already been initiated from this network or device. Please select standard activation to continue.',
       };
     }
   }

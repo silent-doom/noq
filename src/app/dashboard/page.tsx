@@ -1035,20 +1035,20 @@ function DashboardContent() {
 
               <div>
                 <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-full border border-emerald-800/60 inline-block mb-2">
-                  {subscription.trialDay === 1 ? 'Day 1 of 3 — Welcome' : subscription.trialDay === 2 ? 'Day 2 of 3 — 1 Day Left' : 'Day 3 of 3 — Final Day'}
+                  {subscription.trialDay <= 4 ? `Day ${subscription.trialDay || 1} of 7 — Welcome` : subscription.trialDay < 7 ? `Day ${subscription.trialDay} of 7 — ${8 - subscription.trialDay} Days Left` : 'Day 7 of 7 — Final Day'}
                 </span>
                 <h3 className="text-xl font-black tracking-tight text-white">
-                  {subscription.trialDay === 1
-                    ? 'Your 3-Day Free Trial is Active'
-                    : subscription.trialDay === 2
-                    ? '1 Day Remaining on Free Trial'
+                  {subscription.trialDay <= 4
+                    ? 'Your 7-Day Free Trial is Active'
+                    : subscription.trialDay < 7
+                    ? `${8 - subscription.trialDay} Days Remaining on Free Trial`
                     : 'Final Day of Free Trial!'}
                 </h3>
                 <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
-                  {subscription.trialDay === 1
+                  {subscription.trialDay <= 4
                     ? 'Explore full virtual queue capabilities with zero limits. Set up consultation rooms, test customer live passes, and try parallel calling. Activate anytime to ensure permanent continuity.'
-                    : subscription.trialDay === 2
-                    ? 'Your virtual queue is live and operational. Tomorrow is your final trial day. Activate your subscription today to ensure uninterrupted queue tracking for your visitors.'
+                    : subscription.trialDay < 7
+                    ? 'Your virtual queue is live and operational. Activate your subscription today to ensure uninterrupted queue tracking for your visitors.'
                     : 'Your free trial ends tonight at midnight. After today, an unpaid terminal enters a 3-day grace period before being deactivated. Settle your plan now to keep your live queue, links, and posters permanently active.'}
                 </p>
               </div>
@@ -1056,7 +1056,7 @@ function DashboardContent() {
               <div className="bg-zinc-900 border border-zinc-800 p-3.5 rounded-2xl text-left space-y-1.5 text-xs">
                 <div className="flex justify-between text-zinc-400">
                   <span>Trial Progress</span>
-                  <span className="font-bold text-emerald-400 font-mono">Day {subscription.trialDay || 1} of 3</span>
+                  <span className="font-bold text-emerald-400 font-mono">Day {subscription.trialDay || 1} of 7</span>
                 </div>
                 <div className="flex justify-between text-zinc-400">
                   <span>Setup + 1st Month Plan</span>
@@ -1095,7 +1095,7 @@ function DashboardContent() {
             <div className="flex items-center gap-2.5">
               <span className="text-lg">🌟</span>
               <div>
-                <span className="font-extrabold text-emerald-900">3-Day Free Trial (Day {subscription.trialDay || 1} of 3): </span>
+                <span className="font-extrabold text-emerald-900">7-Day Free Trial (Day {subscription.trialDay || 1} of 7): </span>
                 <span className="text-emerald-700">{subscription.message}</span>
               </div>
             </div>

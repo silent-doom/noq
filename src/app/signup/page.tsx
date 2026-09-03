@@ -125,11 +125,11 @@ export default function SignupPage() {
           },
           onDismiss: () => {
             setLoading(false);
-            setError('Payment window was closed. You can retry activating your plan, or click "Start 3-Day Free Trial" below.');
+            setError('Payment window was closed. You can retry activating your plan, or click "Start 7-Day Free Trial" below.');
           },
           onError: (err) => {
             setLoading(false);
-            setError(err?.message || 'Payment could not be completed. You can retry or start your 3-day free trial.');
+            setError(err?.message || 'Payment could not be completed. You can retry or start your 7-day free trial.');
           },
         });
       } else {
@@ -690,7 +690,7 @@ export default function SignupPage() {
                   onClick={(e) => handleSignup(e as any, true)}
                   className="w-full bg-zinc-800/80 hover:bg-zinc-700/80 disabled:opacity-50 disabled:cursor-not-allowed border border-zinc-700/60 text-zinc-200 font-bold py-3.5 rounded-2xl text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer"
                 >
-                  ⚡ Start 3-Day Free Trial (No Card Required) →
+                  ⚡ Start 7-Day Free Trial (No Card Required) →
                 </button>
 
                 <p className="text-[11px] text-zinc-500 text-center leading-relaxed pt-2">

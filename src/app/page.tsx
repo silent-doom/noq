@@ -202,7 +202,7 @@ export default function LandingPage() {
             href="/signup"
             className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-sm px-8 py-4 rounded-2xl transition shadow-xl shadow-emerald-500/20 cursor-pointer"
           >
-            ONBOARD WITH 3-DAY FREE TRIAL ↗
+            ONBOARD WITH 7-DAY FREE TRIAL ↗
           </Link>
           <Link
             href="/login"
@@ -654,7 +654,7 @@ export default function LandingPage() {
                   onClick={(e) => handleRegister(e, true)}
                   className="w-full bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 border border-zinc-700 text-zinc-200 font-bold py-3 rounded-2xl text-xs uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  <span>⚡ Start 3-Day Free Trial (No Card Required) ➔</span>
+                  <span>⚡ Start 7-Day Free Trial (No Card Required) ➔</span>
                 </button>
 
                 <p className="text-[10px] text-zinc-500 text-center leading-relaxed pt-1">
