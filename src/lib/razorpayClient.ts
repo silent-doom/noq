@@ -9,6 +9,7 @@ export interface CheckoutOptions {
   customerPhone?: string;
   onSuccess: (data: any) => void;
   onError?: (err: any) => void;
+  onDismiss?: () => void;
 }
 
 /**
@@ -135,11 +136,22 @@ export async function openRazorpayCheckout(options: CheckoutOptions): Promise<vo
       modal: {
         ondismiss: function () {
           console.log('Payment modal dismissed by user');
+          if (options.onDismiss) {
+            options.onDismiss();
+          } else if (options.onError) {
+            options.onError(new Error('Payment window closed by user'));
+          }
         },
       },
     };
 
     const rzp = new (window as any).Razorpay(rzpOptions);
+    rzp.on('payment.failed', function (response: any) {
+      console.warn('Payment failed:', response.error);
+      if (options.onError) {
+        options.onError(new Error(response.error?.description || 'Payment transaction failed'));
+      }
+    });
     rzp.open();
   } catch (err: any) {
     console.error('Checkout error:', err);

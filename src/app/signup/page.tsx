@@ -123,11 +123,13 @@ export default function SignupPage() {
             setLoading(false);
             window.location.href = json.dashboardUrl;
           },
-          onError: () => {
+          onDismiss: () => {
             setLoading(false);
-            if (confirm('Payment was skipped or cancelled. Open your dashboard in trial mode?')) {
-              window.location.href = json.dashboardUrl;
-            }
+            setError('Payment window was closed. You can retry activating your plan, or click "Start 3-Day Free Trial" below.');
+          },
+          onError: (err) => {
+            setLoading(false);
+            setError(err?.message || 'Payment could not be completed. You can retry or start your 3-day free trial.');
           },
         });
       } else {

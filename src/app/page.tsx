@@ -92,6 +92,9 @@ export default function LandingPage() {
             setLoading(false);
             window.location.href = json.dashboardUrl;
           },
+          onDismiss: () => {
+            setLoading(false);
+          },
           onError: () => {
             setLoading(false);
             if (confirm('Payment was skipped or cancelled. View your newly created dashboard in trial mode?')) {

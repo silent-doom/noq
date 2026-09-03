@@ -332,6 +332,9 @@ function DashboardContent() {
           alert('✅ Subscription renewed successfully! Your terminal is active.');
           await fetchQueueData();
         },
+        onDismiss: () => {
+          setRenewLoading(false);
+        },
         onError: (err) => {
           setRenewLoading(false);
           alert(err?.message || 'Payment was cancelled or failed.');
