@@ -1409,14 +1409,14 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* Layout Grid */}
-        <div className="p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-8 max-w-7xl w-full">
+        {/* Layout Grid — Balanced 2-Column from md (768px+) and Clean Stacked on mobile */}
+        <div className="p-3.5 sm:p-5 lg:p-8 grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 lg:gap-8 max-w-7xl w-full mx-auto">
 
           {/* ─── LEFT COLUMN: Control Panel ─── */}
-          <div className="lg:col-span-5 space-y-4">
+          <div className="md:col-span-5 space-y-4">
 
-            {/* Current Token Card — centred on all screen sizes */}
-            <div className="bg-black text-white rounded-[2rem] p-6 sm:p-7 flex flex-col items-center text-center shadow-xl">
+            {/* Current Token Hero Card */}
+            <div className="bg-black text-white rounded-[2rem] p-5 sm:p-7 flex flex-col items-center text-center shadow-xl">
               <div className="w-full flex items-center justify-between gap-2 flex-wrap">
                 <span className={`inline-flex items-center gap-1.5 ${currentServingTokenObj ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-zinc-800 text-zinc-400 border-zinc-700'} border text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${currentServingTokenObj ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-500'}`} />
@@ -1444,17 +1444,17 @@ function DashboardContent() {
                 )}
               </div>
 
-              <span className="text-[11px] font-bold text-zinc-400 tracking-widest uppercase mt-6">
+              <span className="text-[10px] sm:text-[11px] font-bold text-zinc-400 tracking-widest uppercase mt-5 sm:mt-6">
                 CURRENT TOKEN
               </span>
 
-              <div className="text-6xl sm:text-7xl font-black text-white tracking-tight my-2">
+              <div className="text-5xl sm:text-6xl lg:text-7xl font-black text-white tracking-tight my-2">
                 {currentServingTokenObj && currentServingTokenObj.token_number > 0
                   ? `#${currentServingTokenObj.token_number}`
                   : '--'}
               </div>
 
-              <div className="text-zinc-300 font-medium text-sm mb-6 max-w-xs leading-relaxed">
+              <div className="text-zinc-300 font-medium text-xs sm:text-sm mb-5 sm:mb-6 max-w-xs leading-relaxed truncate px-2">
                 {currentServingTokenObj && currentServingTokenObj.token_number > 0
                   ? currentServingTokenObj.customer_name
                   : terms.atRestStatus}
@@ -1463,7 +1463,7 @@ function DashboardContent() {
               <button
                 onClick={handleNextToken}
                 disabled={actionLoading || allWaitingTokens.length === 0}
-                className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20 cursor-pointer"
+                className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold py-3.5 sm:py-4 rounded-2xl flex items-center justify-center gap-2 text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20 cursor-pointer"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -1471,28 +1471,31 @@ function DashboardContent() {
                 <span>{actionLoading ? 'Updating...' : `CALL NEXT ${terms.guestTerm.toUpperCase()}`}</span>
               </button>
 
-              <div className="mt-3 w-full grid grid-cols-4 gap-1.5 sm:gap-2">
+              <div className="mt-3 w-full grid grid-cols-2 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4 gap-1.5 sm:gap-2">
                 <button
                   onClick={() => currentServingTokenObj && handleUpdateStatus(currentServingTokenObj.id, 'COMPLETED')}
                   disabled={!currentServingTokenObj || actionLoading}
-                  className="py-3 px-1 sm:px-3 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-30 text-[11px] sm:text-xs font-semibold text-emerald-400 rounded-xl transition border border-zinc-800 cursor-pointer truncate"
+                  className="py-2.5 sm:py-3 px-2 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-30 text-[11px] font-semibold text-emerald-400 rounded-xl transition border border-zinc-800 cursor-pointer flex items-center justify-center gap-1"
                 >
-                  Mark Done
+                  <span>✓</span>
+                  <span>Mark Done</span>
                 </button>
                 <button
                   onClick={handleExtendPace}
                   disabled={actionLoading}
-                  className="py-3 px-1 sm:px-3.5 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-30 text-[11px] sm:text-xs font-bold text-amber-400 rounded-xl transition border border-zinc-800 cursor-pointer truncate"
+                  className="py-2.5 sm:py-3 px-2 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-30 text-[11px] font-bold text-amber-400 rounded-xl transition border border-zinc-800 cursor-pointer flex items-center justify-center gap-1"
                   title="Add +5 mins extra service duration"
                 >
-                  ⏱️ +5m
+                  <span>⏱️</span>
+                  <span>+5m</span>
                 </button>
                 <button
                   onClick={() => currentServingTokenObj && handleWaitlist(currentServingTokenObj.id)}
                   disabled={!currentServingTokenObj || actionLoading}
-                  className="py-3 px-1 sm:px-3 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-30 text-[11px] sm:text-xs font-semibold text-zinc-400 rounded-xl transition border border-zinc-800 cursor-pointer truncate"
+                  className="py-2.5 sm:py-3 px-2 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-30 text-[11px] font-semibold text-zinc-400 rounded-xl transition border border-zinc-800 cursor-pointer flex items-center justify-center gap-1"
                 >
-                  Skip
+                  <span>⏭</span>
+                  <span>Skip</span>
                 </button>
                 <button
                   onClick={
@@ -1500,18 +1503,17 @@ function DashboardContent() {
                       ? handleRecallToken
                       : () => playTestAnnouncement(voiceLang, activeCounter)
                   }
-                  disabled={actionLoading}
-                  className="py-3 px-1 sm:px-3 bg-zinc-900 hover:bg-zinc-800 text-[11px] sm:text-xs font-bold text-sky-400 rounded-xl transition border border-zinc-800 cursor-pointer flex items-center justify-center gap-1 truncate"
-                  title={currentServingTokenObj ? "Play audio chime and repeat voice announcement" : "Play test chime and sample announcement"}
+                  className="py-2.5 sm:py-3 px-2 bg-zinc-900 hover:bg-zinc-800 text-[11px] font-semibold text-zinc-300 rounded-xl transition border border-zinc-800 cursor-pointer flex items-center justify-center gap-1"
+                  title="Play audio announcement for this counter"
                 >
                   <span>🔊</span>
-                  <span className="hidden sm:inline">{currentServingTokenObj ? 'Recall' : 'Test Voice'}</span>
+                  <span>{currentServingTokenObj ? 'Recall' : 'Voice'}</span>
                 </button>
               </div>
             </div>
 
             {/* Metrics Card */}
-            <div className="bg-white border border-zinc-200/80 rounded-[2rem] p-5 lg:p-6 grid grid-cols-3 lg:grid-cols-2 gap-3 lg:gap-4 shadow-sm">
+            <div className="bg-white border border-zinc-200/80 rounded-[2rem] p-4 sm:p-5 lg:p-6 grid grid-cols-3 md:grid-cols-2 lg:grid-cols-2 gap-2.5 sm:gap-3 lg:gap-4 shadow-sm">
               <div>
                 <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">IN LINE</span>
                 <div className="text-2xl lg:text-3xl font-black text-zinc-900 mt-1">{allWaitingTokens.length}</div>
@@ -1522,8 +1524,8 @@ function DashboardContent() {
                 <div className="text-2xl lg:text-3xl font-black text-zinc-900 mt-1">~{paceMins}m</div>
                 <div className="text-xs text-zinc-400 mt-0.5 font-medium">per token</div>
               </div>
-              {/* Station — only on mobile since desktop has it in the header */}
-              <div className="lg:hidden">
+              {/* Station — visible on mobile when station switcher is compact */}
+              <div className="md:hidden">
                 <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">STATION</span>
                 <div className="text-xs font-bold text-emerald-600 mt-1 leading-tight truncate">{activeCounter}</div>
                 <div className="text-[11px] text-zinc-400 mt-0.5 font-medium">active</div>
@@ -1532,20 +1534,20 @@ function DashboardContent() {
           </div>
 
           {/* ─── RIGHT COLUMN: Waiting List ─── */}
-          <div className="lg:col-span-7">
+          <div className="md:col-span-7">
             <div className="bg-white border border-zinc-200/80 rounded-[2rem] p-4 lg:p-7 shadow-sm min-h-[300px] lg:min-h-[480px] flex flex-col">
 
-              {/* Header — desktop: original no-divider style; mobile: with inline search */}
-              <div className="flex items-center justify-between lg:pb-6 pb-4 lg:border-b-0 border-b border-zinc-100">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-4 md:pb-6 border-b border-zinc-100 md:border-b-0">
                 <div>
                   <h2 className="text-base lg:text-lg font-bold text-zinc-900">Waiting List</h2>
-                  <p className="text-xs text-zinc-400 mt-0.5 font-medium hidden lg:block">
+                  <p className="text-xs text-zinc-400 mt-0.5 font-medium hidden md:block">
                     Manage upcoming {terms.guestTermPlural.toLowerCase()} in real-time.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {/* Inline search — mobile only */}
-                  <div className="relative lg:hidden">
+                  {/* Inline search */}
+                  <div className="relative">
                     <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
@@ -1554,7 +1556,7 @@ function DashboardContent() {
                       placeholder="Search..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-28 pl-7 pr-2 py-1.5 bg-zinc-50 border border-zinc-200 rounded-full text-[11px] text-zinc-800 placeholder-zinc-400 focus:outline-none"
+                      className="w-24 sm:w-32 md:w-36 pl-7 pr-2 py-1.5 bg-zinc-50 border border-zinc-200 rounded-full text-[11px] text-zinc-800 placeholder-zinc-400 focus:outline-none"
                     />
                   </div>
                   <span className="bg-zinc-100 text-zinc-600 text-xs font-bold px-3 py-1 rounded-full border border-zinc-200 shrink-0">
@@ -1564,11 +1566,11 @@ function DashboardContent() {
               </div>
 
               {loading ? (
-                <div className="flex-1 flex items-center justify-center text-zinc-400 text-xs font-medium">
+                <div className="flex-1 flex items-center justify-center text-zinc-400 text-xs font-medium py-12">
                   Loading list...
                 </div>
               ) : displayedWaitingTokens.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center text-zinc-400 text-xs font-medium">
+                <div className="flex-1 flex items-center justify-center text-zinc-400 text-xs font-medium py-12">
                   {searchQuery ? `No matching ${terms.guestTermPlural.toLowerCase()} found.` : `No upcoming ${terms.guestTermPlural.toLowerCase()} waiting in line.`}
                 </div>
               ) : (
@@ -1581,24 +1583,24 @@ function DashboardContent() {
                     return (
                       <div key={token.id || token.token_number}>
 
-                        {/* DESKTOP: original single-row layout */}
-                        <div className="hidden lg:flex items-center justify-between p-4 rounded-2xl border border-zinc-100 bg-zinc-50/50 hover:bg-zinc-50 transition">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-black text-white rounded-xl flex items-center justify-center font-black text-base shadow-sm">
+                        {/* DESKTOP & TABLET: responsive inline row */}
+                        <div className="hidden md:flex items-center justify-between p-3.5 sm:p-4 rounded-2xl border border-zinc-100 bg-zinc-50/50 hover:bg-zinc-50 transition gap-2">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-11 h-11 bg-black text-white rounded-xl flex items-center justify-center font-black text-sm shrink-0 shadow-sm">
                               #{token.token_number}
                             </div>
-                            <div>
-                              <p className="font-bold text-zinc-900 text-sm">
+                            <div className="min-w-0">
+                              <p className="font-bold text-zinc-900 text-sm truncate">
                                 {token.customer_name || `Anonymous ${terms.guestTerm}`}
                               </p>
-                              <div className="text-xs text-zinc-400 flex items-center gap-2 mt-0.5">
+                              <div className="text-xs text-zinc-400 flex items-center gap-1.5 mt-0.5 flex-wrap">
                                 <AccessChannelBadge channel={token.access_channel} />
                                 <span>•</span>
-                                <span>Est. Wait ~{formatWaitTime(estWaitMins)}</span>
+                                <span>~{formatWaitTime(estWaitMins)}</span>
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 shrink-0">
                             <button
                               onClick={() => handleUpdateStatus(token.id, 'SERVING')}
                               disabled={actionLoading}
@@ -1621,10 +1623,10 @@ function DashboardContent() {
                                   setIsTransferModalOpen(true);
                                 }}
                                 disabled={actionLoading}
-                                className="border border-sky-500/40 text-sky-600 bg-sky-50/60 hover:bg-sky-100/80 text-xs font-bold px-3 py-1.5 rounded-full transition cursor-pointer flex items-center gap-1"
+                                className="border border-sky-500/40 text-sky-600 bg-sky-50/60 hover:bg-sky-100/80 text-xs font-bold px-2.5 py-1.5 rounded-full transition cursor-pointer flex items-center gap-1"
                                 title="Transfer patient to another linked branch"
                               >
-                                <span>🔄 Transfer</span>
+                                <span>🔄</span>
                               </button>
                             )}
                             <button
@@ -1637,8 +1639,8 @@ function DashboardContent() {
                           </div>
                         </div>
 
-                        {/* MOBILE: stacked two-row layout */}
-                        <div className="lg:hidden p-3 rounded-2xl border border-zinc-100 bg-zinc-50/50 hover:bg-zinc-50 transition">
+                        {/* MOBILE: stacked card layout */}
+                        <div className="md:hidden p-3 rounded-2xl border border-zinc-100 bg-zinc-50/50 hover:bg-zinc-50 transition">
                           <div className="flex items-center gap-3 mb-2.5">
                             <div className="w-10 h-10 bg-black text-white rounded-xl flex items-center justify-center font-black text-sm shrink-0 shadow-sm">
                               #{token.token_number}
@@ -1654,7 +1656,7 @@ function DashboardContent() {
                               </div>
                             </div>
                           </div>
-                          {/* Action buttons: wrap so they never overflow on small screens */}
+                          {/* Action buttons: wrap nicely */}
                           <div className="flex flex-wrap items-center gap-1.5">
                             <button
                               onClick={() => handleUpdateStatus(token.id, 'SERVING')}

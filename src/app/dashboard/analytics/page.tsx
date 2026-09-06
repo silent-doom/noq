@@ -137,16 +137,40 @@ function AnalyticsContent() {
     document.body.removeChild(link);
   };
 
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
   return (
     <div className="flex h-screen bg-[#f4f5f7] font-sans text-zinc-900 overflow-hidden relative">
+      {/* Mobile sidebar overlay backdrop */}
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-30 lg:hidden"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
       {/* Dark Sidebar Navigation */}
-      <aside className="w-64 bg-black text-zinc-400 flex flex-col justify-between p-5 shrink-0">
+      <aside
+        className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-black text-zinc-400 flex flex-col justify-between p-5 shrink-0 transition-transform duration-300 ${
+          isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
+      >
         <div>
-          <div className="flex items-center gap-2.5 mb-8 px-2">
-            <span className="text-2xl font-black text-white tracking-tight">noQ</span>
-            <span className="text-[10px] bg-zinc-800 text-zinc-400 font-mono font-medium px-2 py-0.5 rounded tracking-wide">
-              ANALYTICS
-            </span>
+          <div className="flex items-center justify-between gap-2.5 mb-8 px-2">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-black text-white tracking-tight">noQ</span>
+              <span className="text-[10px] bg-zinc-800 text-zinc-400 font-mono font-medium px-2 py-0.5 rounded tracking-wide">
+                ANALYTICS
+              </span>
+            </div>
+            <button
+              className="lg:hidden text-zinc-400 hover:text-white"
+              onClick={() => setIsMobileSidebarOpen(false)}
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
 
           <nav className="space-y-1.5">
@@ -208,13 +232,24 @@ function AnalyticsContent() {
 
       {/* Main Analytics Panel */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="px-8 py-5 flex items-center justify-between border-b border-zinc-200/60 bg-white/50 backdrop-blur-sm sticky top-0 z-10">
-          <div>
-            <h1 className="text-xl font-bold text-zinc-900">Operations & Performance Analytics</h1>
-            <p className="text-xs text-zinc-400 mt-0.5 font-medium">Real-time throughput, satisfaction scores, & weekly admin reports.</p>
+        <header className="px-4 sm:px-8 py-4 sm:py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-zinc-200/60 bg-white/50 backdrop-blur-sm sticky top-0 z-10 gap-3">
+          <div className="flex items-center gap-3">
+            <button
+              className="lg:hidden w-9 h-9 flex items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 hover:bg-zinc-200 shrink-0 cursor-pointer transition"
+              onClick={() => setIsMobileSidebarOpen(true)}
+              aria-label="Open Navigation Menu"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <div>
+              <h1 className="text-lg sm:text-xl font-bold text-zinc-900">Operations & Performance Analytics</h1>
+              <p className="text-xs text-zinc-400 mt-0.5 font-medium hidden sm:block">Real-time throughput, satisfaction scores, & weekly admin reports.</p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
             {/* Timeframe Selector */}
             <div className="bg-zinc-100 p-1 rounded-2xl border border-zinc-200 flex text-xs font-semibold">
               <button
@@ -227,7 +262,7 @@ function AnalyticsContent() {
                 onClick={() => setTimeframe('week')}
                 className={`px-3 py-1 rounded-xl transition ${timeframe === 'week' ? 'bg-white text-zinc-900 shadow-xs' : 'text-zinc-500 hover:text-zinc-900'}`}
               >
-                7-Day Weekly
+                7-Day
               </button>
               <button
                 onClick={() => setTimeframe('month')}

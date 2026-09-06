@@ -159,20 +159,43 @@ function WaitlistContent() {
     }
   };
 
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const skippedTokens = tokens.filter((t) => t.status === 'SKIPPED');
   const pendingRescheduleTokens = tokens.filter((t) => t.reschedule_status === 'PENDING');
   const terms = getDomainTerminology(streamCategory);
 
   return (
-    <div className="flex h-screen bg-[#f8f9fa] font-sans text-zinc-900 overflow-hidden">
+    <div className="flex h-screen bg-[#f8f9fa] font-sans text-zinc-900 overflow-hidden relative">
+      {/* Mobile sidebar overlay backdrop */}
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-30 lg:hidden"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar Navigation */}
-      <aside className="w-64 bg-black text-zinc-400 flex flex-col justify-between p-5 shrink-0">
+      <aside
+        className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-black text-zinc-400 flex flex-col justify-between p-5 shrink-0 transition-transform duration-300 ${
+          isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
+      >
         <div>
-          <div className="flex items-center gap-2.5 mb-8 px-2">
-            <span className="text-2xl font-black text-white tracking-tight">noQ</span>
-            <span className="text-[10px] bg-zinc-800 text-zinc-300 font-mono font-medium px-2 py-0.5 rounded tracking-wide">
-              ADMIN
-            </span>
+          <div className="flex items-center justify-between gap-2.5 mb-8 px-2">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-black text-white tracking-tight">noQ</span>
+              <span className="text-[10px] bg-zinc-800 text-zinc-300 font-mono font-medium px-2 py-0.5 rounded tracking-wide">
+                ADMIN
+              </span>
+            </div>
+            <button
+              className="lg:hidden text-zinc-400 hover:text-white"
+              onClick={() => setIsMobileSidebarOpen(false)}
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
 
           <nav className="space-y-1.5">
@@ -236,17 +259,28 @@ function WaitlistContent() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-8 overflow-y-auto">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-2xl font-bold text-zinc-900">Skipped {terms.guestTermPlural} Waitlist</h1>
-              <p className="text-xs text-zinc-500 mt-1">
-                {terms.guestTermPlural} who were away when called. Re-inserting places them <strong>2 spots behind the currently serving token</strong> to preserve queue integrity.
-              </p>
-            </div>
+          <div className="flex items-center justify-between gap-3 mb-6 sm:mb-8">
             <div className="flex items-center gap-3">
+              <button
+                className="lg:hidden w-9 h-9 flex items-center justify-center rounded-xl bg-zinc-200 text-zinc-700 hover:bg-zinc-300 shrink-0 cursor-pointer transition"
+                onClick={() => setIsMobileSidebarOpen(true)}
+                aria-label="Open Navigation Menu"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-zinc-900">Skipped {terms.guestTermPlural} Waitlist</h1>
+                <p className="text-xs text-zinc-500 mt-1 hidden sm:block">
+                  {terms.guestTermPlural} who were away when called. Re-inserting places them <strong>2 spots behind the currently serving token</strong> to preserve queue integrity.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
               <span className="bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold px-3 py-1.5 rounded-full">
                 {skippedTokens.length} On Waitlist
               </span>
