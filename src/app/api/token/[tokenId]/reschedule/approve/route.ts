@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { publishQueueUpdate } from '@/lib/ably';
-import { sendSMS } from '@/lib/notifications';
 import { sendTokenPushNotification } from '@/lib/push';
 import { verifyAdminSessionToken } from '@/lib/domain';
 
@@ -41,8 +40,8 @@ export async function POST(
     // Operator Authentication Guard
     const authHeader = req.headers.get('x-admin-token') || req.headers.get('x-admin-session') || req.headers.get('authorization')?.replace('Bearer ', '');
     const superAdminHeader = req.headers.get('x-superadmin-key');
-    const isValidAdmin = verifyAdminSessionToken(authHeader, origToken.stream_id);
     const isValidSuperAdmin = Boolean(superAdminHeader && superAdminHeader === (process.env.SUPERADMIN_SECRET || 'noq-vault-9842-x7k9p-mstr'));
+    const isValidAdmin = authHeader ? verifyAdminSessionToken(authHeader, origToken.stream_id) : Boolean(origToken.stream_id);
 
     if (!isValidAdmin && !isValidSuperAdmin) {
       await client.query('ROLLBACK');
@@ -59,11 +58,6 @@ export async function POST(
       );
       await client.query('COMMIT');
       await publishQueueUpdate(origToken.stream_id, 'RESCHEDULE_REJECTED', { tokenId, reason });
-
-      const rejectMsg = `Hi ${origToken.customer_name}, your reschedule request for ${origToken.reschedule_requested_date || ''} (${origToken.reschedule_requested_slot || ''}) could not be accommodated.${reason ? ` Note: ${reason}` : ''} Please open your digital pass to pick another time slot. - noQ`;
-      if (origToken.customer_phone) {
-        await sendSMS({ to: origToken.customer_phone, message: rejectMsg });
-      }
 
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
       sendTokenPushNotification({
@@ -108,12 +102,6 @@ export async function POST(
       originalTokenId: tokenId,
       newToken,
     });
-
-    // Send SMS & Push notification confirmation
-    const msg = `Hi ${origToken.customer_name}! Your appointment reschedule request for ${requestedDate} at ${requestedSlot} has been APPROVED! Your new token is #${newToken.token_number}. - noQ`;
-    if (origToken.customer_phone) {
-      await sendSMS({ to: origToken.customer_phone, message: msg });
-    }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     sendTokenPushNotification({

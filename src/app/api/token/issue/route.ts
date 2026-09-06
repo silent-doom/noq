@@ -56,6 +56,70 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Queue stream not found' }, { status: 404 });
     }
 
+    // 1b. Anti-Abuse: Prevent multiple active tokens for the same customer phone in this queue
+    if (sanitizedPhone) {
+      const activeCheck = await client.query(
+        `SELECT id, token_number, status 
+         FROM tokens 
+         WHERE stream_id = $1 
+           AND customer_phone = $2 
+           AND status IN ('WAITING', 'SERVING', 'WAITLISTED')
+         LIMIT 1`,
+        [streamId.trim(), sanitizedPhone]
+      );
+
+      if (activeCheck.rows.length > 0) {
+        await client.query('ROLLBACK');
+        const active = activeCheck.rows[0];
+        return NextResponse.json(
+          {
+            error: `You already have an active pass (Token #${active.token_number} - ${active.status}). You cannot book another token simultaneously.`,
+            existingTokenId: active.id,
+            existingTokenNumber: active.token_number,
+          },
+          { status: 409 }
+        );
+      }
+
+      // 1c. Anti-Churn & Anti-Play Protection: Check cancellation frequency & cooldown
+      const cancelHistory = await client.query(
+        `SELECT id, updated_at 
+         FROM tokens 
+         WHERE stream_id = $1 
+           AND customer_phone = $2 
+           AND status = 'CANCELLED' 
+           AND updated_at >= NOW() - INTERVAL '24 HOURS'
+         ORDER BY updated_at DESC`,
+        [streamId.trim(), sanitizedPhone]
+      );
+
+      if (cancelHistory.rows.length >= 3) {
+        await client.query('ROLLBACK');
+        return NextResponse.json(
+          {
+            error: 'Daily booking limit reached due to repeated cancellations. Please register in person at the reception desk.',
+          },
+          { status: 429 }
+        );
+      }
+
+      if (cancelHistory.rows.length > 0) {
+        const lastCancelled = new Date(cancelHistory.rows[0].updated_at).getTime();
+        const cooldownMins = 10;
+        const elapsedMins = (Date.now() - lastCancelled) / (1000 * 60);
+        if (elapsedMins < cooldownMins) {
+          await client.query('ROLLBACK');
+          const remainingMins = Math.ceil(cooldownMins - elapsedMins);
+          return NextResponse.json(
+            {
+              error: `Cancellation cooldown active. Please wait ${remainingMins} minute${remainingMins === 1 ? '' : 's'} before booking a new token.`,
+            },
+            { status: 429 }
+          );
+        }
+      }
+    }
+
     // 2. Atomically increment the stream's daily token counter
     const counterRes = await client.query(
       `UPDATE queue_streams 

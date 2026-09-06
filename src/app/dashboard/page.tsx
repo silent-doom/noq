@@ -2154,7 +2154,7 @@ function DashboardContent() {
             <div className="flex justify-between items-center">
               <div>
                 <h3 className="text-base font-bold text-zinc-900">Transfer Patient to Branch</h3>
-                <p className="text-xs text-zinc-500 mt-0.5">Move token seamlessly with live pass & SMS update.</p>
+                <p className="text-xs text-zinc-500 mt-0.5">Move token seamlessly with live pass & voice update.</p>
               </div>
               <button
                 onClick={() => setIsTransferModalOpen(false)}
@@ -2190,7 +2190,7 @@ function DashboardContent() {
               </div>
 
               <p className="text-[11px] text-zinc-500 leading-relaxed">
-                ℹ️ The patient will automatically receive a Web Push & SMS notification with their new token pass for the destination clinic.
+                ℹ️ The patient will automatically receive a live digital pass and real-time audio update for the destination clinic.
               </p>
 
               <div className="flex gap-2 pt-2">

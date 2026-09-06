@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Ably from 'ably';
 import { getDomainTerminology, formatWaitTime, generateAvailableTimeSlots, isValidPhoneNumber, formatPhoneNumberE164 } from '@/lib/domain';
+import { playChimeAndAnnounce, playTestAnnouncement, playChimeAudio } from '@/lib/audioAnnouncement';
 
 interface TokenData {
   id: string;
@@ -78,46 +79,39 @@ export default function TokenPassPage() {
     }
   };
 
-  // SMS Opt-In State
-  const [isSmsModalOpen, setIsSmsModalOpen] = useState(false);
-  const [smsPhoneInput, setSmsPhoneInput] = useState('');
-  const [smsPhoneError, setSmsPhoneError] = useState<string | null>(null);
-  const [smsOptInSubmitting, setSmsOptInSubmitting] = useState(false);
+  const hasAlertedRef = useRef<boolean>(false);
+  const [audioTesting, setAudioTesting] = useState(false);
 
-  const handleSmsOptInSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSmsPhoneError(null);
-
-    const formatted = formatPhoneNumberE164(smsPhoneInput);
-    if (!isValidPhoneNumber(formatted)) {
-      setSmsPhoneError('Please enter a valid 10 to 15-digit mobile phone number.');
-      return;
-    }
-
-    setSmsOptInSubmitting(true);
-    try {
-      const res = await fetch(`/api/token/${tokenId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customerPhone: formatted,
-          smsOptIn: true,
-        }),
-      });
-
-      const json = await res.json();
-      if (res.ok && json.success) {
-        alert(`✅ SMS Turn Alerts Enabled for ${formatted}!`);
-        setIsSmsModalOpen(false);
-        fetchTokenStatus();
-      } else {
-        setSmsPhoneError(json.error || 'Failed to enable SMS alerts.');
+  // Auto-prime AudioContext on first touch or click to prevent mobile autoplay blocks
+  useEffect(() => {
+    const unlockAudio = () => {
+      if (typeof window !== 'undefined') {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioCtx) {
+          const ctx = new AudioCtx();
+          if (ctx.state === 'suspended') {
+            ctx.resume().catch(() => {});
+          }
+        }
       }
-    } catch (err) {
-      console.error(err);
-      setSmsPhoneError('Network error. Please try again.');
+    };
+
+    window.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
+    window.addEventListener('click', unlockAudio, { once: true });
+    return () => {
+      window.removeEventListener('touchstart', unlockAudio);
+      window.removeEventListener('click', unlockAudio);
+    };
+  }, []);
+
+  const handleTestAudio = async () => {
+    setAudioTesting(true);
+    try {
+      await playTestAnnouncement('bilingual', tokenData?.assigned_station || 'Doctor Room 1');
+    } catch (e) {
+      console.error('Audio test error:', e);
     } finally {
-      setSmsOptInSubmitting(false);
+      setAudioTesting(false);
     }
   };
 
@@ -202,52 +196,20 @@ export default function TokenPassPage() {
     }
   };
 
-  // Synthesize Web Audio Chime (Ding-Dong double tone)
-  const playServingChime = () => {
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
+  const triggerServingAlert = (tokenNumber: number, stationName?: string, businessName?: string) => {
+    // 1. Play dual-tone chime and natural female voice announcement directly on customer's phone
+    playChimeAndAnnounce(tokenNumber, stationName || 'Doctor Room 1', { language: 'bilingual' });
 
-      // High Bell Tone (G5 - 783.99 Hz)
-      const osc1 = ctx.createOscillator();
-      const gain1 = ctx.createGain();
-      osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(783.99, ctx.currentTime);
-      gain1.gain.setValueAtTime(0.5, ctx.currentTime);
-      gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-      osc1.connect(gain1);
-      gain1.connect(ctx.destination);
-      osc1.start(ctx.currentTime);
-      osc1.stop(ctx.currentTime + 0.5);
-
-      // Chime Tone (C6 - 1046.50 Hz)
-      const osc2 = ctx.createOscillator();
-      const gain2 = ctx.createGain();
-      osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.25);
-      gain2.gain.setValueAtTime(0.6, ctx.currentTime + 0.25);
-      gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
-      osc2.connect(gain2);
-      gain2.connect(ctx.destination);
-      osc2.start(ctx.currentTime + 0.25);
-      osc2.stop(ctx.currentTime + 1.2);
-    } catch (err) {
-      console.error('Audio chime error:', err);
-    }
-  };
-
-  const triggerServingAlert = (tokenNumber: number, businessName: string) => {
-    playServingChime();
-
+    // 2. Physical haptic vibration
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      navigator.vibrate([300, 150, 300, 150, 500]);
+      navigator.vibrate([400, 150, 400, 150, 500]);
     }
 
+    // 3. System Push / Lock Screen Alert
     if (typeof window !== 'undefined' && 'Notification' in window) {
       if (Notification.permission === 'granted') {
         new Notification(`🔔 YOUR TURN NOW! Token #${tokenNumber}`, {
-          body: `Please proceed to counter at ${businessName} immediately!`,
+          body: `Please proceed to ${stationName || 'the consultation counter'} immediately!`,
         });
       }
     }
@@ -265,7 +227,7 @@ export default function TokenPassPage() {
   }
 
   const requestAlertPermissions = async () => {
-    playServingChime();
+    await playChimeAudio();
     setAudioEnabled(true);
 
     try {
@@ -307,18 +269,18 @@ export default function TokenPassPage() {
       }
 
       setTokenData((prev) => {
-        if (prev) {
-          if (prev.status === 'SKIPPED' && json.data.status === 'WAITING') {
-            setShowReinsertedBanner(true);
-          }
+        const isNowServing = json.data.status === 'SERVING' || json.data.current_serving_token === json.data.token_number;
+        const wasServing = prev ? (prev.status === 'SERVING' || prev.current_serving_token === prev.token_number) : false;
 
-          const wasServing = prev.current_serving_token === prev.token_number || prev.status === 'SERVING';
-          const isNowServing = json.data.current_serving_token === json.data.token_number || json.data.status === 'SERVING';
-
-          if (!wasServing && isNowServing) {
-            triggerServingAlert(json.data.token_number, json.data.business_name || 'the venue');
-          }
+        if (prev && prev.status === 'SKIPPED' && json.data.status === 'WAITING') {
+          setShowReinsertedBanner(true);
         }
+
+        if (isNowServing && (!wasServing || !hasAlertedRef.current)) {
+          triggerServingAlert(json.data.token_number, json.data.assigned_station, json.data.business_name || 'the venue');
+          hasAlertedRef.current = true;
+        }
+
         return json.data;
       });
       setError(null);
@@ -727,40 +689,31 @@ export default function TokenPassPage() {
             </div>
           )}
 
-          {/* SMS Opt-In Banner */}
+          {/* Mobile Voice Turn Alert Card */}
           {!isCompleted && !isCancelled && (
-            <div>
-              {tokenData.sms_opt_in && isValidPhoneNumber(tokenData.customer_phone) ? (
-                <div className="bg-emerald-50/90 border border-emerald-200 p-2.5 rounded-xl flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs">🔔</span>
-                    <span className="text-[11px] font-bold text-emerald-900 font-mono">
-                      SMS Active: {tokenData.customer_phone}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSmsPhoneInput(tokenData.customer_phone || '');
-                      setIsSmsModalOpen(true);
-                    }}
-                    className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 underline cursor-pointer"
-                  >
-                    Edit
-                  </button>
+            <div className="bg-gradient-to-r from-emerald-950/10 via-emerald-900/5 to-transparent border border-emerald-500/30 p-3 rounded-2xl flex items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-600 flex items-center justify-center text-sm font-bold shrink-0 animate-pulse">
+                  🔊
                 </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSmsPhoneInput(tokenData.customer_phone || '');
-                    setIsSmsModalOpen(true);
-                  }}
-                  className="w-full bg-white hover:bg-zinc-50 border border-emerald-300 text-emerald-900 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs"
-                >
-                  <span>🔔 Inform Me via SMS When Turn Approaches</span>
-                </button>
-              )}
+                <div className="text-left">
+                  <div className="text-[11px] font-extrabold text-emerald-950 flex items-center gap-1.5">
+                    <span>Mobile Voice Alert Active</span>
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                  </div>
+                  <p className="text-[10px] text-zinc-600 font-medium">
+                    Your phone will chime and announce your token when called.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleTestAudio}
+                disabled={audioTesting}
+                className="shrink-0 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-[10px] font-bold px-3 py-1.5 rounded-xl transition cursor-pointer shadow-xs"
+              >
+                {audioTesting ? 'Testing...' : '🔊 Test Sound'}
+              </button>
             </div>
           )}
 
@@ -778,7 +731,7 @@ export default function TokenPassPage() {
                 <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl text-center">
                   <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-widest block">Reschedule Status</span>
                   <p className="text-[11px] font-bold text-emerald-900 mt-0.5">
-                    ✅ Appointment Approved for Future Date! Check SMS for new pass.
+                    ✅ Appointment Approved for Future Date! Your pass is updated below.
                   </p>
                 </div>
               ) : tokenData.reschedule_status === 'REJECTED' ? (

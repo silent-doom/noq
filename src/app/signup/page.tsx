@@ -649,7 +649,7 @@ export default function SignupPage() {
                   <span className="font-mono font-bold text-zinc-300">₹499 / month</span>
                 </div>
                 <p className="text-[10px] text-zinc-500 leading-tight">
-                  ✨ Instant terminal access. Includes unlimited tokens, multi-station calling, SMS gateway & TV display.
+                  ✨ Instant terminal access. Includes unlimited tokens, multi-station calling, mobile voice alerts & TV display.
                 </p>
               </div>
 

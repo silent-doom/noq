@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
       transferredFrom: currentToken.source_biz_name,
     });
 
-    // 6. Push & SMS Notification to Patient
+    // 6. Web Push Notification to Patient
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     sendTokenPushNotification({
       tokenId,
@@ -103,15 +103,6 @@ export async function POST(req: NextRequest) {
       body: `Hi ${currentToken.customer_name}! Your pass has been moved to ${targetStream.business_name}. Your new token is #${newTokenNumber}.`,
       url: `${appUrl}/t/${tokenId}`,
     });
-
-    if (currentToken.sms_opt_in && isValidPhoneNumber(currentToken.customer_phone)) {
-      notifyUpcomingTurn(
-        currentToken.customer_name,
-        currentToken.customer_phone,
-        newTokenNumber,
-        3
-      );
-    }
 
     return NextResponse.json({
       success: true,

@@ -117,14 +117,14 @@ export default function LandingPage() {
     clinic: {
       badge: 'Clinics & Hospitals',
       title: 'Eliminate Crowded OPD Waiting Rooms',
-      desc: 'Patients scan on-site QR codes or book online to track live consultation status with automated SMS alerts. Doctors manage flow effortlessly.',
+      desc: 'Patients scan on-site QR codes or book online to track live consultation status with mobile voice turn alerts. Doctors manage flow effortlessly.',
       guestTerm: 'Patient',
       paceTerm: 'Consultation Pace',
     },
     restaurant: {
       badge: 'Restaurants & Hotels',
       title: 'Streamline Table Seating & Dining Queues',
-      desc: 'Diners receive instant SMS text alerts when their table is ready, freeing up entrance foyers and boosting table turnover.',
+      desc: 'Diners receive live digital passes and mobile audio callouts when their table is ready, freeing up entrance foyers and boosting turnover.',
       guestTerm: 'Diner',
       paceTerm: 'Table Turn Time',
     },
@@ -297,11 +297,11 @@ export default function LandingPage() {
 
           <div className="bg-[#0d0e12] border border-zinc-800/80 p-6 rounded-3xl space-y-3">
             <div className="w-10 h-10 bg-emerald-950 text-emerald-400 rounded-2xl flex items-center justify-center font-bold text-lg">
-              📲
+              🔊
             </div>
-            <h3 className="text-base font-bold text-white">Automated SMS Text Alerts</h3>
+            <h3 className="text-base font-bold text-white">Mobile Voice Turn Alerts</h3>
             <p className="text-xs text-zinc-400 leading-relaxed">
-              Customers receive instant cellular SMS text alerts on their mobile phones when their turn is approaching without needing any app.
+              Customers receive crystal airport chimes and spoken voice callout announcements directly on their mobile phones when called.
             </p>
           </div>
 
@@ -634,7 +634,7 @@ export default function LandingPage() {
                   <span className="font-mono font-bold text-zinc-300">₹499 / month</span>
                 </div>
                 <p className="text-[10px] text-zinc-400 leading-tight">
-                  ✨ Instant terminal access upon creation. Includes unlimited tokens, voice TTS announcements, multi-station parallel calling, and SMS gateway.
+                  ✨ Instant terminal access upon creation. Includes unlimited tokens, voice TTS announcements, multi-station parallel calling, and live mobile passes.
                 </p>
               </div>
 
