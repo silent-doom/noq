@@ -864,12 +864,11 @@ function DashboardContent() {
 
       {/* Main Screen Panel */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto overflow-x-hidden w-full max-w-full">
-        <header className="px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex items-center justify-between border-b border-zinc-200/60 bg-white/70 backdrop-blur-md sticky top-0 z-10 gap-1.5 sm:gap-2 w-full max-w-full overflow-hidden">
-          {/* Left: Hamburger (mobile) + Business Name */}
-          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink">
-            {/* Mobile hamburger */}
+        <header className="px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between border-b border-zinc-200 bg-white/95 backdrop-blur-md sticky top-0 z-30 gap-2 sm:gap-4 w-full shadow-2xs">
+          {/* Left: Brand & Stream Title */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
-              className="lg:hidden w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 hover:bg-zinc-200 shrink-0 cursor-pointer"
+              className="lg:hidden w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 hover:bg-zinc-200 shrink-0 cursor-pointer transition"
               onClick={() => setIsMobileSidebarOpen(true)}
               aria-label="Open Menu"
             >
@@ -878,58 +877,23 @@ function DashboardContent() {
               </svg>
             </button>
 
-            <h1 className="text-sm sm:text-base lg:text-xl font-bold text-zinc-900 truncate max-w-[120px] sm:max-w-[200px] lg:max-w-none">
+            <h1 className="text-sm sm:text-base lg:text-lg font-bold text-zinc-900 truncate max-w-[140px] sm:max-w-[200px] md:max-w-[280px]">
               {streamInfo?.business_name || 'Business Venue'}
             </h1>
-            <span className="hidden md:inline text-xs bg-zinc-100 text-zinc-600 font-semibold px-2.5 py-0.5 rounded-full border border-zinc-200 shrink-0">
+            <span className="hidden sm:inline-block text-[11px] bg-zinc-100 text-zinc-600 font-semibold px-2.5 py-0.5 rounded-full border border-zinc-200 shrink-0">
               {streamInfo?.stream_name || terms.queueTitle}
             </span>
-
-            {/* Linked Branch Switcher — desktop xl only to prevent header squish */}
-            <div className="hidden xl:block">
-              {linkedBranches.length > 0 ? (
-                <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1 text-xs text-emerald-950 font-bold">
-                  <span className="text-[10px] text-emerald-700 uppercase tracking-wider">BRANCH:</span>
-                  <select
-                    value={streamId || ''}
-                    onChange={(e) => {
-                      const newId = e.target.value;
-                      if (newId && newId !== streamId) {
-                        window.location.href = `/dashboard?streamId=${newId}`;
-                      }
-                    }}
-                    className="bg-transparent text-emerald-900 font-bold focus:outline-none cursor-pointer"
-                  >
-                    <option value={streamId || ''}>📍 {streamInfo?.business_name || 'Current'} (Active)</option>
-                    {linkedBranches.map((b) => (
-                      <option key={b.stream_id} value={b.stream_id}>
-                        ➔ {b.business_name} ({b.stream_name})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsLinkModalOpen(true)}
-                  className="text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1 rounded-full transition flex items-center gap-1 cursor-pointer"
-                  title="Connect another clinic/branch of this doctor"
-                >
-                  <span>+ Link Branch</span>
-                </button>
-              )}
-            </div>
           </div>
 
-          {/* Right: Controls */}
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            {/* Station selector — visible on all sizes but compact */}
-            <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-full px-2 sm:px-2.5 py-1 text-xs text-white shrink-0">
+          {/* Right: Operational Controls */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Station Selector Pill */}
+            <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-full px-2.5 py-1 text-xs text-white shrink-0 shadow-2xs">
               <span className="hidden md:inline text-[10px] font-bold text-zinc-400 uppercase tracking-wider">STN:</span>
               <select
                 value={activeCounter}
                 onChange={(e) => setActiveCounter(e.target.value)}
-                className="bg-transparent font-bold text-emerald-400 focus:outline-none cursor-pointer max-w-[85px] sm:max-w-[120px] md:max-w-none text-[11px]"
+                className="bg-transparent font-bold text-emerald-400 focus:outline-none cursor-pointer max-w-[105px] sm:max-w-[140px] text-[11px]"
               >
                 {(Array.isArray(streamInfo?.stations) && streamInfo.stations.length > 0
                   ? streamInfo.stations
@@ -942,64 +906,18 @@ function DashboardContent() {
               </select>
             </div>
 
-            {/* Search — hidden on mobile/tablet (already in Waiting List card) */}
-            <div className="relative hidden lg:block">
-              <svg className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder={`Search ${terms.guestTerm.toLowerCase()}...`}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-36 xl:w-44 pl-9 pr-3 py-1.5 bg-white border border-zinc-200 rounded-full text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition shadow-xs"
-              />
-            </div>
-
-            {/* A11y — xl only */}
-            <button
-              onClick={() => setIsA11yOpen(true)}
-              className="hidden xl:flex px-2.5 py-1.5 rounded-full bg-white border border-zinc-200 text-xs font-bold text-zinc-700 hover:bg-zinc-50 shadow-2xs transition cursor-pointer items-center gap-1"
-              title="Accessibility Settings"
-              aria-label="Accessibility Options"
-            >
-              <span>👓 A11y</span>
-            </button>
-
-            {/* Lock / Unlock Status — lg+ */}
-            <button
-              onClick={() => {
-                if (isAuthenticated) {
-                  if (confirm('Lock Admin Terminal session?')) {
-                    setIsAuthenticated(false);
-                    if (streamId) {
-                      sessionStorage.removeItem(`noq_auth_${streamId}`);
-                      sessionStorage.removeItem(`noq_token_${streamId}`);
-                    }
-                  }
-                }
-              }}
-              className={`hidden lg:flex px-2.5 py-1.5 rounded-full text-xs font-bold items-center gap-1.5 transition ${
-                isAuthenticated
-                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-                  : 'bg-amber-50 text-amber-700 border border-amber-200'
-              }`}
-            >
-              <span>{isAuthenticated ? '🔒 Unlocked' : '🔑 Locked'}</span>
-            </button>
-
-            {/* STAT Emergency Quick Button */}
+            {/* Emergency STAT Button */}
             <button
               onClick={() => setIsEmergencyModalOpen(true)}
-              className="h-8 sm:h-9 px-2 sm:px-3 rounded-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-600 flex items-center gap-1 sm:gap-1.5 text-xs font-bold shadow-xs transition cursor-pointer shrink-0"
+              className="h-8 sm:h-8.5 px-2.5 sm:px-3 rounded-full bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 flex items-center gap-1 sm:gap-1.5 text-xs font-bold transition cursor-pointer shrink-0"
               title="Trigger Emergency STAT Call"
             >
-              <span className="text-sm animate-pulse">🚨</span>
-              <span className="hidden md:inline">Emergency STAT</span>
-              <span className="hidden sm:inline md:hidden">STAT</span>
+              <span className="text-xs animate-pulse">🚨</span>
+              <span className="hidden sm:inline">Emergency STAT</span>
+              <span className="sm:hidden text-[10px] font-extrabold">STAT</span>
             </button>
 
-            {/* Audio Chime & TTS Toggle */}
+            {/* Voice Announcement Toggle */}
             <button
               onClick={() => {
                 const nextVal = !ttsVoiceEnabled;
@@ -1012,21 +930,21 @@ function DashboardContent() {
                   }
                 }
               }}
-              className={`h-8 sm:h-9 px-2 sm:px-3 rounded-full border text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 ${
+              className={`h-8 sm:h-8.5 px-2.5 sm:px-3 rounded-full border text-xs font-bold transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 ${
                 ttsVoiceEnabled
-                  ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/30'
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
                   : 'bg-zinc-100 text-zinc-400 border-zinc-200 hover:bg-zinc-200'
               }`}
               title={ttsVoiceEnabled ? 'Audio Chime & TTS Voice Active (Click to mute)' : 'Audio Muted (Click to enable & test sound)'}
             >
-              <span className="text-xs sm:text-sm">{ttsVoiceEnabled ? '🔊' : '🔇'}</span>
-              <span className="hidden sm:inline">{ttsVoiceEnabled ? 'Voice ON' : 'Mute'}</span>
+              <span className="text-xs">{ttsVoiceEnabled ? '🔊' : '🔇'}</span>
+              <span className="hidden sm:inline text-[11px]">{ttsVoiceEnabled ? 'Voice ON' : 'Mute'}</span>
             </button>
 
             {/* Settings Gear */}
             <button
               onClick={() => setIsSettingsOpen(true)}
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-600 hover:bg-zinc-50 shadow-xs transition cursor-pointer shrink-0"
+              className="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-600 hover:bg-zinc-50 shadow-2xs transition cursor-pointer shrink-0"
               title="Queue Settings & Broadcast"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1035,14 +953,14 @@ function DashboardContent() {
               </svg>
             </button>
 
-            {/* New Walk-in — shown on mobile as quick action */}
+            {/* New Walk-in Button */}
             <button
               onClick={() => setIsWalkInOpen(true)}
-              className="lg:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-emerald-500 flex items-center justify-center text-white font-black text-base sm:text-lg shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 transition cursor-pointer shrink-0"
+              className="h-8 sm:h-8.5 px-3 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm transition cursor-pointer shrink-0"
               title={`Add Walk-in ${terms.guestTerm}`}
-              aria-label="Add Walk-in"
             >
-              +
+              <span className="text-sm font-black">+</span>
+              <span className="hidden sm:inline text-[11px]">Walk-in</span>
             </button>
           </div>
         </header>
@@ -1113,17 +1031,17 @@ function DashboardContent() {
 
         {/* FREE TRIAL TOP BANNER */}
         {subscription?.isTrial && !subscription?.isLocked && (
-          <div className="mx-3 sm:mx-6 lg:mx-8 mt-3 sm:mt-4 p-3 sm:p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs text-emerald-950 shadow-2xs animate-fade-in max-w-full overflow-hidden">
-            <div className="flex items-start sm:items-center gap-2 min-w-0">
-              <span className="text-lg shrink-0 mt-0.5 sm:mt-0">🌟</span>
-              <div className="min-w-0 break-words">
-                <span className="font-extrabold text-emerald-900">7-Day Free Trial (Day {subscription.trialDay || 1} of 7): </span>
-                <span className="text-emerald-700 break-words">{subscription.message}</span>
+          <div className="mx-4 sm:mx-6 lg:mx-8 mt-3 sm:mt-4 p-3 sm:p-3.5 bg-gradient-to-r from-emerald-500/15 via-emerald-500/10 to-emerald-500/5 border border-emerald-500/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-emerald-950 shadow-xs animate-fade-in max-w-full">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="text-base shrink-0">🌟</span>
+              <div className="min-w-0">
+                <span className="font-extrabold text-emerald-950">7-Day Free Trial (Day {subscription.trialDay || 1} of 7): </span>
+                <span className="text-emerald-800 font-medium">{subscription.message}</span>
               </div>
             </div>
             <button
               onClick={() => setIsRenewModalOpen(true)}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer shadow-2xs shrink-0 w-full sm:w-auto text-center"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-xl text-xs transition cursor-pointer shadow-xs shrink-0 w-full sm:w-auto text-center"
             >
               Activate 1st Month Plan (₹1,499) ↗
             </button>
