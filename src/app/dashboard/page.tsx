@@ -843,57 +843,113 @@ function DashboardContent() {
           </nav>
         </div>
 
-        {/* Action Button: Open Walk-in Modal */}
-        <button
-          onClick={() => setIsWalkInOpen(true)}
-          className="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white font-medium text-xs py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition cursor-pointer"
-        >
-          <span className="text-base font-bold">+</span>
-          <span>New Walk-in {terms.guestTerm}</span>
-        </button>
+        {/* Sidebar Controls Section */}
+        <div className="space-y-2 pt-2 border-t border-zinc-800/80">
+          {/* Action Button: Open Walk-in Modal */}
+          <button
+            onClick={() => {
+              setIsWalkInOpen(true);
+              setIsMobileSidebarOpen(false);
+            }}
+            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition cursor-pointer shadow-sm"
+          >
+            <span className="text-base font-black">+</span>
+            <span>New Walk-in {terms.guestTerm}</span>
+          </button>
 
-        {/* Action Button: Emergency STAT Call */}
-        <button
-          onClick={() => setIsEmergencyModalOpen(true)}
-          className="w-full mt-2 bg-red-950/40 hover:bg-red-900/60 border border-red-800/60 text-red-300 hover:text-red-100 font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
-        >
-          <span className="text-sm animate-pulse">🚨</span>
-          <span>STAT Emergency Call</span>
-        </button>
+          {/* Voice Announcement Toggle inside Sidebar */}
+          <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-xl space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-zinc-300 flex items-center gap-1.5">
+                <span>{ttsVoiceEnabled ? '🔊' : '🔇'}</span>
+                <span>Voice Audio</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const nextVal = !ttsVoiceEnabled;
+                  setTtsVoiceEnabled(nextVal);
+                }}
+                className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold transition cursor-pointer ${
+                  ttsVoiceEnabled ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
+                }`}
+              >
+                {ttsVoiceEnabled ? 'ENABLED' : 'MUTED'}
+              </button>
+            </div>
+            {ttsVoiceEnabled && (
+              <button
+                type="button"
+                onClick={() => playTestAnnouncement(voiceLang, activeCounter)}
+                className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-bold py-1.5 rounded-lg transition cursor-pointer"
+              >
+                🔊 Test Audio Speaker
+              </button>
+            )}
+          </div>
+
+          {/* Queue Settings Trigger inside Sidebar */}
+          <button
+            onClick={() => {
+              setIsSettingsOpen(true);
+              setIsMobileSidebarOpen(false);
+            }}
+            className="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white font-semibold text-xs py-2.5 px-3 rounded-xl flex items-center justify-between transition cursor-pointer"
+          >
+            <span className="flex items-center gap-2">
+              <span>⚙️</span>
+              <span>Queue Settings</span>
+            </span>
+            <span className="text-zinc-500 text-xs">➔</span>
+          </button>
+
+          {/* Action Button: Emergency STAT Call */}
+          <button
+            onClick={() => {
+              setIsEmergencyModalOpen(true);
+              setIsMobileSidebarOpen(false);
+            }}
+            className="w-full bg-red-950/40 hover:bg-red-900/60 border border-red-800/60 text-red-300 hover:text-red-100 font-bold text-xs py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
+          >
+            <span className="text-sm animate-pulse">🚨</span>
+            <span>STAT Emergency Call</span>
+          </button>
+        </div>
       </aside>
 
       {/* Main Screen Panel */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto overflow-x-hidden w-full max-w-full">
-        <header className="px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between border-b border-zinc-200 bg-white/95 backdrop-blur-md sticky top-0 z-30 gap-2 sm:gap-4 w-full shadow-2xs">
-          {/* Left: Brand & Stream Title */}
+        <header className="px-3.5 sm:px-6 lg:px-8 py-3 flex items-center justify-between border-b border-zinc-200 bg-white/95 backdrop-blur-md sticky top-0 z-30 gap-2 sm:gap-4 w-full shadow-2xs">
+          {/* Left: Hamburger (mobile) + Brand Name */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               className="lg:hidden w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 hover:bg-zinc-200 shrink-0 cursor-pointer transition"
               onClick={() => setIsMobileSidebarOpen(true)}
-              aria-label="Open Menu"
+              aria-label="Open Navigation Menu"
+              title="Menu"
             >
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
 
-            <h1 className="text-sm sm:text-base lg:text-lg font-bold text-zinc-900 truncate max-w-[140px] sm:max-w-[200px] md:max-w-[280px]">
+            <h1 className="text-sm sm:text-base lg:text-lg font-bold text-zinc-900 truncate max-w-[130px] sm:max-w-[200px] md:max-w-[280px]">
               {streamInfo?.business_name || 'Business Venue'}
             </h1>
-            <span className="hidden sm:inline-block text-[11px] bg-zinc-100 text-zinc-600 font-semibold px-2.5 py-0.5 rounded-full border border-zinc-200 shrink-0">
+            <span className="hidden lg:inline-block text-[11px] bg-zinc-100 text-zinc-600 font-semibold px-2.5 py-0.5 rounded-full border border-zinc-200 shrink-0">
               {streamInfo?.stream_name || terms.queueTitle}
             </span>
           </div>
 
-          {/* Right: Operational Controls */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Right: Operational Controls (Clean, spacious, zero squish) */}
+          <div className="flex items-center gap-2 shrink-0">
             {/* Station Selector Pill */}
-            <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-full px-2.5 py-1 text-xs text-white shrink-0 shadow-2xs">
+            <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-full px-2.5 sm:px-3 py-1 text-xs text-white shrink-0 shadow-2xs">
               <span className="hidden md:inline text-[10px] font-bold text-zinc-400 uppercase tracking-wider">STN:</span>
               <select
                 value={activeCounter}
                 onChange={(e) => setActiveCounter(e.target.value)}
-                className="bg-transparent font-bold text-emerald-400 focus:outline-none cursor-pointer max-w-[105px] sm:max-w-[140px] text-[11px]"
+                className="bg-transparent font-bold text-emerald-400 focus:outline-none cursor-pointer max-w-[100px] sm:max-w-[140px] text-[11px]"
               >
                 {(Array.isArray(streamInfo?.stations) && streamInfo.stations.length > 0
                   ? streamInfo.stations
@@ -906,18 +962,17 @@ function DashboardContent() {
               </select>
             </div>
 
-            {/* Emergency STAT Button */}
+            {/* Emergency STAT Button — hidden on mobile (accessible in drawer) */}
             <button
               onClick={() => setIsEmergencyModalOpen(true)}
-              className="h-8 sm:h-8.5 px-2.5 sm:px-3 rounded-full bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 flex items-center gap-1 sm:gap-1.5 text-xs font-bold transition cursor-pointer shrink-0"
+              className="hidden lg:flex h-8.5 px-3 rounded-full bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 items-center gap-1.5 text-xs font-bold transition cursor-pointer shrink-0"
               title="Trigger Emergency STAT Call"
             >
               <span className="text-xs animate-pulse">🚨</span>
-              <span className="hidden sm:inline">Emergency STAT</span>
-              <span className="sm:hidden text-[10px] font-extrabold">STAT</span>
+              <span>Emergency STAT</span>
             </button>
 
-            {/* Voice Announcement Toggle */}
+            {/* Voice Announcement Toggle — hidden on mobile (accessible in drawer) */}
             <button
               onClick={() => {
                 const nextVal = !ttsVoiceEnabled;
@@ -930,7 +985,7 @@ function DashboardContent() {
                   }
                 }
               }}
-              className={`h-8 sm:h-8.5 px-2.5 sm:px-3 rounded-full border text-xs font-bold transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 ${
+              className={`hidden lg:flex h-8.5 px-3 rounded-full border text-xs font-bold transition cursor-pointer items-center gap-1.5 shrink-0 ${
                 ttsVoiceEnabled
                   ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
                   : 'bg-zinc-100 text-zinc-400 border-zinc-200 hover:bg-zinc-200'
@@ -938,13 +993,13 @@ function DashboardContent() {
               title={ttsVoiceEnabled ? 'Audio Chime & TTS Voice Active (Click to mute)' : 'Audio Muted (Click to enable & test sound)'}
             >
               <span className="text-xs">{ttsVoiceEnabled ? '🔊' : '🔇'}</span>
-              <span className="hidden sm:inline text-[11px]">{ttsVoiceEnabled ? 'Voice ON' : 'Mute'}</span>
+              <span className="text-[11px]">{ttsVoiceEnabled ? 'Voice ON' : 'Mute'}</span>
             </button>
 
-            {/* Settings Gear */}
+            {/* Settings Gear — hidden on mobile (accessible in drawer) */}
             <button
               onClick={() => setIsSettingsOpen(true)}
-              className="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-600 hover:bg-zinc-50 shadow-2xs transition cursor-pointer shrink-0"
+              className="hidden lg:flex w-8.5 h-8.5 rounded-full bg-white border border-zinc-200 items-center justify-center text-zinc-600 hover:bg-zinc-50 shadow-2xs transition cursor-pointer shrink-0"
               title="Queue Settings & Broadcast"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -953,10 +1008,10 @@ function DashboardContent() {
               </svg>
             </button>
 
-            {/* New Walk-in Button */}
+            {/* Quick Walk-in Button */}
             <button
               onClick={() => setIsWalkInOpen(true)}
-              className="h-8 sm:h-8.5 px-3 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm transition cursor-pointer shrink-0"
+              className="h-8 sm:h-8.5 px-3 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-xs transition cursor-pointer shrink-0"
               title={`Add Walk-in ${terms.guestTerm}`}
             >
               <span className="text-sm font-black">+</span>
