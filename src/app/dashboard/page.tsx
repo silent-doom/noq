@@ -941,31 +941,34 @@ function DashboardContent() {
             </span>
           </div>
 
-          {/* Right: Operational Controls (Clean, spacious, zero squish) */}
+          {/* Right: Operational Controls — Uniform, Harmonious, Pixel-Perfect Pills */}
           <div className="flex items-center gap-2 shrink-0">
             {/* Station Selector Pill */}
-            <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-full px-2.5 sm:px-3 py-1 text-xs text-white shrink-0 shadow-2xs">
+            <div className="h-9 px-3 rounded-full bg-zinc-100 hover:bg-zinc-200/80 border border-zinc-200 flex items-center gap-1.5 text-xs text-zinc-900 transition shrink-0 shadow-2xs">
               <span className="hidden md:inline text-[10px] font-bold text-zinc-400 uppercase tracking-wider">STN:</span>
               <select
                 value={activeCounter}
                 onChange={(e) => setActiveCounter(e.target.value)}
-                className="bg-transparent font-bold text-emerald-400 focus:outline-none cursor-pointer max-w-[100px] sm:max-w-[140px] text-[11px]"
+                className="bg-transparent font-bold text-zinc-900 focus:outline-none cursor-pointer max-w-[100px] sm:max-w-[140px] text-xs appearance-none pr-1"
               >
                 {(Array.isArray(streamInfo?.stations) && streamInfo.stations.length > 0
                   ? streamInfo.stations
                   : generateDomainStations(streamInfo?.category)
                 ).map((st) => (
-                  <option key={st} value={st} className="bg-zinc-900 text-white">
+                  <option key={st} value={st} className="bg-white text-zinc-900">
                     {st}
                   </option>
                 ))}
               </select>
+              <svg className="w-3.5 h-3.5 text-zinc-400 shrink-0 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+              </svg>
             </div>
 
             {/* Emergency STAT Button — hidden on mobile (accessible in drawer) */}
             <button
               onClick={() => setIsEmergencyModalOpen(true)}
-              className="hidden lg:flex h-8.5 px-3 rounded-full bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 items-center gap-1.5 text-xs font-bold transition cursor-pointer shrink-0"
+              className="hidden lg:flex h-9 px-3.5 rounded-full bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 items-center gap-1.5 text-xs font-bold transition cursor-pointer shrink-0 shadow-2xs"
               title="Trigger Emergency STAT Call"
             >
               <span className="text-xs animate-pulse">🚨</span>
@@ -985,21 +988,21 @@ function DashboardContent() {
                   }
                 }
               }}
-              className={`hidden lg:flex h-8.5 px-3 rounded-full border text-xs font-bold transition cursor-pointer items-center gap-1.5 shrink-0 ${
+              className={`hidden lg:flex h-9 px-3.5 rounded-full border text-xs font-bold transition cursor-pointer items-center gap-1.5 shrink-0 shadow-2xs ${
                 ttsVoiceEnabled
                   ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                  : 'bg-zinc-100 text-zinc-400 border-zinc-200 hover:bg-zinc-200'
+                  : 'bg-zinc-100 text-zinc-600 border-zinc-200 hover:bg-zinc-200'
               }`}
               title={ttsVoiceEnabled ? 'Audio Chime & TTS Voice Active (Click to mute)' : 'Audio Muted (Click to enable & test sound)'}
             >
               <span className="text-xs">{ttsVoiceEnabled ? '🔊' : '🔇'}</span>
-              <span className="text-[11px]">{ttsVoiceEnabled ? 'Voice ON' : 'Mute'}</span>
+              <span>{ttsVoiceEnabled ? 'Voice ON' : 'Mute'}</span>
             </button>
 
             {/* Settings Gear — hidden on mobile (accessible in drawer) */}
             <button
               onClick={() => setIsSettingsOpen(true)}
-              className="hidden lg:flex w-8.5 h-8.5 rounded-full bg-white border border-zinc-200 items-center justify-center text-zinc-600 hover:bg-zinc-50 shadow-2xs transition cursor-pointer shrink-0"
+              className="hidden lg:flex w-9 h-9 rounded-full bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 items-center justify-center text-zinc-600 hover:text-zinc-900 shadow-2xs transition cursor-pointer shrink-0"
               title="Queue Settings & Broadcast"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1011,11 +1014,11 @@ function DashboardContent() {
             {/* Quick Walk-in Button */}
             <button
               onClick={() => setIsWalkInOpen(true)}
-              className="h-8 sm:h-8.5 px-3 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-xs transition cursor-pointer shrink-0"
+              className="h-9 px-4 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer shrink-0"
               title={`Add Walk-in ${terms.guestTerm}`}
             >
               <span className="text-sm font-black">+</span>
-              <span className="hidden sm:inline text-[11px]">Walk-in</span>
+              <span className="hidden sm:inline">Walk-in</span>
             </button>
           </div>
         </header>

@@ -249,24 +249,24 @@ function AnalyticsContent() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
             {/* Timeframe Selector */}
-            <div className="bg-zinc-100 p-1 rounded-2xl border border-zinc-200 flex text-xs font-semibold">
+            <div className="h-9 bg-zinc-100 p-0.5 rounded-full border border-zinc-200 flex items-center text-xs font-semibold shadow-2xs">
               <button
                 onClick={() => setTimeframe('today')}
-                className={`px-3 py-1 rounded-xl transition ${timeframe === 'today' ? 'bg-white text-zinc-900 shadow-xs' : 'text-zinc-500 hover:text-zinc-900'}`}
+                className={`h-7.5 px-3 rounded-full transition cursor-pointer ${timeframe === 'today' ? 'bg-white text-zinc-900 font-bold shadow-xs' : 'text-zinc-500 hover:text-zinc-900'}`}
               >
                 Today
               </button>
               <button
                 onClick={() => setTimeframe('week')}
-                className={`px-3 py-1 rounded-xl transition ${timeframe === 'week' ? 'bg-white text-zinc-900 shadow-xs' : 'text-zinc-500 hover:text-zinc-900'}`}
+                className={`h-7.5 px-3 rounded-full transition cursor-pointer ${timeframe === 'week' ? 'bg-white text-zinc-900 font-bold shadow-xs' : 'text-zinc-500 hover:text-zinc-900'}`}
               >
                 7-Day
               </button>
               <button
                 onClick={() => setTimeframe('month')}
-                className={`px-3 py-1 rounded-xl transition ${timeframe === 'month' ? 'bg-white text-zinc-900 shadow-xs' : 'text-zinc-500 hover:text-zinc-900'}`}
+                className={`h-7.5 px-3 rounded-full transition cursor-pointer ${timeframe === 'month' ? 'bg-white text-zinc-900 font-bold shadow-xs' : 'text-zinc-500 hover:text-zinc-900'}`}
               >
                 30-Day
               </button>
@@ -274,16 +274,18 @@ function AnalyticsContent() {
 
             <button
               onClick={exportToCSV}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-2xl shadow-sm transition flex items-center gap-2 cursor-pointer"
+              className="h-9 px-3.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer shrink-0"
             >
-              <span>📥 Export CSV</span>
+              <span>📥</span>
+              <span>Export CSV</span>
             </button>
 
             <button
               onClick={() => window.print()}
-              className="bg-black hover:bg-zinc-800 text-white text-xs font-bold px-4 py-2 rounded-2xl shadow-sm transition flex items-center gap-2 cursor-pointer"
+              className="h-9 px-3.5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer shrink-0"
             >
-              <span>🖨️ Print Report</span>
+              <span>🖨️</span>
+              <span>Print Report</span>
             </button>
           </div>
         </header>
