@@ -3,7 +3,7 @@
 > **Live Production App**: [https://noq-serve.vercel.app/](https://noq-serve.vercel.app/)  
 > **📖 Complete Layman User Guide & Feature Documentation**: [FEATURE_LIST.md](file:///Users/faizanchoudhary/Documents/noq/FEATURE_LIST.md)
 
-> **noQ** is an enterprise-grade virtual queue management platform that replaces physical waiting lines with live digital passes, native lock-screen Web Push alerts, Android SIM SMS dispatch, Ably real-time Pub/Sub, multi-branch clinic linkage & transfers, TV voice announcements, and dynamic domain adaptation across Clinics, Restaurants, Salons, and Retail.
+> **noQ** is an enterprise-grade virtual queue management platform that replaces physical waiting lines with live digital passes, native lock-screen Web Push alerts, dual-tone mobile voice turn chimes, Ably real-time Pub/Sub, multi-branch clinic linkage & transfers, TV voice announcements, and dynamic domain adaptation across Clinics, Restaurants, Salons, and Retail.
 
 ---
 
@@ -21,12 +21,11 @@
 - **🚀 Zero-Latency Dashboard Operations**: Advanced "Call Next" operations using highly optimized CTE (Common Table Expression) SQL combined with non-blocking Ably Websockets to instantly advance multi-station queues without freezing the UI.
 - **📱 Responsive Mobile Operator Interface**: Mobile-first alignment and overflow-free design for the operator dashboard, including full mobile responsiveness for pending customer reschedule requests and token action controls.
 - **📱 Zero-App Lock-Screen Digital Pass**: Customers scan on-site QR codes or book remotely to track live queue positions, spots ahead, dynamic ETAs, and assigned room/station in real-time (`/t/[tokenId]`).
-- **🏥 Multi-Branch Clinic Linkage & Patient Transfer**: Link separately onboarded clinics of the same doctor/business (e.g. Mumbai & Navi Mumbai) using secure stream IDs and PINs. Switch active branch queues in 1 tap and transfer patients seamlessly across clinics with automatic live pass and SMS updates.
+- **🏥 Multi-Branch Clinic Linkage & Patient Transfer**: Link separately onboarded clinics of the same doctor/business (e.g. Mumbai & Navi Mumbai) using secure stream IDs and PINs. Switch active branch queues in 1 tap and transfer patients seamlessly across clinics with automatic live pass updates.
 - **⚡ Parallel Multi-Doctor & Multi-Station Queueing**: Supports concurrent consultations across multiple rooms/tables in parallel without cross-cancelling active sessions.
 - **🔒 Security & PII Protection**: Automatic customer phone number and PII masking on public APIs (`+91 •••••• 4512`) and cryptographic session token verification for operator controls.
 - **🎛️ Tactile NumberSlider Pickers**: Interactive, smooth gradient drag sliders with quick-select preset pills and tactile stepper buttons for onboarding and pace configuration.
 - **👓 Accessibility & Screen-Reader Optimization**: Complete `aria-live` queue announcements, semantic roles, High Contrast theme, and Large Typography modes.
-- **📲 httpSMS Android SIM Cellular Gateway**: Dispatches real SMS text messages directly from an Android phone SIM card at local plan rates.
 - **⚡ Ably Real-Time Pub/Sub Synchronization**: Zero-polling, sub-millisecond state updates across Operator Dashboards, Customer Passes, and TV Screens.
 - **🔔 Native Web Push Notifications (VAPID Service Worker)**: Sends OS lock-screen push alerts to iOS (Safari 16.4+) and Android devices when a customer's turn is called.
 - **🔊 Neural Multi-Language Female Voice Engine & Audio Chime (`/api/tts`)**: Synthesizes a crisp airport/clinical dual-tone bell chime (G5 → C6 via Web Audio API) followed by studio-quality neural female voice announcements in **Hindi (`🇮🇳 हिन्दी`)**, **English (`🇬🇧 English`)**, or **Bilingual (`🌐 EN+HI`)** calling out the token number and assigned room/station (*"कृपया ध्यान दें। टोकन नंबर 15, कृपया डॉक्टर रूम 2 पर जाएं"*), active across both Lounge TV Displays and the Operator Dashboard with instant test controls and mute toggles.
@@ -55,7 +54,7 @@
 - **Styling**: Vanilla CSS, Glassmorphic Dark Theme, Lucide Icons
 - **Database**: PostgreSQL (Supabase / Neon) with connection pooling
 - **Cache & Messaging**: Upstash Serverless Redis & Ably Realtime Pub/Sub
-- **Push & SMS**: Service Worker Web Push (VAPID), httpSMS Android SIM Gateway
+- **Audio & Push**: Web Audio API Dual-Tone Chime, Web Speech TTS, Service Worker Web Push (VAPID)
 - **Deployment**: Vercel / Render / Netlify
 
 ---
@@ -86,10 +85,6 @@ UPSTASH_REDIS_REST_TOKEN="your-upstash-token"
 
 # Ably Realtime Key
 NEXT_PUBLIC_ABLY_SUBSCRIBE_KEY="your-ably-key"
-
-# httpSMS Android Gateway Credentials
-HTTPSMS_API_KEY="your-httpsms-api-key"
-HTTPSMS_FROM_NUMBER="+917827369050"
 
 # Web Push VAPID Keypair
 NEXT_PUBLIC_VAPID_PUBLIC_KEY="your-vapid-public-key"
@@ -149,7 +144,7 @@ noq/
 │       ├── audioAnnouncement.ts         # Dual-Tone Chime & Multi-Language Voice Engine
 │       ├── db.ts                        # PostgreSQL Connection Pool
 │       ├── domain.ts                    # Dynamic Domain Lexicon, PII Masking & Auth
-│       ├── httpsms.ts                   # httpSMS Android Gateway Client
+│       ├── notifications.ts             # Real-Time Queue Notification Handlers
 │       └── push.ts                      # Web Push VAPID Payload Dispatcher
 ```
 

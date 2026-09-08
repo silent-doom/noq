@@ -98,7 +98,7 @@ export default function PrivacyPolicyPage() {
             <span className="text-emerald-400 font-mono text-sm">04.</span> Operational Messaging & Notification Consent
           </h2>
           <p className="text-xs text-zinc-400 leading-relaxed">
-            By submitting a phone number to join an active queue, visitors provide explicit consent to receive transactional notifications (SMS text alerts, turn callouts, and queue progress updates) specifically relevant to that service visit. We do not dispatch unsolicited promotional broadcasts or spam marketing messages.
+            By submitting a phone number to join an active queue, visitors provide explicit consent to receive transactional notifications (live pass updates, audio turn callouts, and queue progress alerts) specifically relevant to that service visit. We do not dispatch unsolicited promotional broadcasts or spam marketing messages.
           </p>
         </section>
 

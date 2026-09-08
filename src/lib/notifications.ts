@@ -1,31 +1,20 @@
 /**
- * SMS alerts have been permanently disabled per system requirements.
- * Real-time queue notifications are delivered via Web Push, Live Pass Audio, and Ably WebSockets.
+ * Real-time queue notifications are delivered directly to devices via:
+ * 1. Native OS Lock-Screen Web Push (VAPID Service Worker)
+ * 2. Mobile Browser Voice Announcements & Dual-Tone Chimes
+ * 3. Ably Realtime WebSocket Pub/Sub
  */
-export async function sendSMS({ to, message }: { to: string; message: string }) {
-  // SMS feature is disabled. No external SMS gateways called.
-  return;
-}
 
-/**
- * Trigger: It's Your Turn (Handled via Web Push & Customer Mobile Audio)
- */
 export async function notifyNowServing(customerName: string, phone: string, tokenNumber: number) {
-  // SMS disabled
+  // Handled via Ably stream broadcast and Web Push
   return;
 }
 
-/**
- * Trigger: Upcoming Turn Alert (2-3 spots away)
- */
 export async function notifyUpcomingTurn(customerName: string, phone: string, tokenNumber: number, spotsAhead: number) {
-  // SMS disabled
+  // Handled via Ably stream broadcast and Web Push
   return;
 }
 
-/**
- * Trigger: Queue Delay Drift Alert
- */
 export async function notifyDelayDrift(
   customerName: string,
   phone: string,
@@ -33,6 +22,6 @@ export async function notifyDelayDrift(
   newEtaMins: number,
   delayMins: number
 ) {
-  // SMS disabled
+  // Handled via Ably stream broadcast and Web Push
   return;
 }

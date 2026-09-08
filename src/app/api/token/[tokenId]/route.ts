@@ -160,20 +160,19 @@ export async function PATCH(
     const resolvedParams = await params;
     const { tokenId } = resolvedParams;
     const body = await req.json();
-    const { status, fair_priority, customerPhone, smsOptIn } = body;
+    const { status, fair_priority, customerPhone } = body;
 
     await client.query('BEGIN');
 
-    // Handle SMS opt-in / phone number update (permitted for pass holder)
-    if ((customerPhone || typeof smsOptIn === 'boolean') && !status) {
+    // Handle customer phone number update (permitted for pass holder)
+    if (customerPhone && !status) {
       const optRes = await client.query(
         `UPDATE tokens 
-         SET customer_phone = COALESCE($1, customer_phone),
-             sms_opt_in = COALESCE($2, sms_opt_in),
+         SET customer_phone = $1,
              updated_at = NOW()
-         WHERE id = $3
+         WHERE id = $2
          RETURNING *`,
-        [customerPhone?.trim() || null, typeof smsOptIn === 'boolean' ? smsOptIn : true, tokenId]
+        [customerPhone.trim() || null, tokenId]
       );
       await client.query('COMMIT');
       return NextResponse.json({ success: true, data: optRes.rows[0], token: optRes.rows[0] });

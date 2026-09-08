@@ -64,7 +64,7 @@ graph LR
     subgraph "Customer Experience"
         A[Scan QR / Remote Booking] --> B[Live Digital Pass on Phone]
         B --> C[Real-Time Position & ETA]
-        C --> D[Turn Alert: Voice / Push / SMS]
+        C --> D[Turn Alert: Mobile Voice Chime / Push]
         D --> E[Leave 5-Star Review on Google Maps]
     end
 
@@ -99,8 +99,8 @@ graph LR
   - Automatically remembers returning visitors on the same browser for 1-tap re-entry.
 - **Instant Sequential Token**:
   - Instantly issues your digital token (e.g. Token `#14`) and loads your live pass.
-- **Automated SMS Pass Delivery**:
-  - Dispatches an SMS confirmation containing your direct pass URL so you never lose your ticket.
+- **Direct Live Pass Access**:
+  - Automatically loads your live pass with bookmarking and 1-tap WhatsApp sharing so you never lose your ticket.
 
 ---
 
@@ -137,16 +137,16 @@ graph LR
 
 ---
 
-### Feature C4: Lock-Screen Push & Multi-Channel Turn Alerts
+### Feature C4: Lock-Screen Push & Real-Time Voice Turn Alerts
 *Never miss your turn, even with your phone in your pocket or browser closed.*
 
 - **Native Lock-Screen Web Push Notifications**:
   - Tap `🔔 Enable Lock-Screen Turn Alerts` on your pass.
   - Delivers operating system alerts to Android and iOS (Safari 16.4+) lock screens.
-- **Automated SMS Text Alerts**:
-  - Receive automated SMS text messages when you are 3 spots away and when your token is called to the counter.
-- **WhatsApp Direct Turn Updates**:
-  - Receive turn reminders and rescheduling notices directly via WhatsApp.
+- **Direct Mobile Voice & Chime Callouts**:
+  - Your phone browser automatically chimes and speaks when your token is called to the counter.
+- **WhatsApp Direct Sharing**:
+  - Share your pass URL with family or caregivers in 1 tap so they can monitor your queue status.
 
 ---
 
@@ -171,7 +171,7 @@ graph LR
 - **Self-Serve Reschedule Request**:
   - If running late, tap `📅 Request Future Reschedule`.
   - Select your preferred new date and time slot within operating hours.
-  - The business reviews your request and dispatches an updated pass via SMS.
+  - The business reviews your request and issues an updated pass token with live status.
 
 ---
 
@@ -310,9 +310,9 @@ graph LR
 - **Incoming Reschedule Queue**:
   - View requested future dates and time slots submitted by customers from their passes.
 - **1-Click Approval**:
-  - Automatically issues a new token for the requested slot and sends an automated SMS confirmation.
+  - Automatically issues a new token for the requested slot and updates the customer's live pass.
 - **1-Click Rejection with Custom Note**:
-  - Sends a polite SMS explaining why the slot is unavailable so the guest can choose an alternative time.
+  - Provides a clear note explaining why the slot is unavailable so the guest can choose an alternative time.
 
 ---
 
@@ -325,7 +325,7 @@ graph LR
   - Switch active branch dashboards from the header dropdown without logging out.
 - **Cross-Branch Patient Transfer (`/api/branch/transfer`)**:
   - Transfer a patient who arrived at the wrong branch or needs specialist equipment at another location.
-  - Automatically creates a new token at the destination clinic, cancels the old token, and dispatches a relocation SMS to the patient.
+  - Automatically creates a new token at the destination clinic, cancels the old token, and redirects the patient's live pass.
 
 ---
 
@@ -544,7 +544,7 @@ graph LR
 **No.** noQ is 100% web-based. It runs inside standard mobile browsers (Safari, Chrome, Firefox, Edge). Simply scan the QR code and your pass opens instantly.
 
 #### Q2: Will I be notified if I lock my phone or close the browser tab?
-**Yes.** When you open your digital pass, tap **"Enable Lock-Screen Turn Alerts"**. You will receive native push notifications on your phone lock screen (Android and iOS 16.4+). You also receive automated SMS text alerts.
+**Yes.** When you open your digital pass, tap **"Enable Lock-Screen Turn Alerts"**. You will receive native push notifications on your phone lock screen (Android and iOS 16.4+), and your phone will chime when called.
 
 #### Q3: What if I am running late or cannot make it?
 From your digital pass, tap **"Request Future Reschedule"** to pick a new date and time slot, or tap **"Cancel Token"** if you cannot attend.
@@ -565,14 +565,11 @@ Once your consultation or service is completed, an interactive 5-star rating wid
 #### Q6: Can multiple doctors or counters call patients simultaneously?
 **Yes.** noQ supports parallel multi-station operations. Doctor Room 1 and Doctor Room 2 can call and serve patients simultaneously without cross-cancelling.
 
-#### Q7: How does noQ send SMS text messages at local rates?
-noQ integrates with the **httpSMS Android Gateway**, allowing you to connect an on-premise Android phone with a local SIM card to send real cellular SMS messages without third-party API surcharges.
-
-#### Q8: What if a patient arrives late after being skipped?
+#### Q7: What if a patient arrives late after being skipped?
 In the **Smart Waitlist** tab, tap **"Re-Queue Fairly"**. noQ's mathematical algorithm places them at the midpoint of the current waiting queue, resolving lobby disputes peacefully.
 
-#### Q9: Can I link multiple clinics and transfer patients between them?
-**Yes.** Use the **Multi-Branch Network** to connect multiple branches with their Stream IDs and PINs. Switch branch queues with 1 tap and transfer patients seamlessly with automated SMS alerts.
+#### Q8: Can I link multiple clinics and transfer patients between them?
+**Yes.** Use the **Multi-Branch Network** to connect multiple branches with their Stream IDs and PINs. Switch branch queues with 1 tap and transfer patients seamlessly with real-time pass redirection.
 
 ---
 
@@ -584,7 +581,7 @@ In the **Smart Waitlist** tab, tap **"Re-Queue Fairly"**. noQ's mathematical alg
 | :--- | :--- | :--- |
 | **Pass is not updating in real time** | Low mobile connectivity or network firewall | Tap the browser refresh button. Your token and position are saved safely on the server. |
 | **Push notifications not appearing on iPhone** | Notification permission not granted or iOS < 16.4 | Ensure iPhone is running iOS 16.4+, tap "Allow" on notification prompt, and check that Focus/Do Not Disturb is disabled. |
-| **Lost digital pass browser tab** | Accidental tab closure | Click the pass link sent to your phone via SMS, or re-scan the venue QR code (it will automatically restore your active ticket). |
+| **Lost digital pass browser tab** | Accidental tab closure | Re-scan the venue QR code (it will automatically restore your active ticket), or open your saved bookmark / WhatsApp shared link. |
 
 ---
 
@@ -595,7 +592,6 @@ In the **Smart Waitlist** tab, tap **"Re-Queue Fairly"**. noQ's mathematical alg
 | **TV Display is not speaking voice announcements** | Browser autoplay audio policy | Click anywhere on the TV screen or tap **"🔊 Click to Enable Voice Announcements"** to grant audio permission. |
 | **Admin PIN not accepted** | Incorrect PIN entered | Use the 6-digit PIN created during onboarding (default fallback: `123456`), or clear session storage in browser settings. |
 | **Printed QR poster not scanning** | Low printer toner or dark environment | Print in high contrast / black-and-white at 100% scale and ensure adequate lighting at the front desk. |
-| **SMS messages not delivering** | Android httpSMS gateway phone disconnected | Ensure the Android gateway phone has active cellular signal, SMS balance, and httpSMS background service running. |
 
 ---
 
@@ -605,7 +601,6 @@ In the **Smart Waitlist** tab, tap **"Re-Queue Fairly"**. noQ's mathematical alg
 - **CSAT (Customer Satisfaction Score)**: A 1-to-5 star rating submitted by customers upon service completion.
 - **Dynamic ETA**: The continuously recalculated estimated wait time based on actual consultation pace.
 - **Fair Priority Algorithm**: A mathematical midpoint re-queue calculation that places returned latecomers into an equitable queue position.
-- **httpSMS**: A cellular gateway service connecting Android SIM cards to web applications for local-rate SMS dispatch.
 - **PII (Personally Identifiable Information)**: Sensitive customer data (phone numbers and full names) protected and masked by noQ.
 - **Queue Stream**: The central virtual queue instance for a specific clinic, restaurant, or business branch.
 - **TTS (Text-to-Speech)**: The studio neural voice engine (`/api/tts`) and Web Speech fallback that converts token callouts into spoken Hindi, English, or Bilingual female audio announcements on lounge TVs and operator dashboards.

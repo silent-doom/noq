@@ -11,7 +11,6 @@ interface TokenData {
   token_number: number;
   customer_name: string;
   customer_phone?: string;
-  sms_opt_in?: boolean;
   status: string;
   assigned_station?: string;
   stream_id: string;

@@ -67,7 +67,7 @@ export default function DoctorMOUPage() {
           </h3>
           <div className="text-xs text-zinc-400 space-y-2 leading-relaxed print:text-zinc-800">
             <p>
-              1.1. The Platform Provider delivers non-clinical crowd management, live digital token issuance, multi-station doctor room calling, waiting room TV voice announcements, and transactional turn alert SMS notifications.
+              1.1. The Platform Provider delivers non-clinical crowd management, live digital token issuance, multi-station doctor room calling, waiting room TV voice announcements, and real-time mobile turn chime alerts.
             </p>
             <p>
               1.2. <strong>Zero Electronic Medical Records (EMR) Storage:</strong> The Platform explicitly does not store, request, or maintain clinical diagnostic notes, prescription files, lab specimens, pathology reports, or insurance claims. Patient check-in is limited strictly to name, phone number, and queue token number.
@@ -118,7 +118,7 @@ export default function DoctorMOUPage() {
               4.1. The Healthcare Practice is responsible for maintaining reliable internet connectivity and terminal hardware (e.g. tablet, phone, PC) at the reception counter.
             </p>
             <p>
-              4.2. For cellular SMS dispatch via local carrier rates, the Healthcare Practice may optionally link an on-premise Android cellular phone running the httpSMS gateway application with an active local SIM balance.
+              4.2. For real-time updates, visitors receive turn callouts directly on their mobile browser screen via Ably synchronization, native Web Push permissions, and dual-tone voice chimes.
             </p>
           </div>
         </div>

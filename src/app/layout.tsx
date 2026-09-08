@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     template: '%s | noQ Virtual Queue',
   },
   description:
-    'Enterprise-grade virtual queue management platform that replaces physical waiting lines with live digital passes, lock-screen Web Push alerts, httpSMS Android integration, and Ably real-time synchronization.',
+    'Enterprise-grade virtual queue management platform that replaces physical waiting lines with live digital passes, lock-screen Web Push alerts, mobile voice announcements, and Ably real-time synchronization.',
   keywords: [
     'virtual queue',
     'digital queue pass',

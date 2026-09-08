@@ -112,13 +112,13 @@ export default function TermsPage() {
           </div>
         </section>
 
-        {/* Section 5: Telephony & Cellular Gateway */}
+        {/* Section 5: Real-Time Synchronization & Alerts */}
         <section className="space-y-3 bg-zinc-900/40 border border-zinc-800/80 p-6 rounded-2xl">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <span className="text-emerald-400 font-mono text-sm">05.</span> Telephony, SMS & Third-Party Gateways
+            <span className="text-emerald-400 font-mono text-sm">05.</span> Real-Time Synchronization & Push Alerts
           </h2>
           <p className="text-xs text-zinc-400 leading-relaxed">
-            noQ provides native web push alerts, Ably real-time synchronization, and integrations with Android SIM cellular gateways (httpSMS). Delivery of cellular SMS is subject to carrier availability, device connectivity, and active SIM balance. noQ is not liable for carrier-level SMS delivery delays or network outages.
+            noQ provides native web push alerts, browser audio chime callouts, and Ably real-time data synchronization. Delivery of real-time events and push alerts is subject to device connectivity, browser permissions, and network availability. noQ is not liable for device-level notification muting or external internet service interruptions.
           </p>
         </section>
 
