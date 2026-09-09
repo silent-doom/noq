@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, recordRateLimitHit } from '@/lib/rateLimit';
+import { logApiError } from '@/lib/incidentLogger';
 
 export const runtime = 'nodejs';
 
@@ -91,7 +92,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('TTS API error:', error);
+    await logApiError(req, 'AUDIO_TTS', error);
     return NextResponse.json(
       { error: error?.message || 'Failed to synthesize voice audio' },
       { status: 500 }

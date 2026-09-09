@@ -1,8 +1,23 @@
+import { NextRequest } from 'next/server';
 import { db } from './db';
+
+export type IncidentCategory =
+  | 'PASS_GENERATION'
+  | 'AUDIO_TTS'
+  | 'WEBSOCKET_ABLY'
+  | 'PAYMENT'
+  | 'DATABASE'
+  | 'CLIENT_EXCEPTION'
+  | 'QUEUE_ADVANCE'
+  | 'AUTH'
+  | 'SUPERADMIN'
+  | 'API_ERROR'
+  | 'PUSH_NOTIFICATION'
+  | 'BRANCH_SYNC';
 
 export interface IncidentLogPayload {
   level?: 'INFO' | 'WARN' | 'ERROR' | 'CRITICAL';
-  category: 'PASS_GENERATION' | 'AUDIO_TTS' | 'WEBSOCKET_ABLY' | 'PAYMENT' | 'DATABASE' | 'CLIENT_EXCEPTION';
+  category: IncidentCategory;
   message: string;
   stack?: string;
   path?: string;
@@ -12,7 +27,7 @@ export interface IncidentLogPayload {
 
 let tableEnsured = false;
 
-async function ensureTableExists(client: any) {
+export async function ensureIncidentTableExists(client: any) {
   if (tableEnsured) return;
   try {
     await client.query(`
@@ -37,7 +52,7 @@ async function ensureTableExists(client: any) {
 }
 
 /**
- * Persists runtime errors and client diagnostics into PostgreSQL database and server logs.
+ * Persists runtime errors and server diagnostics into the PostgreSQL database.
  */
 export async function logProductionIncident(incident: IncidentLogPayload): Promise<void> {
   const level = incident.level || 'ERROR';
@@ -53,7 +68,7 @@ export async function logProductionIncident(incident: IncidentLogPayload): Promi
   try {
     const client = await db.connect();
     try {
-      await ensureTableExists(client);
+      await ensureIncidentTableExists(client);
       await client.query(
         `INSERT INTO production_issue_logs (level, category, message, stack, path, user_agent, metadata)
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
@@ -73,4 +88,27 @@ export async function logProductionIncident(incident: IncidentLogPayload): Promi
   } catch (dbErr) {
     console.error('[logProductionIncident DB Failure]:', dbErr);
   }
+}
+
+/**
+ * Convenience helper for API route handlers to record server-side exceptions in Postgres.
+ */
+export async function logApiError(
+  req: NextRequest,
+  category: IncidentCategory,
+  error: any,
+  metadata?: Record<string, any>
+): Promise<void> {
+  const path = req.nextUrl?.pathname || req.url || 'API';
+  const userAgent = req.headers?.get('user-agent') || 'Server';
+  
+  await logProductionIncident({
+    level: 'ERROR',
+    category,
+    message: error?.message || String(error),
+    stack: error?.stack,
+    path,
+    userAgent,
+    metadata,
+  });
 }

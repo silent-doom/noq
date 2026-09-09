@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { checkRateLimit, recordRateLimitHit } from '@/lib/rateLimit';
+import { logApiError } from '@/lib/incidentLogger';
 
 const VALID_CHANNELS = ['WALK_IN', 'PHYSICAL_QR', 'WEB_DIRECT', 'LINK', 'REMOTE'];
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -149,9 +150,9 @@ export async function POST(req: NextRequest) {
       success: true,
       data: insertRes.rows[0],
     });
-  } catch (error) {
+  } catch (error: any) {
     await client.query('ROLLBACK');
-    console.error('Error issuing token:', error);
+    await logApiError(req, 'PASS_GENERATION', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   } finally {
     client.release();

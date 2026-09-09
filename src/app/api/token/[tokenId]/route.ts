@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyAdminSessionToken, maskPhoneNumber } from '@/lib/domain';
 import { publishQueueUpdate } from '@/lib/ably';
-import { logProductionIncident } from '@/lib/incidentLogger';
+import { logProductionIncident, logApiError } from '@/lib/incidentLogger';
 
 export async function GET(
   req: NextRequest,
@@ -180,7 +180,7 @@ export async function GET(
       },
     });
   } catch (error: any) {
-    console.error('Error fetching token pass:', error);
+    await logApiError(req, 'PASS_GENERATION', error, { tokenId: (await Promise.resolve(params))?.tokenId });
     return NextResponse.json({ error: 'Failed to retrieve digital pass' }, { status: 500 });
   } finally {
     client.release();

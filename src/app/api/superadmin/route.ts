@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { ensureSubscriptionTables, computeSubscriptionState, recordSubscriptionPayment, purgeExpiredBusinessData, calculateNextBillingDate } from '@/lib/subscription';
 import { checkRateLimit, recordRateLimitHit, clearRateLimit } from '@/lib/rateLimit';
+import { logApiError } from '@/lib/incidentLogger';
 
 import { PoolClient } from 'pg';
 
@@ -172,6 +173,16 @@ export async function GET(req: NextRequest) {
     const totalTokensIssued = businesses.reduce((acc, b) => acc + b.totalTokens, 0);
     const totalStorageBytes = businesses.reduce((acc, b) => acc + b.storageFootprint.bytes, 0);
 
+    let recentIncidents: any[] = [];
+    try {
+      const incidentsRes = await client.query(
+        `SELECT * FROM production_issue_logs ORDER BY created_at DESC LIMIT 50`
+      );
+      recentIncidents = incidentsRes.rows;
+    } catch {
+      // ignore if table not initialized yet
+    }
+
     return NextResponse.json({
       success: true,
       platformMetrics: {
@@ -189,9 +200,10 @@ export async function GET(req: NextRequest) {
         totalStorageFormatted: totalStorageBytes > 1048576 ? `${(totalStorageBytes / 1048576).toFixed(2)} MB` : `${(totalStorageBytes / 1024).toFixed(1)} KB`,
       },
       businesses,
+      recentIncidents,
     });
   } catch (error: any) {
-    console.error('Super Admin GET Error:', error);
+    await logApiError(req, 'SUPERADMIN', error);
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to fetch platform metrics' },
       { status: 500 }

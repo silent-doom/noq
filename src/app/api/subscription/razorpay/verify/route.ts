@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyRazorpaySignature } from '@/lib/razorpay';
 import { recordSubscriptionPayment, computeSubscriptionState } from '@/lib/subscription';
+import { logApiError } from '@/lib/incidentLogger';
 
 export async function POST(req: NextRequest) {
   const client = await db.connect();
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     await client.query('ROLLBACK');
-    console.error('Razorpay Verify API Error:', error);
+    await logApiError(req, 'PAYMENT', error);
     return NextResponse.json(
       { success: false, error: error.message || 'Payment verification failed' },
       { status: 500 }

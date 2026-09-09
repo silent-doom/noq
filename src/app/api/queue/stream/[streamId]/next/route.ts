@@ -4,6 +4,7 @@ import { notifyNowServing, notifyUpcomingTurn } from '@/lib/notifications';
 import { publishQueueUpdate } from '@/lib/ably';
 import { sendTokenPushNotification } from '@/lib/push';
 import { isValidPhoneNumber, verifyAdminSessionToken } from '@/lib/domain';
+import { logApiError } from '@/lib/incidentLogger';
 
 export async function POST(
   req: NextRequest,
@@ -138,7 +139,7 @@ export async function POST(
     return NextResponse.json({ success: true, serving_token: servingTokenPayload });
   } catch (error: any) {
     await client.query('ROLLBACK');
-    console.error('Error advancing queue (stream/next):', error);
+    await logApiError(req, 'QUEUE_ADVANCE', error, { streamId: (await Promise.resolve(params))?.streamId });
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   } finally {
     client.release();

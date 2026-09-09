@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { logProductionIncident } from '@/lib/incidentLogger';
+import { logProductionIncident, ensureIncidentTableExists } from '@/lib/incidentLogger';
 import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
@@ -29,13 +29,9 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const superAdminHeader = req.headers.get('x-superadmin-key');
-    const isValidSuperAdmin =
-      superAdminHeader &&
-      superAdminHeader === (process.env.SUPERADMIN_SECRET || 'noq-vault-9842-x7k9p-mstr');
-
     const client = await db.connect();
     try {
+      await ensureIncidentTableExists(client);
       const logsRes = await client.query(
         `SELECT * FROM production_issue_logs ORDER BY created_at DESC LIMIT 50`
       );
