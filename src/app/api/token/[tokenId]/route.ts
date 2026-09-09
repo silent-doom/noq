@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyAdminSessionToken, maskPhoneNumber } from '@/lib/domain';
+import { publishQueueUpdate } from '@/lib/ably';
+import { logProductionIncident } from '@/lib/incidentLogger';
 
 export async function GET(
   req: NextRequest,
@@ -306,6 +308,12 @@ export async function PATCH(
       );
 
       await client.query('COMMIT');
+
+      // Broadcast real-time update across Ably
+      publishQueueUpdate(streamId, 'FAIR_PRIORITY_REINSERTED', fairUpdateRes.rows[0]).catch((err) => {
+        console.error('Failed to publish Ably update for fair re-insertion:', err);
+      });
+
       return NextResponse.json({ success: true, data: fairUpdateRes.rows[0] });
     }
 
@@ -350,10 +358,25 @@ export async function PATCH(
     }
 
     await client.query('COMMIT');
+
+    // Broadcast real-time event across Ably
+    publishQueueUpdate(streamId, 'TOKEN_UPDATE', updatedToken).catch((err) => {
+      console.error('Failed to publish Ably token update in PATCH:', err);
+    });
+
     return NextResponse.json({ success: true, data: updatedToken });
   } catch (error: any) {
     await client.query('ROLLBACK');
     console.error('Error updating token status:', error);
+
+    logProductionIncident({
+      level: 'ERROR',
+      category: 'DATABASE',
+      message: `Failed to update token status for ${params}: ${error?.message}`,
+      stack: error?.stack,
+      path: req.nextUrl.pathname,
+    }).catch(() => {});
+
     return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
   } finally {
     client.release();

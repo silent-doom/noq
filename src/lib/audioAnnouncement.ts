@@ -32,7 +32,7 @@ export function formatStationForHindi(stationName: string): string {
 // Global shared AudioContext to prevent hitting browser limit & ensure smooth resume on user action
 let sharedAudioCtx: AudioContext | null = null;
 
-function getAudioContext(): AudioContext | null {
+export function getAudioContext(): AudioContext | null {
   if (typeof window === 'undefined') return null;
   const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
   if (!AudioCtx) return null;
@@ -40,6 +40,34 @@ function getAudioContext(): AudioContext | null {
     sharedAudioCtx = new AudioCtx();
   }
   return sharedAudioCtx;
+}
+
+/**
+ * Proactively primes and unlocks AudioContext, HTML5 Audio, and Web Speech API on user interaction (touch/click).
+ * This allows real-time incoming events (e.g. Ably/Push/Polling) to play voice announcements immediately
+ * without getting blocked by browser autoplay policies.
+ */
+export async function unlockAudioContext(): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+  try {
+    const ctx = getAudioContext();
+    if (ctx && ctx.state === 'suspended') {
+      await ctx.resume();
+    }
+    // Pre-warm Web Speech API
+    if ('speechSynthesis' in window) {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+      const silentUtterance = new SpeechSynthesisUtterance(' ');
+      silentUtterance.volume = 0;
+      window.speechSynthesis.speak(silentUtterance);
+    }
+    return true;
+  } catch (err) {
+    console.warn('Audio unlock warning:', err);
+    return false;
+  }
 }
 
 /**
@@ -99,7 +127,7 @@ let currentTtsAudio: HTMLAudioElement | null = null;
 
 /**
  * Plays neural female voice speech audio using the dedicated /api/tts server stream.
- * Automatically falls back to Web Speech API if network is unavailable.
+ * Automatically falls back to Web Speech API if network is unavailable or blocked.
  */
 export function playNaturalVoiceAudio(text: string, lang: 'hi' | 'en'): Promise<void> {
   return new Promise((resolve) => {
@@ -114,11 +142,9 @@ export function playNaturalVoiceAudio(text: string, lang: 'hi' | 'en'): Promise<
       currentTtsAudio = null;
     }
 
-    const url = `/api/tts?text=${encodeURIComponent(text)}&lang=${encodeURIComponent(lang)}`;
-    const audio = new Audio(url);
-    currentTtsAudio = audio;
-
     let finished = false;
+    let fallbackTriggered = false;
+
     const finish = () => {
       if (!finished) {
         finished = true;
@@ -129,18 +155,41 @@ export function playNaturalVoiceAudio(text: string, lang: 'hi' | 'en'): Promise<
       }
     };
 
+    const triggerFallback = () => {
+      if (!fallbackTriggered) {
+        fallbackTriggered = true;
+        speakPhraseWebSpeech(text, lang, finish);
+      }
+    };
+
+    const url = `/api/tts?text=${encodeURIComponent(text)}&lang=${encodeURIComponent(lang)}`;
+    const audio = new Audio(url);
+    currentTtsAudio = audio;
+
     audio.onended = finish;
     audio.onerror = (e) => {
       console.warn('Neural TTS stream error, falling back to Web Speech API:', e);
-      speakPhraseWebSpeech(text, lang, finish);
+      triggerFallback();
     };
 
-    // Safety timeout in case playback stalls
-    setTimeout(finish, 14000);
+    // Fast-fallback timeout if network TTS doesn't load within 2.5s
+    const networkTimeout = setTimeout(() => {
+      if (!finished && audio.readyState < 2) {
+        console.warn('Neural TTS took too long, falling back to Web Speech API');
+        triggerFallback();
+      }
+    }, 2500);
+
+    // Global safety timeout in case playback stalls
+    setTimeout(() => {
+      clearTimeout(networkTimeout);
+      finish();
+    }, 14000);
 
     audio.play().catch((err) => {
       console.warn('HTML5 audio play blocked, falling back to Web Speech:', err);
-      speakPhraseWebSpeech(text, lang, finish);
+      clearTimeout(networkTimeout);
+      triggerFallback();
     });
   });
 }
@@ -148,7 +197,7 @@ export function playNaturalVoiceAudio(text: string, lang: 'hi' | 'en'): Promise<
 /**
  * Offline / Emergency Web Speech API fallback.
  */
-function speakPhraseWebSpeech(
+export function speakPhraseWebSpeech(
   text: string,
   langCode: 'hi' | 'en',
   onComplete?: () => void
@@ -159,8 +208,16 @@ function speakPhraseWebSpeech(
   }
 
   try {
+    if (window.speechSynthesis.speaking) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+    }
+
     if (window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
+      try {
+        window.speechSynthesis.resume();
+      } catch {}
     }
 
     const utterance = new SpeechSynthesisUtterance(text);
@@ -181,7 +238,7 @@ function speakPhraseWebSpeech(
         const engVoice = voices.find((v) => {
           const l = v.lang.toLowerCase();
           const n = v.name.toLowerCase();
-          return l.startsWith('en') && (n.includes('samantha') || n.includes('veena') || n.includes('female'));
+          return l.startsWith('en') && (n.includes('samantha') || n.includes('veena') || n.includes('female') || n.includes('karen') || n.includes('zira'));
         });
         if (engVoice) utterance.voice = engVoice;
       }
@@ -200,7 +257,8 @@ function speakPhraseWebSpeech(
     setTimeout(finish, 8000);
 
     window.speechSynthesis.speak(utterance);
-  } catch {
+  } catch (err) {
+    console.warn('Web Speech API execution error:', err);
     if (onComplete) onComplete();
   }
 }

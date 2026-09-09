@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Ably from 'ably';
 import { getDomainTerminology, formatWaitTime, generateAvailableTimeSlots, isValidPhoneNumber, formatPhoneNumberE164 } from '@/lib/domain';
-import { playChimeAndAnnounce, playTestAnnouncement, playChimeAudio } from '@/lib/audioAnnouncement';
+import { playChimeAndAnnounce, playTestAnnouncement, playChimeAudio, unlockAudioContext } from '@/lib/audioAnnouncement';
 
 interface TokenData {
   id: string;
@@ -195,21 +195,64 @@ export default function TokenPassPage() {
     }
   };
 
-  const triggerServingAlert = (tokenNumber: number, stationName?: string, businessName?: string) => {
-    // 1. Play dual-tone chime and natural female voice announcement directly on customer's phone
-    playChimeAndAnnounce(tokenNumber, stationName || 'Doctor Room 1', { language: 'bilingual' });
+  // Proactive Audio & Speech Unlock on user tap/touch anywhere on the pass
+  useEffect(() => {
+    const handleFirstUserInteraction = async () => {
+      await unlockAudioContext();
+      setAudioEnabled(true);
+      window.removeEventListener('click', handleFirstUserInteraction);
+      window.removeEventListener('touchstart', handleFirstUserInteraction);
+      window.removeEventListener('pointerdown', handleFirstUserInteraction);
+    };
 
-    // 2. Physical haptic vibration
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      navigator.vibrate([400, 150, 400, 150, 500]);
+    window.addEventListener('click', handleFirstUserInteraction, { once: true });
+    window.addEventListener('touchstart', handleFirstUserInteraction, { once: true });
+    window.addEventListener('pointerdown', handleFirstUserInteraction, { once: true });
+
+    return () => {
+      window.removeEventListener('click', handleFirstUserInteraction);
+      window.removeEventListener('touchstart', handleFirstUserInteraction);
+      window.removeEventListener('pointerdown', handleFirstUserInteraction);
+    };
+  }, []);
+
+  const triggerServingAlert = async (tokenNumber: number, stationName?: string, businessName?: string) => {
+    try {
+      // 1. Proactively prime and unlock audio context
+      await unlockAudioContext();
+      setAudioEnabled(true);
+
+      // 2. Play dual-tone chime and natural voice announcement directly on customer's device
+      await playChimeAndAnnounce(tokenNumber, stationName || 'Counter 1', { language: 'bilingual' });
+    } catch (err: any) {
+      console.warn('Voice announcement playback error:', err);
+      fetch('/api/log/issue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          level: 'WARN',
+          category: 'AUDIO_TTS',
+          message: `Voice announcement failed for token #${tokenNumber}: ${err?.message}`,
+          metadata: { tokenId, tokenNumber, stationName },
+        }),
+      }).catch(() => {});
     }
 
-    // 3. System Push / Lock Screen Alert
+    // 3. Physical haptic vibration
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate([400, 150, 400, 150, 500]);
+      } catch {}
+    }
+
+    // 4. System Push / Lock Screen Alert
     if (typeof window !== 'undefined' && 'Notification' in window) {
       if (Notification.permission === 'granted') {
-        new Notification(`🔔 YOUR TURN NOW! Token #${tokenNumber}`, {
-          body: `Please proceed to ${stationName || 'the consultation counter'} immediately!`,
-        });
+        try {
+          new Notification(`🔔 YOUR TURN NOW! Token #${tokenNumber}`, {
+            body: `Please proceed to ${stationName || 'the consultation counter'} immediately!`,
+          });
+        } catch {}
       }
     }
   };
@@ -226,6 +269,7 @@ export default function TokenPassPage() {
   }
 
   const requestAlertPermissions = async () => {
+    await unlockAudioContext();
     await playChimeAudio();
     setAudioEnabled(true);
 
@@ -264,6 +308,16 @@ export default function TokenPassPage() {
 
       if (!res.ok) {
         setError(json.error || 'Failed to fetch token details');
+        fetch('/api/log/issue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            level: 'ERROR',
+            category: 'PASS_GENERATION',
+            message: `Pass fetch returned HTTP ${res.status}: ${json.error || 'Unknown error'}`,
+            metadata: { tokenId },
+          }),
+        }).catch(() => {});
         return;
       }
 
@@ -295,9 +349,19 @@ export default function TokenPassPage() {
         return payload;
       });
       setError(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch token status:', err);
       setError('Network error. Trying to reconnect...');
+      fetch('/api/log/issue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          level: 'WARN',
+          category: 'CLIENT_EXCEPTION',
+          message: `Client network failure fetching token status: ${err?.message}`,
+          metadata: { tokenId },
+        }),
+      }).catch(() => {});
     } finally {
       setLoading(false);
     }
@@ -488,6 +552,24 @@ export default function TokenPassPage() {
           </div>
         </div>
 
+        {/* Proactive Sound & Voice Enablement Prompt */}
+        {!audioEnabled && (
+          <div 
+            onClick={requestAlertPermissions}
+            className="bg-amber-50 border-b border-amber-200/80 px-4 py-2.5 flex items-center justify-between cursor-pointer hover:bg-amber-100 transition"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-base">🔊</span>
+              <p className="text-[11px] font-bold text-amber-900 leading-tight">
+                Tap here to enable voice callout alerts on your phone
+              </p>
+            </div>
+            <span className="text-[10px] font-extrabold bg-amber-500 text-black px-2 py-0.5 rounded-full uppercase">
+              ENABLE
+            </span>
+          </div>
+        )}
+
         {/* Location Header */}
         <div className="p-6 border-b border-gray-100">
           <p className="text-[11px] font-bold text-[#a1a1aa] tracking-wider uppercase mb-1">
@@ -604,8 +686,17 @@ export default function TokenPassPage() {
                 TOKEN CANCELLED
               </div>
             ) : isServing ? (
-              <div className="bg-emerald-500 text-white font-bold text-xs rounded-2xl py-3.5 px-4 uppercase tracking-wider text-center shadow-sm animate-pulse">
-                NOW SERVING — PROCEED TO {tokenData.assigned_station ? tokenData.assigned_station.toUpperCase() : 'YOUR ASSIGNED ROOM / TABLE'}
+              <div className="space-y-3">
+                <div className="bg-emerald-500 text-white font-bold text-xs rounded-2xl py-3.5 px-4 uppercase tracking-wider text-center shadow-sm animate-pulse">
+                  NOW SERVING — PROCEED TO {tokenData.assigned_station ? tokenData.assigned_station.toUpperCase() : 'YOUR ASSIGNED ROOM / TABLE'}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => triggerServingAlert(tokenData.token_number, tokenData.assigned_station, tokenData.business_name)}
+                  className="w-full bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-700 text-emerald-300 font-bold py-2.5 px-3 rounded-xl text-[11px] uppercase tracking-wider transition flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-98"
+                >
+                  <span>🔊 REPLAY VOICE ANNOUNCEMENT</span>
+                </button>
               </div>
             ) : isSkipped ? (
               <div className="space-y-3">
