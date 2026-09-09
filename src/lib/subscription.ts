@@ -1,7 +1,7 @@
 import { PoolClient } from 'pg';
 
 export interface SubscriptionState {
-  status: 'ACTIVE' | 'TRIAL' | 'GRACE_PERIOD' | 'LOCKED' | 'DEACTIVATED' | 'EXPIRED';
+  status: 'ACTIVE' | 'TRIAL' | 'PENDING_PAYMENT' | 'GRACE_PERIOD' | 'LOCKED' | 'DEACTIVATED' | 'EXPIRED';
   billingAnchorDay: number;
   nextBillingDate: Date | null;
   daysRemaining: number;
@@ -124,6 +124,22 @@ export function computeSubscriptionState(business: {
       isTrial: false,
       isDeactivated: true,
       message: 'Business terminal deactivated due to unpaid subscription. All queue data and configurations are safely preserved. Settle payment to instantly reactivate.',
+    };
+  }
+
+  // 2. Pending initial payment / Unpaid registration (Paid flow before Razorpay confirmation)
+  if (business.subscription_status === 'PENDING_PAYMENT' || business.subscription_status === 'UNPAID') {
+    return {
+      status: 'PENDING_PAYMENT',
+      billingAnchorDay: anchorDay,
+      nextBillingDate: null,
+      daysRemaining: 0,
+      daysOverdue: 0,
+      monthlyFee,
+      isLocked: true,
+      isGracePeriod: false,
+      isTrial: false,
+      message: 'Account activation required. Please complete your initial subscription payment to unlock this terminal and call tokens.',
     };
   }
 

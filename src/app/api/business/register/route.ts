@@ -50,20 +50,18 @@ export async function POST(req: NextRequest) {
     const now = new Date();
     const isTrial = Boolean(isFreeTrial);
 
-    let initialStatus = isTrial ? 'TRIAL' : 'ACTIVE';
-    let nextBilling: Date;
-    let anchorDay: number;
+    let initialStatus = isTrial ? 'TRIAL' : 'PENDING_PAYMENT';
+    let nextBilling: Date | null = null;
+    let anchorDay: number = now.getDate();
+    let lastPayment: Date | null = null;
 
     if (isTrial) {
       // 7-Day Free Trial
       nextBilling = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       anchorDay = nextBilling.getDate();
-    } else {
-      anchorDay = now.getDate();
-      nextBilling = calculateNextBillingDate(anchorDay, now);
+      lastPayment = now;
     }
 
-    const initialFee = Number(initialPaymentAmount) > 0 ? Number(initialPaymentAmount) : 1499.00;
     const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip')?.trim() || '';
 
     await client.query('BEGIN');
@@ -100,9 +98,9 @@ export async function POST(req: NextRequest) {
       `INSERT INTO businesses 
        (name, category, phone, base_service_time_mins, max_daily_capacity, qr_code_slug, admin_passcode, google_maps_url,
         subscription_status, billing_anchor_day, subscription_start_date, next_billing_date, last_payment_date, monthly_fee, registration_ip)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), $11, NOW(), 499.00, $12)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), $11, $12, 499.00, $13)
        RETURNING *`,
-      [name.trim(), businessCategory, phoneVal, paceMins, capacity, qrSlug, passcodeVal, mapsUrlVal, initialStatus, anchorDay, nextBilling, clientIp]
+      [name.trim(), businessCategory, phoneVal, paceMins, capacity, qrSlug, passcodeVal, mapsUrlVal, initialStatus, anchorDay, nextBilling, lastPayment, clientIp]
     );
 
     const newBusiness = bRes.rows[0];
@@ -110,22 +108,6 @@ export async function POST(req: NextRequest) {
     // Record free trial in registry
     if (isTrial) {
       await recordTrialRegistration(client, newBusiness.id, newBusiness.name, phoneVal, clientIp);
-    }
-
-    // 2. If Paid, Record initial onboarding subscription payment
-    if (!isTrial) {
-      await client.query(
-        `INSERT INTO subscription_payments 
-         (business_id, amount, payment_type, payment_status, payment_method, transaction_ref, paid_at, billing_period_start, billing_period_end, notes)
-         VALUES ($1, $2, 'ONBOARDING_INITIAL', 'SUCCESS', 'ONLINE_CARD_UPI', $3, NOW(), NOW(), $4, $5)`,
-        [
-          newBusiness.id,
-          initialFee,
-          `TXN_INIT_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`,
-          nextBilling,
-          `Initial Onboarding & 1st Month Subscription for ${name.trim()}`,
-        ]
-      );
     }
 
     // 3. Create initial Queue Stream with stations, operating hours, queue_structure & google_maps_url

@@ -29,7 +29,7 @@ interface ClientRecord {
   daysRemaining: number;
   daysOverdue: number;
   monthlyFee: number;
-  subscriptionStatus: 'ACTIVE' | 'TRIAL' | 'GRACE_PERIOD' | 'LOCKED' | 'DEACTIVATED' | 'EXPIRED';
+  subscriptionStatus: 'ACTIVE' | 'TRIAL' | 'PENDING_PAYMENT' | 'GRACE_PERIOD' | 'LOCKED' | 'DEACTIVATED' | 'EXPIRED';
   totalPaidRevenue: number;
   paymentCount: number;
   streamCount: number;
@@ -326,7 +326,7 @@ export default function SuperAdminPage() {
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap">
-            {['ALL', 'PAID', 'ACTIVE', 'TRIAL', 'GRACE_PERIOD', 'LOCKED', 'DEACTIVATED'].map((st) => (
+            {['ALL', 'PAID', 'ACTIVE', 'TRIAL', 'PENDING_PAYMENT', 'GRACE_PERIOD', 'LOCKED', 'DEACTIVATED'].map((st) => (
               <button
                 key={st}
                 onClick={() => setStatusFilter(st)}
@@ -380,6 +380,8 @@ export default function SuperAdminPage() {
                         ? 'bg-emerald-950 text-emerald-400 border-emerald-800'
                         : b.subscriptionStatus === 'TRIAL'
                         ? 'bg-sky-950 text-sky-400 border-sky-800'
+                        : b.subscriptionStatus === 'PENDING_PAYMENT'
+                        ? 'bg-purple-950 text-purple-400 border-purple-800'
                         : b.subscriptionStatus === 'GRACE_PERIOD'
                         ? 'bg-amber-950 text-amber-400 border-amber-800'
                         : b.subscriptionStatus === 'LOCKED'
