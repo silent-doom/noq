@@ -6,6 +6,7 @@ import Link from 'next/link';
 interface PlatformMetrics {
   totalRevenue: number;
   totalTransactions: number;
+  payingBusinessesCount: number;
   mrr: number;
   totalBusinesses: number;
   activeClients: number;
@@ -28,7 +29,9 @@ interface ClientRecord {
   daysRemaining: number;
   daysOverdue: number;
   monthlyFee: number;
-  subscriptionStatus: 'ACTIVE' | 'GRACE_PERIOD' | 'LOCKED' | 'EXPIRED';
+  subscriptionStatus: 'ACTIVE' | 'TRIAL' | 'GRACE_PERIOD' | 'LOCKED' | 'DEACTIVATED' | 'EXPIRED';
+  totalPaidRevenue: number;
+  paymentCount: number;
   streamCount: number;
   totalTokens: number;
   completedTokens: number;
@@ -172,7 +175,12 @@ export default function SuperAdminPage() {
       b.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
       b.phone.includes(searchQuery);
 
-    const matchesStatus = statusFilter === 'ALL' || b.subscriptionStatus === statusFilter;
+    let matchesStatus = true;
+    if (statusFilter === 'PAID') {
+      matchesStatus = b.totalPaidRevenue > 0;
+    } else if (statusFilter !== 'ALL') {
+      matchesStatus = b.subscriptionStatus === statusFilter;
+    }
 
     return matchesSearch && matchesStatus;
   });
@@ -268,7 +276,9 @@ export default function SuperAdminPage() {
             <div className="bg-zinc-950/90 border border-zinc-800/90 p-4 rounded-2xl space-y-1">
               <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Total Revenue</p>
               <p className="text-xl font-black text-emerald-400 font-mono">₹{metrics.totalRevenue.toLocaleString()}</p>
-              <p className="text-[10px] text-zinc-500">{metrics.totalTransactions} transactions</p>
+              <p className="text-[10px] text-emerald-500/90 font-medium">
+                {metrics.totalTransactions} paid txn{metrics.totalTransactions === 1 ? '' : 's'} ({metrics.payingBusinessesCount || 0} clients)
+              </p>
             </div>
 
             <div className="bg-zinc-950/90 border border-zinc-800/90 p-4 rounded-2xl space-y-1">
@@ -316,7 +326,7 @@ export default function SuperAdminPage() {
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap">
-            {['ALL', 'ACTIVE', 'GRACE_PERIOD', 'LOCKED', 'EXPIRED'].map((st) => (
+            {['ALL', 'PAID', 'ACTIVE', 'TRIAL', 'GRACE_PERIOD', 'LOCKED', 'DEACTIVATED'].map((st) => (
               <button
                 key={st}
                 onClick={() => setStatusFilter(st)}
@@ -326,7 +336,7 @@ export default function SuperAdminPage() {
                     : 'bg-zinc-900 text-zinc-400 border border-zinc-800 hover:text-white'
                 }`}
               >
-                {st.replace('_', ' ')}
+                {st === 'PAID' ? '💳 PAID REVENUE' : st.replace('_', ' ')}
               </button>
             ))}
           </div>
@@ -350,6 +360,7 @@ export default function SuperAdminPage() {
                   <th className="py-3.5 px-4">Category</th>
                   <th className="py-3.5 px-4">Anchor Day</th>
                   <th className="py-3.5 px-4">Status & Renewal</th>
+                  <th className="py-3.5 px-4">Lifetime Revenue</th>
                   <th className="py-3.5 px-4">Throughput</th>
                   <th className="py-3.5 px-4">DB Storage</th>
                   <th className="py-3.5 px-4 text-right">Admin Actions</th>
@@ -358,7 +369,7 @@ export default function SuperAdminPage() {
               <tbody className="divide-y divide-zinc-900 text-zinc-300">
                 {filteredBusinesses.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-zinc-500 font-medium">
+                    <td colSpan={8} className="py-8 text-center text-zinc-500 font-medium">
                       No businesses matching current filter or search criteria.
                     </td>
                   </tr>
@@ -367,6 +378,8 @@ export default function SuperAdminPage() {
                     const statusBadge =
                       b.subscriptionStatus === 'ACTIVE'
                         ? 'bg-emerald-950 text-emerald-400 border-emerald-800'
+                        : b.subscriptionStatus === 'TRIAL'
+                        ? 'bg-sky-950 text-sky-400 border-sky-800'
                         : b.subscriptionStatus === 'GRACE_PERIOD'
                         ? 'bg-amber-950 text-amber-400 border-amber-800'
                         : b.subscriptionStatus === 'LOCKED'
@@ -402,6 +415,28 @@ export default function SuperAdminPage() {
                               <span className="text-emerald-400 font-bold ml-1">({b.daysRemaining}d left)</span>
                             )}
                           </div>
+                        </td>
+
+                        <td className="py-4 px-4">
+                          {b.totalPaidRevenue > 0 ? (
+                            <div className="space-y-0.5">
+                              <span className="font-black text-emerald-400 font-mono text-sm block">
+                                ₹{b.totalPaidRevenue.toLocaleString()}
+                              </span>
+                              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400/90 font-bold bg-emerald-950/70 border border-emerald-800/60 px-1.5 py-0.5 rounded">
+                                <span>💳</span> {b.paymentCount} Paid Txn{b.paymentCount === 1 ? '' : 's'}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="space-y-0.5">
+                              <span className="font-semibold text-zinc-500 font-mono text-xs block">
+                                ₹0
+                              </span>
+                              <span className="text-[10px] text-zinc-500 font-medium">
+                                {b.subscriptionStatus === 'TRIAL' ? '7-Day Free Trial' : 'Unpaid / Pending'}
+                              </span>
+                            </div>
+                          )}
                         </td>
 
                         <td className="py-4 px-4">

@@ -97,7 +97,9 @@ export async function GET(req: NextRequest) {
         (SELECT COUNT(*) FROM tokens t JOIN queue_streams qs ON t.stream_id = qs.id WHERE qs.business_id = b.id) AS total_tokens,
         (SELECT COUNT(*) FROM tokens t JOIN queue_streams qs ON t.stream_id = qs.id WHERE qs.business_id = b.id AND t.status = 'COMPLETED') AS completed_tokens,
         (SELECT COUNT(*) FROM tokens t JOIN queue_streams qs ON t.stream_id = qs.id WHERE qs.business_id = b.id AND t.status = 'WAITING') AS waiting_tokens,
-        (SELECT COUNT(*) FROM token_feedback tf JOIN tokens t ON tf.token_id = t.id JOIN queue_streams qs ON t.stream_id = qs.id WHERE qs.business_id = b.id) AS feedback_count
+        (SELECT COUNT(*) FROM token_feedback tf JOIN tokens t ON tf.token_id = t.id JOIN queue_streams qs ON t.stream_id = qs.id WHERE qs.business_id = b.id) AS feedback_count,
+        (SELECT COALESCE(SUM(amount), 0) FROM subscription_payments WHERE business_id = b.id AND (payment_status IN ('SUCCESS', 'PAID') OR payment_status IS NULL)) AS total_paid_revenue,
+        (SELECT COUNT(*) FROM subscription_payments WHERE business_id = b.id AND (payment_status IN ('SUCCESS', 'PAID') OR payment_status IS NULL)) AS payment_count
       FROM businesses b
       ORDER BY b.created_at DESC
     `);
@@ -108,7 +110,7 @@ export async function GET(req: NextRequest) {
         COALESCE(SUM(amount), 0) AS total_revenue,
         COUNT(*) AS total_transactions
       FROM subscription_payments
-      WHERE status = 'PAID'
+      WHERE payment_status IN ('SUCCESS', 'PAID') OR payment_status IS NULL
     `);
 
     const businesses = bRes.rows.map((b) => {
@@ -116,6 +118,8 @@ export async function GET(req: NextRequest) {
       const totalTokens = Number(b.total_tokens || 0);
       const streamCount = Number(b.stream_count || 0);
       const feedbackCount = Number(b.feedback_count || 0);
+      const totalPaidRevenue = Number(b.total_paid_revenue || 0);
+      const paymentCount = Number(b.payment_count || 0);
 
       // Approximate PostgreSQL row storage footprint (B: 1.2KB base, Token: 450B, Feedback: 300B)
       const estimatedBytes = (1200 * streamCount) + (totalTokens * 450) + (feedbackCount * 300) + 2048;
@@ -133,6 +137,8 @@ export async function GET(req: NextRequest) {
         daysOverdue: subState.daysOverdue,
         monthlyFee: Number(b.monthly_fee) || 499,
         subscriptionStatus: subState.status,
+        totalPaidRevenue,
+        paymentCount,
         streamCount,
         totalTokens,
         completedTokens: Number(b.completed_tokens || 0),
@@ -148,11 +154,12 @@ export async function GET(req: NextRequest) {
 
     const totalRevenue = Number(revRes.rows[0]?.total_revenue || 0);
     const totalTransactions = Number(revRes.rows[0]?.total_transactions || 0);
+    const payingBusinessesCount = businesses.filter((b) => b.totalPaidRevenue > 0).length;
 
     const activeClients = businesses.filter((b) => b.subscriptionStatus === 'ACTIVE').length;
     const graceClients = businesses.filter((b) => b.subscriptionStatus === 'GRACE_PERIOD').length;
     const lockedClients = businesses.filter((b) => b.subscriptionStatus === 'LOCKED').length;
-    const expiredClients = businesses.filter((b) => b.subscriptionStatus === 'EXPIRED').length;
+    const expiredClients = businesses.filter((b) => b.subscriptionStatus === 'EXPIRED' || b.subscriptionStatus === 'DEACTIVATED').length;
     
     const totalTokensIssued = businesses.reduce((acc, b) => acc + b.totalTokens, 0);
     const totalStorageBytes = businesses.reduce((acc, b) => acc + b.storageFootprint.bytes, 0);
@@ -162,6 +169,7 @@ export async function GET(req: NextRequest) {
       platformMetrics: {
         totalRevenue,
         totalTransactions,
+        payingBusinessesCount,
         mrr: activeClients * 499,
         totalBusinesses: businesses.length,
         activeClients,
