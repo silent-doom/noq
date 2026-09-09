@@ -111,7 +111,41 @@ export async function GET(
     const authHeader = req.headers.get('x-admin-token') || req.headers.get('x-admin-session') || req.headers.get('authorization')?.replace('Bearer ', '');
     const isAdmin = verifyAdminSessionToken(authHeader, token.stream_id);
 
+    const payloadData = {
+      id: token.id,
+      token_number: token.token_number,
+      customer_name: token.customer_name,
+      customer_phone: isAdmin ? token.customer_phone : (token.customer_phone ? maskPhoneNumber(token.customer_phone) : null),
+      status: token.status,
+      assigned_station: token.assigned_station,
+      stream_id: token.stream_id,
+      access_channel: token.access_channel,
+      created_at: token.created_at,
+      updated_at: token.updated_at,
+      reschedule_requested_date: token.reschedule_requested_date,
+      reschedule_requested_slot: token.reschedule_requested_slot,
+      reschedule_status: token.reschedule_status,
+      sms_opt_in: token.sms_opt_in !== false,
+      spots_ahead: spotsAhead,
+      est_wait_min: estWaitMin,
+      est_wait_max: estWaitMax,
+      est_wait_mins: clampedWait,
+      current_serving_token: token.current_serving_token,
+      pace_per_patient_mins: basePaceMins,
+      delay_status: delayStatus,
+      delay_mins: delayMins,
+      waitlist_position: waitlistPosition,
+      broadcast_message: token.broadcast_message || null,
+      business_name: token.business_name || 'Business Venue',
+      category: token.category || 'CLINIC',
+      opening_time: token.opening_time || null,
+      closing_time: token.closing_time || null,
+      google_maps_url: token.google_maps_url || null,
+    };
+
     return NextResponse.json({
+      success: true,
+      data: payloadData,
       token: {
         id: token.id,
         token_number: token.token_number,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Globe, Clock, Users, ArrowRight, RefreshCw, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { getDomainTerminology, formatWaitTime } from '@/lib/domain';
 
@@ -15,8 +15,11 @@ interface StreamInfo {
   pace_per_patient_mins?: number;
 }
 
-export default function RemoteBookingPage({ params }: { params: { streamId: string } }) {
+export default function RemoteBookingPage({ params }: { params?: { streamId: string } }) {
   const router = useRouter();
+  const routeParams = useParams();
+  const streamId = (routeParams?.streamId || params?.streamId) as string;
+
   const [stream, setStream] = useState<StreamInfo | null>(null);
   const [waitingCount, setWaitingCount] = useState<number>(0);
   const [name, setName] = useState('');
@@ -30,9 +33,11 @@ export default function RemoteBookingPage({ params }: { params: { streamId: stri
 
   // Fetch current stream details & queue length
   useEffect(() => {
+    if (!streamId) return;
+
     async function loadStreamInfo() {
       try {
-        const res = await fetch(`/api/queue/stream/${params.streamId}`);
+        const res = await fetch(`/api/queue/stream/${streamId}`);
         if (!res.ok) return;
         const json = await res.json();
         setStream(json.stream || json.data?.stream);
@@ -51,12 +56,12 @@ export default function RemoteBookingPage({ params }: { params: { streamId: stri
       loadStreamInfo();
     }, 10000);
     return () => clearInterval(interval);
-  }, [params.streamId]);
+  }, [streamId]);
 
   const handleRemoteBook = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name.trim() || !phone.trim() || isSubmittingRef.current || loading) return;
+    if (!name.trim() || !phone.trim() || !streamId || isSubmittingRef.current || loading) return;
 
     isSubmittingRef.current = true;
     setLoading(true);
@@ -66,7 +71,7 @@ export default function RemoteBookingPage({ params }: { params: { streamId: stri
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          streamId: params.streamId,
+          streamId: streamId,
           customerName: name.trim(),
           customerPhone: phone.trim(),
           accessChannel: 'REMOTE',

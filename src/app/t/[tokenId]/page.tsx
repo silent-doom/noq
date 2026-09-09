@@ -259,28 +259,40 @@ export default function TokenPassPage() {
   const fetchTokenStatus = async (showLoadingState = false) => {
     if (showLoadingState) setLoading(true);
     try {
-      const res = await fetch(`/api/token/${tokenId}`);
+      const res = await fetch(`/api/token/${tokenId}`, { cache: 'no-store' });
       const json = await res.json();
 
-      if (!res.ok || !json.success) {
+      if (!res.ok) {
         setError(json.error || 'Failed to fetch token details');
         return;
       }
 
+      const payload = json.data || {
+        ...(json.token || {}),
+        ...(json.queueState || {}),
+        current_serving_token: json.queueState?.current_serving ?? json.token?.current_serving_token ?? 0,
+        est_wait_mins: json.queueState?.est_wait_min ?? json.queueState?.est_wait_mins ?? 0,
+      };
+
+      if (!payload || !payload.id) {
+        setError(json.error || 'Token pass not found');
+        return;
+      }
+
       setTokenData((prev) => {
-        const isNowServing = json.data.status === 'SERVING' || json.data.current_serving_token === json.data.token_number;
+        const isNowServing = payload.status === 'SERVING' || payload.current_serving_token === payload.token_number;
         const wasServing = prev ? (prev.status === 'SERVING' || prev.current_serving_token === prev.token_number) : false;
 
-        if (prev && prev.status === 'SKIPPED' && json.data.status === 'WAITING') {
+        if (prev && prev.status === 'SKIPPED' && payload.status === 'WAITING') {
           setShowReinsertedBanner(true);
         }
 
         if (isNowServing && (!wasServing || !hasAlertedRef.current)) {
-          triggerServingAlert(json.data.token_number, json.data.assigned_station, json.data.business_name || 'the venue');
+          triggerServingAlert(payload.token_number, payload.assigned_station, payload.business_name || 'the venue');
           hasAlertedRef.current = true;
         }
 
-        return json.data;
+        return payload;
       });
       setError(null);
     } catch (err) {

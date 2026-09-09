@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { QrCode, ArrowRight, RefreshCw, CheckCircle2 } from 'lucide-react';
 
-export default function QRScanPage({ params }: { params: { streamId: string } }) {
+export default function QRScanPage({ params }: { params?: { streamId: string } }) {
   const router = useRouter();
+  const routeParams = useParams();
+  const streamId = (routeParams?.streamId || params?.streamId) as string;
+
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,7 +21,7 @@ export default function QRScanPage({ params }: { params: { streamId: string } })
     e.preventDefault();
 
     // Prevent submission if form invalid, loading, or already submitting
-    if (!name.trim() || isSubmittingRef.current || loading) return;
+    if (!name.trim() || !streamId || isSubmittingRef.current || loading) return;
 
     // Lock immediately on first tap
     isSubmittingRef.current = true;
@@ -29,7 +32,7 @@ export default function QRScanPage({ params }: { params: { streamId: string } })
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          streamId: params.streamId,
+          streamId: streamId,
           customerName: name.trim(),
           customerPhone: phone.trim(),
           accessChannel: 'PHYSICAL_QR',
