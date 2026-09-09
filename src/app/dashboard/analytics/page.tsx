@@ -232,7 +232,7 @@ function AnalyticsContent() {
 
       {/* Main Analytics Panel */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="px-4 sm:px-8 py-4 sm:py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-zinc-200/60 bg-white/50 backdrop-blur-sm sticky top-0 z-10 gap-3">
+        <header className="px-4 sm:px-8 py-4 sm:py-5 flex flex-col xl:flex-row items-start xl:items-center justify-between border-b border-zinc-200/60 bg-white/50 backdrop-blur-sm sticky top-0 z-10 gap-3">
           <div className="flex items-center gap-3">
             <button
               className="lg:hidden w-9 h-9 flex items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 hover:bg-zinc-200 shrink-0 cursor-pointer transition"
@@ -249,7 +249,7 @@ function AnalyticsContent() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 w-full xl:w-auto justify-start xl:justify-end flex-wrap">
             {/* Timeframe Selector */}
             <div className="h-9 bg-zinc-100 p-0.5 rounded-full border border-zinc-200 flex items-center text-xs font-semibold shadow-2xs">
               <button

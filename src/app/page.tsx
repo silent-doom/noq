@@ -149,17 +149,17 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#07080a] text-white font-sans selection:bg-emerald-500 selection:text-black">
       {/* NAVIGATION BAR */}
-      <nav className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between border-b border-zinc-900">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="text-3xl font-black tracking-tight text-white hover:text-emerald-400 transition">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex items-center justify-between border-b border-zinc-900">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <Link href="/" className="text-2xl sm:text-3xl font-black tracking-tight text-white hover:text-emerald-400 transition shrink-0">
             noQ
           </Link>
-          <span className="bg-emerald-950 text-emerald-400 border border-emerald-800/60 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+          <span className="hidden sm:inline-block bg-emerald-950 text-emerald-400 border border-emerald-800/60 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap">
             ENTERPRISE QUEUE PLATFORM
           </span>
         </div>
 
-        <div className="flex items-center gap-3 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           <Link
             href="/dashboard?streamId=c65dacd2-03e1-4737-b7b2-8d9502ec5ca1"
             className="text-xs font-semibold text-zinc-400 hover:text-white transition hidden md:block"
@@ -168,13 +168,13 @@ export default function LandingPage() {
           </Link>
           <Link
             href="/login"
-            className="text-xs font-bold text-zinc-300 hover:text-white px-3.5 py-2 rounded-full border border-zinc-800 hover:border-zinc-700 transition"
+            className="text-[11px] sm:text-xs font-bold text-zinc-300 hover:text-white px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full border border-zinc-800 hover:border-zinc-700 transition whitespace-nowrap"
           >
             Operator Sign In
           </Link>
           <Link
             href="/signup"
-            className="bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs px-4 sm:px-5 py-2 sm:py-2.5 rounded-full transition shadow-lg shadow-emerald-500/20"
+            className="bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-[11px] sm:text-xs px-3.5 sm:px-5 py-1.5 sm:py-2.5 rounded-full transition shadow-lg shadow-emerald-500/20 whitespace-nowrap"
           >
             Get Started Free
           </Link>

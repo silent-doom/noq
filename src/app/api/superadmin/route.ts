@@ -78,7 +78,16 @@ export async function GET(req: NextRequest) {
 
     await clearRateLimit(rateKey);
 
-    await ensureSubscriptionTables(client);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS feedbacks (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        token_id UUID,
+        stream_id UUID,
+        rating INT NOT NULL,
+        comment TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
 
     // 1. Fetch all businesses with subscription metrics and storage calculation
     const bRes = await client.query(`
@@ -92,12 +101,11 @@ export async function GET(req: NextRequest) {
         b.billing_anchor_day,
         b.next_billing_date,
         b.monthly_fee,
-        b.total_tokens_served,
         (SELECT COUNT(*) FROM queue_streams WHERE business_id = b.id) AS stream_count,
         (SELECT COUNT(*) FROM tokens t JOIN queue_streams qs ON t.stream_id = qs.id WHERE qs.business_id = b.id) AS total_tokens,
         (SELECT COUNT(*) FROM tokens t JOIN queue_streams qs ON t.stream_id = qs.id WHERE qs.business_id = b.id AND t.status = 'COMPLETED') AS completed_tokens,
         (SELECT COUNT(*) FROM tokens t JOIN queue_streams qs ON t.stream_id = qs.id WHERE qs.business_id = b.id AND t.status = 'WAITING') AS waiting_tokens,
-        (SELECT COUNT(*) FROM token_feedback tf JOIN tokens t ON tf.token_id = t.id JOIN queue_streams qs ON t.stream_id = qs.id WHERE qs.business_id = b.id) AS feedback_count,
+        (SELECT COUNT(*) FROM feedbacks f JOIN queue_streams qs ON f.stream_id = qs.id WHERE qs.business_id = b.id) AS feedback_count,
         (SELECT COALESCE(SUM(amount), 0) FROM subscription_payments WHERE business_id = b.id AND (payment_status IN ('SUCCESS', 'PAID') OR payment_status IS NULL)) AS total_paid_revenue,
         (SELECT COUNT(*) FROM subscription_payments WHERE business_id = b.id AND (payment_status IN ('SUCCESS', 'PAID') OR payment_status IS NULL)) AS payment_count
       FROM businesses b
