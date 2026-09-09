@@ -174,11 +174,21 @@ export async function GET(req: NextRequest) {
     const totalStorageBytes = businesses.reduce((acc, b) => acc + b.storageFootprint.bytes, 0);
 
     let recentIncidents: any[] = [];
+    let supportTickets: any[] = [];
     try {
       const incidentsRes = await client.query(
         `SELECT * FROM production_issue_logs ORDER BY created_at DESC LIMIT 50`
       );
       recentIncidents = incidentsRes.rows;
+    } catch {
+      // ignore if table not initialized yet
+    }
+
+    try {
+      const ticketsRes = await client.query(
+        `SELECT * FROM support_tickets ORDER BY created_at DESC LIMIT 50`
+      );
+      supportTickets = ticketsRes.rows;
     } catch {
       // ignore if table not initialized yet
     }
@@ -201,6 +211,7 @@ export async function GET(req: NextRequest) {
       },
       businesses,
       recentIncidents,
+      supportTickets,
     });
   } catch (error: any) {
     await logApiError(req, 'SUPERADMIN', error);
@@ -232,7 +243,7 @@ export async function POST(req: NextRequest) {
     if (!isAuthorized) {
       await recordRateLimitHit(rateKey, 15 * 60);
       return NextResponse.json(
-        { success: false, error: 'Unauthorized: Invalid Super Admin master key' },
+        { success: false, error: 'Invalid Super Admin Master Key authorization' },
         { status: 401 }
       );
     }
@@ -241,14 +252,22 @@ export async function POST(req: NextRequest) {
 
     await ensureSubscriptionTables(client);
     const body = await req.json();
-    const { action, businessId, amount, extensionDays = 7, notes } = body;
+    const { action, businessId, ticketId, ticketStatus, amount, extensionDays = 7, notes } = body;
+
+    if (action === 'UPDATE_TICKET' && ticketId) {
+      const updated = await client.query(
+        `UPDATE support_tickets SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+        [ticketStatus || 'RESOLVED', ticketId]
+      );
+      return NextResponse.json({ success: true, ticket: updated.rows[0] });
+    }
 
     if (!businessId) {
       return NextResponse.json({ success: false, error: 'businessId is required' }, { status: 400 });
     }
 
     if (action === 'MANUAL_RENEW') {
-      const payAmount = Number(amount) > 0 ? Number(amount) : 999.00;
+      const payAmount = Number(amount) > 0 ? Number(amount) : 499.00;
       await client.query('BEGIN');
       const { payment, nextBillingDate } = await recordSubscriptionPayment(
         client,

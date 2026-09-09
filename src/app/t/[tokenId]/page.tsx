@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Ably from 'ably';
 import { getDomainTerminology, formatWaitTime, generateAvailableTimeSlots, isValidPhoneNumber, formatPhoneNumberE164 } from '@/lib/domain';
 import { playChimeAndAnnounce, playTestAnnouncement, playChimeAudio, unlockAudioContext } from '@/lib/audioAnnouncement';
+import SupportHelpModal from '@/components/SupportHelpModal';
 
 interface TokenData {
   id: string;
@@ -62,6 +63,7 @@ export default function TokenPassPage() {
   // Share & PWA State
   const [copiedLink, setCopiedLink] = useState(false);
   const [showPwaPrompt, setShowPwaPrompt] = useState(false);
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
 
   const handleCopyLink = () => {
     if (typeof window !== 'undefined') {
@@ -750,28 +752,35 @@ export default function TokenPassPage() {
         {/* Boarding Pass Ticket Stub / Utilities Section */}
         <div className="p-5 bg-zinc-50/60 space-y-3">
           
-          {/* Quick Action Share & App Buttons (Clean Compact Row) */}
-          <div className="grid grid-cols-3 gap-2">
+          {/* Quick Action Share, App & Support Help Buttons */}
+          <div className="grid grid-cols-4 gap-1.5">
             <button
               type="button"
               onClick={handleCopyLink}
-              className="bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 font-bold py-2 px-2.5 rounded-xl text-[11px] flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
+              className="bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 font-bold py-2 px-1.5 rounded-xl text-[10px] flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
             >
               <span>{copiedLink ? '✓ Copied' : '📋 Copy'}</span>
             </button>
             <button
               type="button"
               onClick={handleShareWhatsApp}
-              className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold py-2 px-2.5 rounded-xl text-[11px] flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
+              className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold py-2 px-1.5 rounded-xl text-[10px] flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
             >
               <span>💬 Share</span>
             </button>
             <button
               type="button"
               onClick={() => setShowPwaPrompt(!showPwaPrompt)}
-              className="bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 font-bold py-2 px-2.5 rounded-xl text-[11px] flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
+              className="bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 font-bold py-2 px-1.5 rounded-xl text-[10px] flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
             >
               <span>📱 App</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsHelpModalOpen(true)}
+              className="bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-bold py-2 px-1.5 rounded-xl text-[10px] flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
+            >
+              <span>❓ Help</span>
             </button>
           </div>
 
@@ -988,6 +997,16 @@ export default function TokenPassPage() {
           {isUpdating ? 'Cancelling...' : 'Cancel Token'}
         </button>
       )}
+
+      {/* Support & Maintainer Help Modal */}
+      <SupportHelpModal
+        isOpen={isHelpModalOpen}
+        onClose={() => setIsHelpModalOpen(false)}
+        source="CUSTOMER"
+        businessName={tokenData.business_name}
+        tokenId={tokenId}
+        streamId={tokenData.stream_id}
+      />
 
     </div>
   );

@@ -56,6 +56,24 @@ interface IncidentRecord {
   created_at: string;
 }
 
+interface SupportTicketRecord {
+  id: number;
+  ticket_number: string;
+  source: string;
+  business_id?: string;
+  business_name?: string;
+  stream_id?: string;
+  token_id?: string;
+  contact_name: string;
+  contact_phone: string;
+  category: string;
+  subject: string;
+  description: string;
+  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
+  created_at: string;
+  updated_at: string;
+}
+
 export default function SuperAdminPage() {
   const [adminKey, setAdminKey] = useState<string>('');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -65,13 +83,15 @@ export default function SuperAdminPage() {
   const [metrics, setMetrics] = useState<PlatformMetrics | null>(null);
   const [businesses, setBusinesses] = useState<ClientRecord[]>([]);
   const [incidents, setIncidents] = useState<IncidentRecord[]>([]);
-  const [activeTab, setActiveTab] = useState<'BUSINESSES' | 'INCIDENTS'>('BUSINESSES');
+  const [supportTickets, setSupportTickets] = useState<SupportTicketRecord[]>([]);
+  const [activeTab, setActiveTab] = useState<'BUSINESSES' | 'INCIDENTS' | 'TICKETS'>('BUSINESSES');
 
   const [loading, setLoading] = useState<boolean>(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [incidentCategoryFilter, setIncidentCategoryFilter] = useState<string>('ALL');
+  const [ticketStatusFilter, setTicketStatusFilter] = useState<string>('ALL');
   const [expandedIncidentId, setExpandedIncidentId] = useState<number | null>(null);
 
   // Check saved admin key on load
@@ -100,6 +120,7 @@ export default function SuperAdminPage() {
         setMetrics(json.platformMetrics);
         setBusinesses(Array.isArray(json.businesses) ? json.businesses : []);
         setIncidents(Array.isArray(json.recentIncidents) ? json.recentIncidents : []);
+        setSupportTickets(Array.isArray(json.supportTickets) ? json.supportTickets : []);
         setIsAuthenticated(true);
         sessionStorage.setItem('noq_superadmin_key', key);
       } else {
@@ -164,6 +185,35 @@ export default function SuperAdminPage() {
     }
   };
 
+  const handleUpdateTicketStatus = async (ticketId: number, newStatus: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED') => {
+    if (!adminKey) return;
+    setActionLoadingId(`TICKET_${ticketId}`);
+    try {
+      const res = await fetch('/api/superadmin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-superadmin-key': adminKey,
+        },
+        body: JSON.stringify({
+          action: 'UPDATE_TICKET',
+          ticketId,
+          ticketStatus: newStatus,
+        }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        fetchPlatformData();
+      } else {
+        alert(json.error || 'Failed to update ticket status');
+      }
+    } catch {
+      alert('Network error updating ticket status');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
   const handleRunCron = async () => {
     if (!adminKey) return;
     setLoading(true);
@@ -208,6 +258,18 @@ export default function SuperAdminPage() {
       (inc.path && inc.path.toLowerCase().includes(searchQuery.toLowerCase())) ||
       inc.category.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
+  });
+
+  const filteredTickets = supportTickets.filter((t) => {
+    const matchesStatus = ticketStatusFilter === 'ALL' || t.status === ticketStatusFilter;
+    const matchesSearch =
+      searchQuery === '' ||
+      t.ticket_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.contact_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.contact_phone.includes(searchQuery) ||
+      t.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (t.business_name && t.business_name.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesStatus && matchesSearch;
   });
 
   if (!isAuthenticated) {
@@ -280,7 +342,7 @@ export default function SuperAdminPage() {
               </span>
             </div>
             <p className="text-xs text-zinc-400 mt-1">
-              Clientele Portfolio, Monthly Billing Health, Grace/Lock Policies, and Real-time Incident DB Logs.
+              Clientele Portfolio, Monthly Billing Health (₹1,499 Setup / ₹499 Renewal), Real-time Incident DB Logs, and Incoming Support Inquiries.
             </p>
           </div>
 
@@ -316,7 +378,7 @@ export default function SuperAdminPage() {
             <div className="bg-zinc-950/90 border border-zinc-800/90 p-4 rounded-2xl space-y-1">
               <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Monthly Run Rate (MRR)</p>
               <p className="text-xl font-black text-white font-mono">₹{metrics.mrr.toLocaleString()}</p>
-              <p className="text-[10px] text-emerald-400 font-semibold">{metrics.activeClients} Active Tenants</p>
+              <p className="text-[10px] text-emerald-400 font-semibold">{metrics.activeClients} Active Tenants (₹499/mo)</p>
             </div>
 
             <div className="bg-zinc-950/90 border border-zinc-800/90 p-4 rounded-2xl space-y-1">
@@ -346,7 +408,7 @@ export default function SuperAdminPage() {
         )}
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-3 border-b border-zinc-800 pb-3">
+        <div className="flex items-center gap-3 border-b border-zinc-800 pb-3 flex-wrap">
           <button
             onClick={() => setActiveTab('BUSINESSES')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
@@ -356,6 +418,16 @@ export default function SuperAdminPage() {
             }`}
           >
             <span>🏢 Clientele Portfolio ({businesses.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('TICKETS')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+              activeTab === 'TICKETS'
+                ? 'bg-emerald-500 text-black shadow-sm'
+                : 'bg-zinc-900 text-zinc-400 hover:text-white'
+            }`}
+          >
+            <span>🎫 Support Inquiries & Help Tickets ({supportTickets.length})</span>
           </button>
           <button
             onClick={() => setActiveTab('INCIDENTS')}
@@ -374,10 +446,16 @@ export default function SuperAdminPage() {
           <div className="flex items-center gap-2">
             <input
               type="text"
-              placeholder={activeTab === 'BUSINESSES' ? "Search business name, category, phone..." : "Search incident logs, URL path, error message..."}
+              placeholder={
+                activeTab === 'BUSINESSES'
+                  ? 'Search business name, category, phone...'
+                  : activeTab === 'TICKETS'
+                  ? 'Search tickets by number, name, phone, venue, subject...'
+                  : 'Search incident logs, URL path, error message...'
+              }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-zinc-500 w-72 focus:outline-none focus:border-emerald-500"
+              className="bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-zinc-500 w-80 focus:outline-none focus:border-emerald-500"
             />
           </div>
 
@@ -394,6 +472,22 @@ export default function SuperAdminPage() {
                   }`}
                 >
                   {st === 'PAID' ? '💳 PAID REVENUE' : st.replace('_', ' ')}
+                </button>
+              ))}
+            </div>
+          ) : activeTab === 'TICKETS' ? (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {['ALL', 'OPEN', 'IN_PROGRESS', 'RESOLVED'].map((st) => (
+                <button
+                  key={st}
+                  onClick={() => setTicketStatusFilter(st)}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                    ticketStatusFilter === st
+                      ? 'bg-emerald-500 text-black shadow-xs'
+                      : 'bg-zinc-900 text-zinc-400 border border-zinc-800 hover:text-white'
+                  }`}
+                >
+                  {st.replace('_', ' ')}
                 </button>
               ))}
             </div>
@@ -573,7 +667,122 @@ export default function SuperAdminPage() {
           </div>
         )}
 
-        {/* TAB 2: Production Issue Logs Table */}
+        {/* TAB 2: Incoming Support & Help Tickets */}
+        {activeTab === 'TICKETS' && (
+          <div className="bg-zinc-950 border border-zinc-800/90 rounded-3xl overflow-hidden shadow-2xl">
+            <div className="p-5 border-b border-zinc-800 flex justify-between items-center">
+              <div>
+                <h2 className="text-base font-bold text-white">Incoming Support Tickets & Hotline Inquiries</h2>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Showing {filteredTickets.length} issues submitted by business operators and visitors
+                </p>
+              </div>
+              <button
+                onClick={() => fetchPlatformData()}
+                className="px-3 py-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-xs font-bold text-zinc-300 rounded-lg transition cursor-pointer"
+              >
+                🔄 Refresh Tickets
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-zinc-900/80 text-zinc-400 uppercase tracking-wider text-[10px] font-bold border-b border-zinc-800">
+                  <tr>
+                    <th className="py-3.5 px-4">Ticket Ref</th>
+                    <th className="py-3.5 px-4">Contact & Caller</th>
+                    <th className="py-3.5 px-4">Venue / Business</th>
+                    <th className="py-3.5 px-4">Category & Issue</th>
+                    <th className="py-3.5 px-4">Description</th>
+                    <th className="py-3.5 px-4">Status</th>
+                    <th className="py-3.5 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-900 text-zinc-300">
+                  {filteredTickets.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-zinc-500 font-medium">
+                        ✨ No active support inquiries matching current filter. All tickets resolved.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredTickets.map((t) => {
+                      const statusBadge =
+                        t.status === 'RESOLVED'
+                          ? 'bg-emerald-950 text-emerald-400 border-emerald-800'
+                          : t.status === 'IN_PROGRESS'
+                          ? 'bg-sky-950 text-sky-400 border-sky-800'
+                          : 'bg-amber-950 text-amber-400 border-amber-800 animate-pulse';
+
+                      return (
+                        <tr key={t.id} className="hover:bg-zinc-900/40 transition">
+                          <td className="py-4 px-4 font-mono font-bold text-white">
+                            <span className="block text-emerald-400">{t.ticket_number}</span>
+                            <span className="text-[10px] text-zinc-500 font-normal">{new Date(t.created_at).toLocaleString()}</span>
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <span className="font-bold text-white block">{t.contact_name}</span>
+                            <a
+                              href={`tel:${t.contact_phone}`}
+                              className="text-emerald-400 hover:underline font-mono text-[11px] block mt-0.5"
+                            >
+                              📞 {t.contact_phone}
+                            </a>
+                            <span className="text-[10px] text-zinc-500 uppercase">{t.source}</span>
+                          </td>
+
+                          <td className="py-4 px-4 text-zinc-300">
+                            {t.business_name || 'N/A'}
+                          </td>
+
+                          <td className="py-4 px-4 max-w-xs">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-900 border border-zinc-800 text-zinc-300 mb-1 inline-block">
+                              {t.category}
+                            </span>
+                            <p className="font-bold text-white text-xs">{t.subject}</p>
+                          </td>
+
+                          <td className="py-4 px-4 max-w-sm text-zinc-400 text-[11px] leading-relaxed">
+                            {t.description}
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${statusBadge}`}>
+                              {t.status}
+                            </span>
+                          </td>
+
+                          <td className="py-4 px-4 text-right space-x-1.5">
+                            {t.status !== 'RESOLVED' ? (
+                              <button
+                                onClick={() => handleUpdateTicketStatus(t.id, 'RESOLVED')}
+                                disabled={actionLoadingId === `TICKET_${t.id}`}
+                                className="px-3 py-1 bg-emerald-950 hover:bg-emerald-900 border border-emerald-700 text-emerald-300 rounded-lg text-[11px] font-bold transition cursor-pointer"
+                              >
+                                Mark Resolved ✓
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleUpdateTicketStatus(t.id, 'OPEN')}
+                                disabled={actionLoadingId === `TICKET_${t.id}`}
+                                className="px-3 py-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-400 rounded-lg text-[11px] font-bold transition cursor-pointer"
+                              >
+                                Re-open
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: Production Issue Logs Table */}
         {activeTab === 'INCIDENTS' && (
           <div className="bg-zinc-950 border border-zinc-800/90 rounded-3xl overflow-hidden shadow-2xl">
             <div className="p-5 border-b border-zinc-800 flex justify-between items-center">
@@ -675,7 +884,7 @@ export default function SuperAdminPage() {
                           <td className="py-4 px-4 align-top text-right">
                             <button
                               onClick={() => setExpandedIncidentId(isExpanded ? null : inc.id)}
-                              className="px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-lg text-[11px] font-bold transition"
+                              className="px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-lg text-[11px] font-bold transition cursor-pointer"
                             >
                               {isExpanded ? 'Hide' : 'Inspect'}
                             </button>

@@ -9,6 +9,7 @@ import { NumberSlider } from '@/components/NumberSlider';
 import { getDomainTerminology, formatWaitTime, generateDomainStations } from '@/lib/domain';
 import { openRazorpayCheckout } from '@/lib/razorpayClient';
 import { playChimeAndAnnounce, playTestAnnouncement, VoiceLanguage } from '@/lib/audioAnnouncement';
+import SupportHelpModal from '@/components/SupportHelpModal';
 
 interface Token {
   id: string;
@@ -104,6 +105,7 @@ function DashboardContent() {
   const [isRenewModalOpen, setIsRenewModalOpen] = useState<boolean>(false);
   const [renewLoading, setRenewLoading] = useState<boolean>(false);
   const [showTrialModal, setShowTrialModal] = useState<boolean>(false);
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState<boolean>(false);
 
   // Emergency STAT Clinical Call State
   const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState<boolean>(false);
@@ -344,7 +346,7 @@ function DashboardContent() {
     try {
       await openRazorpayCheckout({
         streamId,
-        amount: subscription?.monthlyFee || 999,
+        amount: subscription?.monthlyFee || 499,
         paymentType: 'MONTHLY_RENEWAL',
         onSuccess: async () => {
           setRenewLoading(false);
@@ -901,6 +903,21 @@ function DashboardContent() {
               <span>Queue Settings</span>
             </span>
             <span className="text-zinc-500 text-xs">➔</span>
+          </button>
+
+          {/* Action Button: Help, FAQ & Maintainer Hotline */}
+          <button
+            onClick={() => {
+              setIsSupportModalOpen(true);
+              setIsMobileSidebarOpen(false);
+            }}
+            className="w-full bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/60 text-emerald-300 font-bold text-xs py-2.5 px-3 rounded-xl flex items-center justify-between transition cursor-pointer shadow-xs"
+          >
+            <span className="flex items-center gap-2">
+              <span>❓</span>
+              <span>Help, FAQ & Support</span>
+            </span>
+            <span className="text-emerald-500 text-xs font-mono">Hotline ↗</span>
           </button>
 
           {/* Action Button: Emergency STAT Call */}
@@ -2246,6 +2263,15 @@ function DashboardContent() {
           </div>
         </div>
       )}
+
+      {/* Maintainer Help, FAQ & Support Modal */}
+      <SupportHelpModal
+        isOpen={isSupportModalOpen}
+        onClose={() => setIsSupportModalOpen(false)}
+        source="OPERATOR"
+        businessName={streamInfo?.business_name}
+        streamId={streamId || undefined}
+      />
     </div>
   );
 }
