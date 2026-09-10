@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Phone, MessageSquare, AlertCircle, HelpCircle, X, CheckCircle2, ShieldAlert, Send } from 'lucide-react';
+import { AlertCircle, HelpCircle, X, CheckCircle2, ShieldAlert, Send } from 'lucide-react';
 
 interface SupportHelpModalProps {
   isOpen: boolean;
@@ -104,8 +104,8 @@ export default function SupportHelpModal({
               <HelpCircle className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">Help, FAQ & Maintainer Hotline</h2>
-              <p className="text-xs text-zinc-400">Direct technical assistance for {businessName || 'noQ Queue Engine'}</p>
+              <h2 className="text-base font-bold text-white">Help & Support</h2>
+              <p className="text-xs text-zinc-400">FAQ and issue reporting for {businessName || 'noQ Queue Engine'}</p>
             </div>
           </div>
           <button
@@ -129,14 +129,12 @@ export default function SupportHelpModal({
             Frequently Asked Questions
           </button>
           <button
-            onClick={() => setActiveTab('HOTLINE')}
-            className={`px-4 py-2 text-xs font-bold rounded-t-xl transition cursor-pointer border-b-2 ${
-              activeTab === 'HOTLINE'
-                ? 'border-emerald-500 text-emerald-400 bg-zinc-900/80'
-                : 'border-transparent text-zinc-400 hover:text-white'
-            }`}
+            disabled
+            className="px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-transparent text-zinc-600 cursor-not-allowed flex items-center gap-1.5"
+            title="Coming soon"
           >
             Direct Maintainer Hotline
+            <span className="text-[9px] font-black bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded-full uppercase tracking-wider">Soon</span>
           </button>
           <button
             onClick={() => setActiveTab('REPORT')}
@@ -166,43 +164,22 @@ export default function SupportHelpModal({
           )}
 
           {activeTab === 'HOTLINE' && (
-            <div className="space-y-6 text-center py-4">
-              <div className="w-14 h-14 rounded-full bg-emerald-950 border border-emerald-700 flex items-center justify-center mx-auto text-emerald-400">
-                <Phone className="w-6 h-6 animate-pulse" />
+            <div className="flex flex-col items-center justify-center py-12 space-y-4 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-600 text-2xl">
+                📞
               </div>
               <div>
-                <h3 className="text-base font-extrabold text-white">Emergency Engineering Hotline</h3>
-                <p className="text-xs text-zinc-400 mt-1 max-w-md mx-auto">
-                  Encountered an urgent technical issue or system glitch? Call or message the platform engineers directly for instant resolution.
+                <h3 className="text-sm font-bold text-white">Maintainer Hotline — Coming Soon</h3>
+                <p className="text-xs text-zinc-500 mt-1.5 max-w-xs mx-auto leading-relaxed">
+                  Direct phone and WhatsApp support from the engineering team is being set up. Use <strong className="text-zinc-300">Report an Issue</strong> in the meantime — tickets go straight to the developers.
                 </p>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-lg mx-auto">
-                <a
-                  href="tel:+919876543210"
-                  className="bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700 p-4 rounded-2xl flex items-center justify-center gap-3 text-emerald-300 font-bold text-xs uppercase tracking-wider transition shadow-sm cursor-pointer"
-                >
-                  <Phone className="w-4 h-4" />
-                  <span>Call Maintainer Hotline</span>
-                </a>
-
-                <a
-                  href="https://wa.me/919876543210?text=Hi%20noQ%20Support,%20I%20need%20urgent%20assistance%20with%20our%20queue%20system."
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 p-4 rounded-2xl flex items-center justify-center gap-3 text-zinc-200 font-bold text-xs uppercase tracking-wider transition shadow-sm cursor-pointer"
-                >
-                  <MessageSquare className="w-4 h-4 text-emerald-400" />
-                  <span>WhatsApp Live Chat</span>
-                </a>
-              </div>
-
-              <div className="bg-zinc-900/50 border border-zinc-800 p-4 rounded-2xl max-w-lg mx-auto text-left text-xs space-y-1">
-                <p className="font-bold text-white">Direct Engineering Contact:</p>
-                <p className="text-zinc-400 font-mono text-[11px]">Primary Email: maintainers@noq.org.in</p>
-                <p className="text-zinc-400 font-mono text-[11px]">Escalations: support@noq.org.in</p>
-                <p className="text-zinc-500 text-[10px] pt-1">Response time: &lt; 15 minutes for critical queue stalls.</p>
-              </div>
+              <button
+                onClick={() => setActiveTab('REPORT')}
+                className="px-4 py-2 bg-emerald-950 hover:bg-emerald-900 border border-emerald-800 text-emerald-300 text-xs font-bold rounded-xl transition cursor-pointer"
+              >
+                Report an Issue Instead →
+              </button>
             </div>
           )}
 

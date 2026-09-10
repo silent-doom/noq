@@ -1071,9 +1071,9 @@ function DashboardContent() {
           >
             <span className="flex items-center gap-2">
               <span>❓</span>
-              <span>Help, FAQ & Support</span>
+              <span>Help & Support</span>
             </span>
-            <span className="text-emerald-500 text-xs font-mono">Hotline ↗</span>
+            <span className="text-emerald-500 text-xs font-mono">FAQ ↗</span>
           </button>
 
           {/* Action Button: Emergency STAT Call */}
