@@ -2,7 +2,7 @@
 
 export interface CheckoutOptions {
   amount: number;
-  paymentType: 'ONBOARDING_INITIAL' | 'MONTHLY_RENEWAL';
+  paymentType: 'ONBOARDING_INITIAL' | 'MONTHLY_RENEWAL' | 'SLOT_ADDON_MONTHLY';
   streamId?: string;
   businessId?: string;
   businessName?: string;
@@ -98,7 +98,12 @@ export async function openRazorpayCheckout(options: CheckoutOptions): Promise<vo
       amount: orderData.order.amount,
       currency: orderData.order.currency,
       name: 'noQ Virtual Queue Engine',
-      description: options.paymentType === 'ONBOARDING_INITIAL' ? 'Setup + 1st Month Plan' : 'Monthly Terminal Renewal',
+      description:
+        options.paymentType === 'ONBOARDING_INITIAL'
+          ? 'Setup + 1st Month Plan'
+          : options.paymentType === 'SLOT_ADDON_MONTHLY'
+          ? 'Slot Booking Add-On — ₹299/month'
+          : 'Monthly Terminal Renewal',
       order_id: orderData.order.id,
       prefill: {
         contact: options.customerPhone || '',

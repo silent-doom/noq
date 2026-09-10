@@ -37,6 +37,8 @@ interface ClientRecord {
   completedTokens: number;
   waitingTokens: number;
   feedbackCount: number;
+  slotBookingEnabled: boolean;
+  slotAddonNextBilling?: string;
   storageFootprint: {
     bytes: number;
     kb: number;
@@ -532,6 +534,7 @@ export default function SuperAdminPage() {
                     <th className="py-3.5 px-4">Lifetime Revenue</th>
                     <th className="py-3.5 px-4">Throughput</th>
                     <th className="py-3.5 px-4">DB Storage</th>
+                    <th className="py-3.5 px-4">📅 Slot Add-On</th>
                     <th className="py-3.5 px-4 text-right">Admin Actions</th>
                   </tr>
                 </thead>
@@ -616,6 +619,16 @@ export default function SuperAdminPage() {
                             <span className="text-amber-400 font-semibold">{b.storageFootprint.formatted}</span>
                           </td>
 
+                          <td className="py-4 px-4">
+                            {b.slotBookingEnabled ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-violet-950 border border-violet-700 text-violet-300 rounded-full text-[10px] font-bold">
+                                📅 Active
+                              </span>
+                            ) : (
+                              <span className="text-zinc-600 text-[10px] font-medium">—</span>
+                            )}
+                          </td>
+
                           <td className="py-4 px-4 text-right space-x-1.5">
                             <button
                               onClick={() => handleExecuteAction(b.id, 'EXTEND_GRACE', 7)}
@@ -645,6 +658,19 @@ export default function SuperAdminPage() {
                             )}
 
                             <button
+                              onClick={() => handleExecuteAction(b.id, b.slotBookingEnabled ? 'DISABLE_SLOT_ADDON' : 'ENABLE_SLOT_ADDON')}
+                              disabled={actionLoadingId === b.id + (b.slotBookingEnabled ? 'DISABLE_SLOT_ADDON' : 'ENABLE_SLOT_ADDON')}
+                              className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer border ${
+                                b.slotBookingEnabled
+                                  ? 'bg-violet-950 hover:bg-violet-900 text-violet-300 border-violet-800'
+                                  : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-400 border-zinc-700'
+                              }`}
+                              title={b.slotBookingEnabled ? 'Disable Slot Booking Add-On' : 'Enable Slot Booking Add-On (₹299/mo)'}
+                            >
+                              {b.slotBookingEnabled ? '📅 Disable' : '📅 Enable'}
+                            </button>
+
+                            <button
                               onClick={() => {
                                 if (confirm(`Purge historical token storage for ${b.name} to free DB space?`)) {
                                   handleExecuteAction(b.id, 'PURGE_DATA');
@@ -657,6 +683,7 @@ export default function SuperAdminPage() {
                               🧹 Purge
                             </button>
                           </td>
+
                         </tr>
                       );
                     })

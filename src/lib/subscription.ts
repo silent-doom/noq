@@ -69,10 +69,12 @@ export async function ensureSubscriptionTables(client: PoolClient): Promise<void
  */
 export function calculateNextBillingDate(anchorDay: number, fromDate: Date = new Date()): Date {
   const next = new Date(fromDate);
+  // Set day to 1 first to avoid month overflow (e.g. Jan 31 → Mar 3 without this)
+  next.setDate(1);
   // Roll to next month
   next.setMonth(next.getMonth() + 1);
-  
-  // Set day to anchor day, clamped to last day of target month
+
+  // Clamp anchor day to last day of the target month
   const targetYear = next.getFullYear();
   const targetMonth = next.getMonth();
   const daysInTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();

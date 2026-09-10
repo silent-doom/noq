@@ -27,6 +27,8 @@ export async function GET(
               b.next_billing_date,
               b.last_payment_date,
               b.monthly_fee,
+              b.slot_booking_enabled,
+              b.slot_addon_next_billing,
               b.created_at AS business_created_at
        FROM queue_streams qs 
        LEFT JOIN businesses b ON qs.business_id = b.id 

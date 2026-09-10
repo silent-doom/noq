@@ -54,9 +54,38 @@ export async function POST(req: NextRequest) {
     }
 
     const biz = bRes.rows[0];
-    const payAmount = Number(amount) > 0 ? Number(amount) : paymentType === 'ONBOARDING_INITIAL' ? 1499 : 499;
+    const payAmount = Number(amount) > 0 ? Number(amount) : paymentType === 'ONBOARDING_INITIAL' ? 1499 : paymentType === 'SLOT_ADDON_MONTHLY' ? 299 : 499;
 
     await client.query('BEGIN');
+
+    // Handle Slot Add-On payment separately — enable the flag, don't roll subscription billing
+    if (paymentType === 'SLOT_ADDON_MONTHLY') {
+      await client.query(
+        `UPDATE businesses
+         SET slot_booking_enabled = TRUE,
+             slot_addon_next_billing = NOW() + INTERVAL '30 days'
+         WHERE id = $1`,
+        [targetBizId]
+      );
+      // Also record payment for audit trail
+      await client.query(
+        `INSERT INTO subscription_payments (business_id, amount, payment_type, payment_status, payment_method, transaction_ref, notes)
+         VALUES ($1, $2, 'SLOT_ADDON_MONTHLY', 'SUCCESS', 'RAZORPAY_GATEWAY', $3, $4)`,
+        [
+          targetBizId,
+          payAmount,
+          razorpayPaymentId || `RZP_${razorpayOrderId || Date.now()}`,
+          `Slot Booking Add-On activation for ${biz.name}`,
+        ]
+      );
+      await client.query('COMMIT');
+      return NextResponse.json({
+        success: true,
+        message: 'Slot Booking Add-On activated! Your customers can now book future appointments.',
+        slotBookingEnabled: true,
+      });
+    }
+
     const { payment, nextBillingDate } = await recordSubscriptionPayment(
       client,
       targetBizId,

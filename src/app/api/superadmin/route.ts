@@ -102,6 +102,8 @@ export async function GET(req: NextRequest) {
         b.billing_anchor_day,
         b.next_billing_date,
         b.monthly_fee,
+        b.slot_booking_enabled,
+        b.slot_addon_next_billing,
         (SELECT COUNT(*) FROM queue_streams WHERE business_id = b.id) AS stream_count,
         (SELECT COUNT(*) FROM tokens t JOIN queue_streams qs ON t.stream_id = qs.id WHERE qs.business_id = b.id) AS total_tokens,
         (SELECT COUNT(*) FROM tokens t JOIN queue_streams qs ON t.stream_id = qs.id WHERE qs.business_id = b.id AND t.status = 'COMPLETED') AS completed_tokens,
@@ -153,6 +155,8 @@ export async function GET(req: NextRequest) {
         completedTokens: Number(b.completed_tokens || 0),
         waitingTokens: Number(b.waiting_tokens || 0),
         feedbackCount,
+        slotBookingEnabled: Boolean(b.slot_booking_enabled),
+        slotAddonNextBilling: b.slot_addon_next_billing,
         storageFootprint: {
           bytes: estimatedBytes,
           kb: Number(estimatedKB),
@@ -260,6 +264,22 @@ export async function POST(req: NextRequest) {
         [ticketStatus || 'RESOLVED', ticketId]
       );
       return NextResponse.json({ success: true, ticket: updated.rows[0] });
+    }
+
+    if (action === 'ENABLE_SLOT_ADDON' && businessId) {
+      await client.query(
+        `UPDATE businesses SET slot_booking_enabled = TRUE, slot_addon_next_billing = NOW() + INTERVAL '30 days' WHERE id = $1`,
+        [businessId]
+      );
+      return NextResponse.json({ success: true, message: 'Slot Booking Add-On enabled for business' });
+    }
+
+    if (action === 'DISABLE_SLOT_ADDON' && businessId) {
+      await client.query(
+        `UPDATE businesses SET slot_booking_enabled = FALSE WHERE id = $1`,
+        [businessId]
+      );
+      return NextResponse.json({ success: true, message: 'Slot Booking Add-On disabled for business' });
     }
 
     if (!businessId) {

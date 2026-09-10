@@ -107,6 +107,27 @@ function DashboardContent() {
   const [showTrialModal, setShowTrialModal] = useState<boolean>(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState<boolean>(false);
 
+  // Slot Booking Premium Add-On State
+  const [slotBookingEnabled, setSlotBookingEnabled] = useState<boolean>(false);
+  const [slotAddonNextBilling, setSlotAddonNextBilling] = useState<string | null>(null);
+  const [showSlotPanel, setShowSlotPanel] = useState<boolean>(false);
+  // Slot appointments
+  const [slotDate, setSlotDate] = useState<string>(new Date().toISOString().substring(0, 10));
+  const [slotAppointments, setSlotAppointments] = useState<any[]>([]);
+  const [slotApptLoading, setSlotApptLoading] = useState<boolean>(false);
+  const [apptStatusLoading, setApptStatusLoading] = useState<string | null>(null);
+  // Working hours config state
+  const [showHoursConfig, setShowHoursConfig] = useState<boolean>(false);
+  const [whDay, setWhDay] = useState<number>(1);
+  const [whOpen, setWhOpen] = useState<string>('10:00');
+  const [whClose, setWhClose] = useState<string>('17:00');
+  const [whDuration, setWhDuration] = useState<number>(30);
+  const [whSaving, setWhSaving] = useState<boolean>(false);
+  const [whSaved, setWhSaved] = useState<boolean>(false);
+  // Slot addon payment
+  const [slotAddonLoading, setSlotAddonLoading] = useState<boolean>(false);
+
+
   // Emergency STAT Clinical Call State
   const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState<boolean>(false);
   const [emergencyStation, setEmergencyStation] = useState<string>('Doctor Room 1');
@@ -329,6 +350,9 @@ function DashboardContent() {
           if (Array.isArray(data.stream.operating_days)) setEditOpDays(data.stream.operating_days);
           if (data.stream.queue_structure) setEditQueueStruct(data.stream.queue_structure);
           if (data.stream.google_maps_url !== undefined) setEditGoogleMapsUrl(data.stream.google_maps_url || '');
+          // Slot addon flag
+          setSlotBookingEnabled(Boolean(data.stream.slot_booking_enabled));
+          if (data.stream.slot_addon_next_billing) setSlotAddonNextBilling(data.stream.slot_addon_next_billing);
         }
       }
     } catch (error) {
@@ -337,6 +361,113 @@ function DashboardContent() {
       setLoading(false);
     }
   }, [streamId]);
+
+  // ── Slot: fetch appointments for a date ───────────────────────────────────
+  const fetchSlotAppointments = useCallback(async (date: string) => {
+    if (!streamId || !slotBookingEnabled) return;
+    setSlotApptLoading(true);
+    try {
+      const adminToken = typeof window !== 'undefined' ? sessionStorage.getItem(`noq_token_${streamId}`) : null;
+      const res = await fetch(
+        `/api/slots/appointments?streamId=${streamId}&date=${date}`,
+        { headers: adminToken ? { 'x-admin-token': adminToken } : {} }
+      );
+      const json = await res.json();
+      if (json.success) setSlotAppointments(json.appointments || []);
+    } catch { /* silent */ } finally {
+      setSlotApptLoading(false);
+    }
+  }, [streamId, slotBookingEnabled]);
+
+  // ── Slot: save working hours config ──────────────────────────────────────
+  const handleSaveWorkingHours = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!streamId || whSaving) return;
+    setWhSaving(true);
+    setWhSaved(false);
+    try {
+      const adminToken = typeof window !== 'undefined' ? sessionStorage.getItem(`noq_token_${streamId}`) : null;
+      const res = await fetch('/api/slots/config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(adminToken ? { 'x-admin-token': adminToken } : {}),
+        },
+        body: JSON.stringify({
+          streamId,
+          dayOfWeek: whDay,
+          openTime: whOpen,
+          closeTime: whClose,
+          slotDurationMins: whDuration,
+          maxPerSlot: 1,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setWhSaved(true);
+        setTimeout(() => setWhSaved(false), 3000);
+      } else {
+        alert(json.error || 'Failed to save working hours');
+      }
+    } catch { alert('Network error saving working hours.'); } finally {
+      setWhSaving(false);
+    }
+  };
+
+  // ── Slot: update appointment status ──────────────────────────────────────
+  const handleUpdateApptStatus = async (appointmentId: string, status: string) => {
+    if (!streamId || apptStatusLoading) return;
+    setApptStatusLoading(appointmentId);
+    try {
+      const adminToken = typeof window !== 'undefined' ? sessionStorage.getItem(`noq_token_${streamId}`) : null;
+      const res = await fetch('/api/slots/appointments', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(adminToken ? { 'x-admin-token': adminToken } : {}),
+        },
+        body: JSON.stringify({ appointmentId, status, streamId }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        // Update local state
+        setSlotAppointments(prev =>
+          prev.map(a => a.id === appointmentId ? { ...a, status } : a)
+        );
+      } else {
+        alert(json.error || 'Failed to update appointment');
+      }
+    } catch { alert('Network error.'); } finally {
+      setApptStatusLoading(null);
+    }
+  };
+
+  // ── Slot: Razorpay upgrade for slot addon ──────────────────────────────────
+  const handleSlotAddonUpgrade = async () => {
+    if (!streamId || slotAddonLoading) return;
+    setSlotAddonLoading(true);
+    try {
+      await openRazorpayCheckout({
+        streamId,
+        amount: 299,
+        paymentType: 'SLOT_ADDON_MONTHLY',
+        onSuccess: async () => {
+          setSlotAddonLoading(false);
+          setSlotBookingEnabled(true);
+          alert('🎉 Slot Booking Add-On activated! Your customers can now book future appointments.');
+          await fetchQueueData();
+        },
+        onDismiss: () => { setSlotAddonLoading(false); },
+        onError: (err) => {
+          setSlotAddonLoading(false);
+          alert(`Payment failed: ${err}`);
+        },
+      });
+    } catch (err: any) {
+      setSlotAddonLoading(false);
+      alert(`Error: ${err?.message}`);
+    }
+  };
 
   const handleRenewSubscription = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -889,6 +1020,31 @@ function DashboardContent() {
               </button>
             )}
           </div>
+
+          {/* Action Button: Slot Bookings — Premium Add-On */}
+          <button
+            id="sidebar-slot-bookings"
+            onClick={() => {
+              setShowSlotPanel(true);
+              setIsMobileSidebarOpen(false);
+              if (slotBookingEnabled) fetchSlotAppointments(slotDate);
+            }}
+            className={`w-full border font-semibold text-xs py-2.5 px-3 rounded-xl flex items-center justify-between transition cursor-pointer ${
+              slotBookingEnabled
+                ? 'bg-violet-950/40 hover:bg-violet-900/60 border-violet-800/60 text-violet-300'
+                : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-400'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <span>📅</span>
+              <span>Slot Bookings</span>
+            </span>
+            {slotBookingEnabled ? (
+              <span className="text-violet-400 text-[10px] font-bold border border-violet-700 bg-violet-950 px-1.5 rounded-full">Active</span>
+            ) : (
+              <span className="text-zinc-600 text-[10px] font-mono">₹299/mo ↗</span>
+            )}
+          </button>
 
           {/* Queue Settings Trigger inside Sidebar */}
           <button
@@ -2260,6 +2416,147 @@ function DashboardContent() {
             >
               Done
             </button>
+          </div>
+        </div>
+      )}
+
+
+      {/* ─── Slot Bookings Panel ─────────────────────────────────────────────── */}
+      {showSlotPanel && (
+        <div className="fixed inset-0 z-50 flex justify-end" id="slot-panel-overlay">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowSlotPanel(false)} />
+          <div className="relative w-full max-w-md bg-zinc-950 border-l border-zinc-800 h-full overflow-y-auto flex flex-col shadow-2xl" id="slot-panel">
+            <div className="sticky top-0 bg-zinc-950 border-b border-zinc-800 p-5 flex items-center justify-between z-10">
+              <div>
+                <h2 className="text-white font-black text-base flex items-center gap-2">📅 Slot Bookings</h2>
+                {slotBookingEnabled && slotAddonNextBilling && (
+                  <p className="text-zinc-500 text-[11px] mt-0.5">
+                    Renews: {new Date(slotAddonNextBilling).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                )}
+              </div>
+              <button onClick={() => setShowSlotPanel(false)} className="text-zinc-500 hover:text-white text-xl cursor-pointer transition">✕</button>
+            </div>
+            <div className="p-5 flex-1 space-y-6">
+              {!slotBookingEnabled ? (
+                <div id="slot-paywall">
+                  <div className="bg-gradient-to-br from-violet-950 to-indigo-950 border border-violet-800/60 rounded-3xl p-6 text-center space-y-4">
+                    <div className="w-14 h-14 bg-violet-900/60 rounded-2xl flex items-center justify-center mx-auto text-2xl">📅</div>
+                    <h3 className="text-white font-black text-lg">Unlock Future Slot Booking</h3>
+                    <p className="text-violet-300 text-xs leading-relaxed">Let customers book appointments up to 7 days in advance. Configure working days, hours, and slot duration.</p>
+                    <div className="grid grid-cols-2 gap-2 text-left">
+                      {['Calendar booking page','Working hours config','Double-booking prevention','Confirmation pass','Appointment timeline','Status management'].map(f => (
+                        <div key={f} className="flex items-start gap-1.5 text-[11px] text-violet-200"><span className="text-emerald-400 mt-px">✓</span><span>{f}</span></div>
+                      ))}
+                    </div>
+                    <div className="pt-3 border-t border-violet-800/40">
+                      <button id="btn-slot-addon-upgrade" onClick={handleSlotAddonUpgrade} disabled={slotAddonLoading} className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-60 text-white font-black py-3.5 rounded-2xl text-sm transition cursor-pointer">
+                        {slotAddonLoading ? '⟳ Processing...' : 'Activate — ₹299/month'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6" id="slot-active-panel">
+                  {/* Date Navigator */}
+                  <div>
+                    <p className="text-zinc-400 text-[11px] font-bold uppercase tracking-wider mb-2">Viewing Appointments For</p>
+                    <div className="flex items-center gap-2">
+                      <button type="button" id="date-prev-btn" onClick={() => { const d=new Date(slotDate+'T00:00:00'); d.setDate(d.getDate()-1); const nd=d.toISOString().substring(0,10); setSlotDate(nd); fetchSlotAppointments(nd); }} className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer text-lg">‹</button>
+                      <input type="date" id="slot-date-picker" value={slotDate} onChange={e => { setSlotDate(e.target.value); fetchSlotAppointments(e.target.value); }} className="flex-1 bg-zinc-900 border border-zinc-800 text-white text-sm font-semibold rounded-xl px-3 py-2 focus:outline-none focus:border-violet-600 cursor-pointer" />
+                      <button type="button" id="date-next-btn" onClick={() => { const d=new Date(slotDate+'T00:00:00'); d.setDate(d.getDate()+1); const nd=d.toISOString().substring(0,10); setSlotDate(nd); fetchSlotAppointments(nd); }} className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer text-lg">›</button>
+                    </div>
+                    <button type="button" onClick={() => { const t=new Date().toISOString().substring(0,10); setSlotDate(t); fetchSlotAppointments(t); }} className="mt-1 text-[11px] text-violet-400 hover:text-violet-300 transition cursor-pointer">← Today</button>
+                  </div>
+                  {/* Appointments */}
+                  <div id="appointments-timeline">
+                    <p className="text-zinc-400 text-[11px] font-bold uppercase tracking-wider mb-3 flex items-center gap-2">
+                      Appointments <span className="bg-zinc-800 text-zinc-400 text-[10px] font-bold px-1.5 rounded-full">{slotAppointments.length}</span>
+                    </p>
+                    {slotApptLoading ? (
+                      <div className="text-center py-8 text-zinc-500"><span className="animate-spin inline-block text-2xl">⟳</span><p className="text-xs mt-2">Loading...</p></div>
+                    ) : slotAppointments.length === 0 ? (
+                      <div className="text-center py-8 bg-zinc-900 border border-zinc-800 rounded-2xl" id="no-appointments-msg">
+                        <p className="text-2xl mb-2">📭</p>
+                        <p className="text-sm font-semibold text-zinc-400">No appointments on this date</p>
+                        <p className="text-xs mt-1 text-zinc-600">Customers book via the queue booking page</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {slotAppointments.map((appt: any) => {
+                          const sc: Record<string,{bg:string;text:string;label:string}> = {
+                            PENDING:   {bg:'bg-amber-950/50 border-amber-800/60',    text:'text-amber-400',   label:'Pending'},
+                            CONFIRMED: {bg:'bg-emerald-950/50 border-emerald-800/60',text:'text-emerald-400', label:'Confirmed ✓'},
+                            CANCELLED: {bg:'bg-zinc-900 border-zinc-800',             text:'text-zinc-500',    label:'Cancelled'},
+                            NO_SHOW:   {bg:'bg-red-950/40 border-red-900/40',          text:'text-red-400',     label:'No-Show'},
+                          };
+                          const c=sc[appt.status]||sc.PENDING;
+                          const t=(appt.slot_time||'').substring(0,5);
+                          const [h,m]=t.split(':').map(Number);
+                          const tl=`${h===0?12:h>12?h-12:h}:${String(m).padStart(2,'0')} ${h<12?'AM':'PM'}`;
+                          return (
+                            <div key={appt.id} className={`flex items-start gap-3 p-3.5 rounded-2xl border ${c.bg}`} id={`appt-${appt.id}`}>
+                              <div className="w-16 shrink-0 text-center"><p className={`text-sm font-black ${c.text}`}>{tl}</p></div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white font-bold text-xs truncate">{appt.customer_name}</p>
+                                <p className="text-zinc-500 text-[11px] font-mono">{appt.customer_phone}</p>
+                                <p className={`text-[10px] font-bold mt-0.5 ${c.text}`}>{c.label}</p>
+                              </div>
+                              {(appt.status==='PENDING'||appt.status==='CONFIRMED') && (
+                                <div className="flex flex-col gap-1 shrink-0">
+                                  {appt.status==='PENDING' && <button onClick={()=>handleUpdateApptStatus(appt.id,'CONFIRMED')} disabled={apptStatusLoading===appt.id} className="px-2 py-1 bg-emerald-900/60 hover:bg-emerald-800 text-emerald-300 border border-emerald-800/60 rounded-lg text-[10px] font-bold cursor-pointer" id={`btn-confirm-${appt.id}`}>✓ Confirm</button>}
+                                  <button onClick={()=>handleUpdateApptStatus(appt.id,'NO_SHOW')} disabled={apptStatusLoading===appt.id} className="px-2 py-1 bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-900/40 rounded-lg text-[10px] font-bold cursor-pointer" id={`btn-noshow-${appt.id}`}>No-Show</button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  {/* Working Hours Config */}
+                  <div>
+                    <button type="button" id="toggle-hours-config" onClick={()=>setShowHoursConfig(v=>!v)} className="w-full flex items-center justify-between p-3.5 bg-zinc-900 border border-zinc-800 rounded-2xl text-zinc-300 hover:text-white transition cursor-pointer">
+                      <span className="flex items-center gap-2 text-xs font-bold"><span>⚙️</span> Working Hours Configuration</span>
+                      <span className="text-zinc-600 text-xs">{showHoursConfig?'▲':'▼'}</span>
+                    </button>
+                    {showHoursConfig && (
+                      <form onSubmit={handleSaveWorkingHours} className="mt-3 space-y-4 bg-zinc-900 border border-zinc-800 rounded-2xl p-4" id="working-hours-form">
+                        <div>
+                          <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Day of Week</label>
+                          <select id="wh-day-select" value={whDay} onChange={e=>setWhDay(Number(e.target.value))} className="w-full bg-zinc-950 border border-zinc-700 text-white text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-violet-600 cursor-pointer">
+                            {['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].map((d,i)=><option key={d} value={i}>{d}</option>)}
+                          </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Opens At</label>
+                            <input type="time" id="wh-open-time" value={whOpen} onChange={e=>setWhOpen(e.target.value)} required className="w-full bg-zinc-950 border border-zinc-700 text-white text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-violet-600" />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Closes At</label>
+                            <input type="time" id="wh-close-time" value={whClose} onChange={e=>setWhClose(e.target.value)} required className="w-full bg-zinc-950 border border-zinc-700 text-white text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-violet-600" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Slot Duration</label>
+                          <select id="wh-duration-select" value={whDuration} onChange={e=>setWhDuration(Number(e.target.value))} className="w-full bg-zinc-950 border border-zinc-700 text-white text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-violet-600 cursor-pointer">
+                            <option value={15}>15 minutes</option>
+                            <option value={30}>30 minutes</option>
+                            <option value={45}>45 minutes</option>
+                            <option value={60}>60 minutes</option>
+                          </select>
+                        </div>
+                        <button type="submit" id="btn-save-hours" disabled={whSaving} className="w-full bg-violet-700 hover:bg-violet-600 disabled:opacity-60 text-white font-black py-3 rounded-xl text-sm transition cursor-pointer">
+                          {whSaving?'⟳ Saving...':whSaved?'✓ Saved!':'Save Configuration'}
+                        </button>
+                        {whSaved && <p className="text-emerald-400 text-[11px] text-center font-bold" id="hours-saved-msg">✓ Working hours saved!</p>}
+                      </form>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
