@@ -38,3 +38,6 @@ Thumbs.db
 /noQ_Brochures.html
 /*.pdf
 /migrate.js
+/playwright-report/
+/test-results/
+

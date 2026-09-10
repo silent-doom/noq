@@ -1031,7 +1031,7 @@ function DashboardContent() {
             }}
             className={`w-full border font-semibold text-xs py-2.5 px-3 rounded-xl flex items-center justify-between transition cursor-pointer ${
               slotBookingEnabled
-                ? 'bg-violet-950/40 hover:bg-violet-900/60 border-violet-800/60 text-violet-300'
+                ? 'bg-emerald-950/40 hover:bg-emerald-900/60 border-emerald-800/60 text-emerald-300'
                 : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-400'
             }`}
           >
@@ -1040,7 +1040,7 @@ function DashboardContent() {
               <span>Slot Bookings</span>
             </span>
             {slotBookingEnabled ? (
-              <span className="text-violet-400 text-[10px] font-bold border border-violet-700 bg-violet-950 px-1.5 rounded-full">Active</span>
+              <span className="text-emerald-400 text-[10px] font-bold border border-emerald-700 bg-emerald-950 px-1.5 rounded-full">Active</span>
             ) : (
               <span className="text-zinc-600 text-[10px] font-mono">₹299/mo ↗</span>
             )}
@@ -2440,22 +2440,59 @@ function DashboardContent() {
             <div className="p-5 flex-1 space-y-6">
               {!slotBookingEnabled ? (
                 <div id="slot-paywall">
-                  <div className="bg-gradient-to-br from-violet-950 to-indigo-950 border border-violet-800/60 rounded-3xl p-6 text-center space-y-4">
-                    <div className="w-14 h-14 bg-violet-900/60 rounded-2xl flex items-center justify-center mx-auto text-2xl">📅</div>
-                    <h3 className="text-white font-black text-lg">Unlock Future Slot Booking</h3>
-                    <p className="text-violet-300 text-xs leading-relaxed">Let customers book appointments up to 7 days in advance. Configure working days, hours, and slot duration.</p>
-                    <div className="grid grid-cols-2 gap-2 text-left">
-                      {['Calendar booking page','Working hours config','Double-booking prevention','Confirmation pass','Appointment timeline','Status management'].map(f => (
-                        <div key={f} className="flex items-start gap-1.5 text-[11px] text-violet-200"><span className="text-emerald-400 mt-px">✓</span><span>{f}</span></div>
-                      ))}
-                    </div>
-                    <div className="pt-3 border-t border-violet-800/40">
-                      <button id="btn-slot-addon-upgrade" onClick={handleSlotAddonUpgrade} disabled={slotAddonLoading} className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-60 text-white font-black py-3.5 rounded-2xl text-sm transition cursor-pointer">
-                        {slotAddonLoading ? '⟳ Processing...' : 'Activate — ₹299/month'}
-                      </button>
+                  {/* Premium feature card — zinc/emerald theme to match dashboard */}
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+                    {/* Top accent stripe */}
+                    <div className="h-0.5 w-full bg-gradient-to-r from-emerald-600 via-emerald-400 to-emerald-600 opacity-60" />
+
+                    <div className="p-6 space-y-5">
+                      {/* Icon + heading */}
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-zinc-800 border border-zinc-700 rounded-2xl flex items-center justify-center text-xl shrink-0">
+                          📅
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-0.5">Premium Add-On</p>
+                          <h3 className="text-white font-black text-sm leading-tight">Future Slot Booking</h3>
+                        </div>
+                      </div>
+
+                      <p className="text-zinc-400 text-xs leading-relaxed">
+                        Let customers book appointments up to 7 days in advance. Configure working days, hours, and slot duration.
+                      </p>
+
+                      {/* Feature list */}
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                        {['Calendar booking page','Working hours config','Double-booking prevention','Confirmation pass','Appointment timeline','Status management'].map(f => (
+                          <div key={f} className="flex items-start gap-1.5">
+                            <span className="text-emerald-400 text-[11px] mt-px font-bold">✓</span>
+                            <span className="text-zinc-300 text-[11px]">{f}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Divider + price + CTA */}
+                      <div className="pt-4 border-t border-zinc-800 space-y-3">
+                        <div className="flex items-baseline justify-between">
+                          <span className="text-zinc-500 text-[11px]">Billed monthly, cancel anytime</span>
+                          <span className="text-white font-black text-base">₹299<span className="text-zinc-500 text-xs font-normal">/mo</span></span>
+                        </div>
+                        <button
+                          id="btn-slot-addon-upgrade"
+                          onClick={handleSlotAddonUpgrade}
+                          disabled={slotAddonLoading}
+                          className="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl text-sm transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/30"
+                        >
+                          {slotAddonLoading
+                            ? <><span className="animate-spin">⟳</span> Processing...</>
+                            : <>Activate Slot Booking →</>
+                          }
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
+
               ) : (
                 <div className="space-y-6" id="slot-active-panel">
                   {/* Date Navigator */}
@@ -2463,10 +2500,10 @@ function DashboardContent() {
                     <p className="text-zinc-400 text-[11px] font-bold uppercase tracking-wider mb-2">Viewing Appointments For</p>
                     <div className="flex items-center gap-2">
                       <button type="button" id="date-prev-btn" onClick={() => { const d=new Date(slotDate+'T00:00:00'); d.setDate(d.getDate()-1); const nd=d.toISOString().substring(0,10); setSlotDate(nd); fetchSlotAppointments(nd); }} className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer text-lg">‹</button>
-                      <input type="date" id="slot-date-picker" value={slotDate} onChange={e => { setSlotDate(e.target.value); fetchSlotAppointments(e.target.value); }} className="flex-1 bg-zinc-900 border border-zinc-800 text-white text-sm font-semibold rounded-xl px-3 py-2 focus:outline-none focus:border-violet-600 cursor-pointer" />
+                      <input type="date" id="slot-date-picker" value={slotDate} onChange={e => { setSlotDate(e.target.value); fetchSlotAppointments(e.target.value); }} className="flex-1 bg-zinc-900 border border-zinc-800 text-white text-sm font-semibold rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 cursor-pointer" />
                       <button type="button" id="date-next-btn" onClick={() => { const d=new Date(slotDate+'T00:00:00'); d.setDate(d.getDate()+1); const nd=d.toISOString().substring(0,10); setSlotDate(nd); fetchSlotAppointments(nd); }} className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer text-lg">›</button>
                     </div>
-                    <button type="button" onClick={() => { const t=new Date().toISOString().substring(0,10); setSlotDate(t); fetchSlotAppointments(t); }} className="mt-1 text-[11px] text-violet-400 hover:text-violet-300 transition cursor-pointer">← Today</button>
+                    <button type="button" onClick={() => { const t=new Date().toISOString().substring(0,10); setSlotDate(t); fetchSlotAppointments(t); }} className="mt-1 text-[11px] text-emerald-500 hover:text-emerald-400 transition cursor-pointer">← Today</button>
                   </div>
                   {/* Appointments */}
                   <div id="appointments-timeline">
@@ -2524,30 +2561,30 @@ function DashboardContent() {
                       <form onSubmit={handleSaveWorkingHours} className="mt-3 space-y-4 bg-zinc-900 border border-zinc-800 rounded-2xl p-4" id="working-hours-form">
                         <div>
                           <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Day of Week</label>
-                          <select id="wh-day-select" value={whDay} onChange={e=>setWhDay(Number(e.target.value))} className="w-full bg-zinc-950 border border-zinc-700 text-white text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-violet-600 cursor-pointer">
+                          <select id="wh-day-select" value={whDay} onChange={e=>setWhDay(Number(e.target.value))} className="w-full bg-zinc-950 border border-zinc-700 text-white text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-emerald-500 cursor-pointer">
                             {['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].map((d,i)=><option key={d} value={i}>{d}</option>)}
                           </select>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Opens At</label>
-                            <input type="time" id="wh-open-time" value={whOpen} onChange={e=>setWhOpen(e.target.value)} required className="w-full bg-zinc-950 border border-zinc-700 text-white text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-violet-600" />
+                            <input type="time" id="wh-open-time" value={whOpen} onChange={e=>setWhOpen(e.target.value)} required className="w-full bg-zinc-950 border border-zinc-700 text-white text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-emerald-500" />
                           </div>
                           <div>
                             <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Closes At</label>
-                            <input type="time" id="wh-close-time" value={whClose} onChange={e=>setWhClose(e.target.value)} required className="w-full bg-zinc-950 border border-zinc-700 text-white text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-violet-600" />
+                            <input type="time" id="wh-close-time" value={whClose} onChange={e=>setWhClose(e.target.value)} required className="w-full bg-zinc-950 border border-zinc-700 text-white text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-emerald-500" />
                           </div>
                         </div>
                         <div>
                           <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Slot Duration</label>
-                          <select id="wh-duration-select" value={whDuration} onChange={e=>setWhDuration(Number(e.target.value))} className="w-full bg-zinc-950 border border-zinc-700 text-white text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-violet-600 cursor-pointer">
+                          <select id="wh-duration-select" value={whDuration} onChange={e=>setWhDuration(Number(e.target.value))} className="w-full bg-zinc-950 border border-zinc-700 text-white text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-emerald-500 cursor-pointer">
                             <option value={15}>15 minutes</option>
                             <option value={30}>30 minutes</option>
                             <option value={45}>45 minutes</option>
                             <option value={60}>60 minutes</option>
                           </select>
                         </div>
-                        <button type="submit" id="btn-save-hours" disabled={whSaving} className="w-full bg-violet-700 hover:bg-violet-600 disabled:opacity-60 text-white font-black py-3 rounded-xl text-sm transition cursor-pointer">
+                        <button type="submit" id="btn-save-hours" disabled={whSaving} className="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-60 text-white font-bold py-3 rounded-xl text-sm transition cursor-pointer">
                           {whSaving?'⟳ Saving...':whSaved?'✓ Saved!':'Save Configuration'}
                         </button>
                         {whSaved && <p className="text-emerald-400 text-[11px] text-center font-bold" id="hours-saved-msg">✓ Working hours saved!</p>}

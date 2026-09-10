@@ -621,7 +621,7 @@ export default function SuperAdminPage() {
 
                           <td className="py-4 px-4">
                             {b.slotBookingEnabled ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-violet-950 border border-violet-700 text-violet-300 rounded-full text-[10px] font-bold">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-950 border border-emerald-700 text-emerald-300 rounded-full text-[10px] font-bold">
                                 📅 Active
                               </span>
                             ) : (
@@ -662,7 +662,7 @@ export default function SuperAdminPage() {
                               disabled={actionLoadingId === b.id + (b.slotBookingEnabled ? 'DISABLE_SLOT_ADDON' : 'ENABLE_SLOT_ADDON')}
                               className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer border ${
                                 b.slotBookingEnabled
-                                  ? 'bg-violet-950 hover:bg-violet-900 text-violet-300 border-violet-800'
+                                  ? 'bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border-emerald-800'
                                   : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-400 border-zinc-700'
                               }`}
                               title={b.slotBookingEnabled ? 'Disable Slot Booking Add-On' : 'Enable Slot Booking Add-On (₹299/mo)'}
