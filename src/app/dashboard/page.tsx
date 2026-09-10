@@ -893,7 +893,7 @@ function DashboardContent() {
         }`}
       >
         <div>
-          <div className="flex items-center justify-between gap-2.5 mb-8 px-2">
+          <div className="flex items-center justify-between gap-2.5 mb-4 px-2">
             <div className="flex items-center gap-2">
               <span className="text-2xl font-black text-white tracking-tight">noQ</span>
               <span className="text-[10px] bg-zinc-800 text-zinc-400 font-mono font-medium px-2 py-0.5 rounded tracking-wide">
@@ -909,6 +909,14 @@ function DashboardContent() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
+          </div>
+
+          {/* Business / Clinic Venue Identity Card */}
+          <div className="mb-6 px-3 py-2.5 bg-zinc-900/80 border border-zinc-800 rounded-xl">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 mb-0.5">Clinic / Business</p>
+            <p className="text-xs font-bold text-white truncate" title={streamInfo?.business_name}>
+              {streamInfo?.business_name || 'Business Venue'}
+            </p>
           </div>
 
           <nav className="space-y-1.5">
@@ -1093,8 +1101,8 @@ function DashboardContent() {
       {/* Main Screen Panel */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto overflow-x-hidden w-full max-w-full">
         <header className="px-3.5 sm:px-6 lg:px-8 py-3 flex items-center justify-between border-b border-zinc-200 bg-white/95 backdrop-blur-md sticky top-0 z-30 gap-2 sm:gap-4 w-full shadow-2xs">
-          {/* Left: Hamburger (mobile) + Brand Name */}
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          {/* Left: Hamburger (mobile) + Clinic / Business Name */}
+          <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
             <button
               className="lg:hidden w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 hover:bg-zinc-200 shrink-0 cursor-pointer transition"
               onClick={() => setIsMobileSidebarOpen(true)}
@@ -1106,12 +1114,14 @@ function DashboardContent() {
               </svg>
             </button>
 
-            <h1 className="text-sm sm:text-base lg:text-lg font-bold text-zinc-900 truncate max-w-[130px] sm:max-w-[200px] md:max-w-[280px]">
-              {streamInfo?.business_name || 'Business Venue'}
-            </h1>
-            <span className="hidden lg:inline-block text-[11px] bg-zinc-100 text-zinc-600 font-semibold px-2.5 py-0.5 rounded-full border border-zinc-200 shrink-0">
-              {streamInfo?.stream_name || terms.queueTitle}
-            </span>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <h1 className="text-base sm:text-lg lg:text-xl font-black text-zinc-950 tracking-tight truncate max-w-[200px] sm:max-w-[360px] md:max-w-[500px]" title={streamInfo?.business_name}>
+                {streamInfo?.business_name || 'Business Venue'}
+              </h1>
+              <span className="hidden sm:inline-flex items-center text-[11px] bg-zinc-100 text-zinc-600 font-medium px-2.5 py-0.5 rounded-full border border-zinc-200 shrink-0">
+                {streamInfo?.stream_name || terms.queueTitle}
+              </span>
+            </div>
           </div>
 
           {/* Right: Operational Controls — Uniform, Harmonious, Pixel-Perfect Pills */}
