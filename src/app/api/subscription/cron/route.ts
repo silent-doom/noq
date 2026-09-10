@@ -11,6 +11,22 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleCron(req: NextRequest) {
+  const cronSecret = (process.env.CRON_SECRET || '').trim();
+  const superSecret = (process.env.SUPERADMIN_SECRET || '').trim();
+  const authHeader = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim() || '';
+  const superKeyHeader = req.headers.get('x-superadmin-key')?.trim() || '';
+
+  const isDev = process.env.NODE_ENV === 'development' || !cronSecret;
+  if (!isDev) {
+    const isAuthorized =
+      (Boolean(cronSecret) && authHeader === cronSecret) ||
+      (Boolean(superSecret) && (authHeader === superSecret || superKeyHeader === superSecret));
+
+    if (!isAuthorized) {
+      return NextResponse.json({ success: false, error: 'Unauthorized cron trigger' }, { status: 401 });
+    }
+  }
+
   const client = await db.connect();
   try {
     await ensureSubscriptionTables(client);

@@ -180,13 +180,13 @@ export function maskCustomerName(name?: string): string {
 
 import crypto from 'crypto';
 
-export function generateAdminSessionToken(streamId: string, passcode: string): string {
+export function generateAdminSessionToken(streamId: string, passcode?: string): string {
   const secret = process.env.ADMIN_JWT_SECRET || 'noq-vault-hmac-sec-84291-x7k9p';
   const timestamp = Date.now();
   const payload = `${streamId}:${timestamp}`;
   const signature = crypto
     .createHmac('sha256', secret)
-    .update(`${payload}:${passcode.trim()}`)
+    .update(payload)
     .digest('hex');
   return Buffer.from(`${payload}:${signature}`).toString('base64url');
 }
@@ -207,22 +207,33 @@ export function verifyAdminSessionToken(token?: string | null, streamId?: string
     if (streamId && tStreamId !== streamId) return false;
 
     const secret = process.env.ADMIN_JWT_SECRET || 'noq-vault-hmac-sec-84291-x7k9p';
+    const payload = `${tStreamId}:${timestampStr}`;
+    const expectedSig = crypto
+      .createHmac('sha256', secret)
+      .update(payload)
+      .digest('hex');
 
-    if (passcode) {
-      const expectedSig = crypto
-        .createHmac('sha256', secret)
-        .update(`${tStreamId}:${timestampStr}:${passcode.trim()}`)
-        .digest('hex');
-      
-      const sigBuf = Buffer.from(signature, 'hex');
-      const expectedBuf = Buffer.from(expectedSig, 'hex');
-      if (sigBuf.length !== expectedBuf.length) return false;
-      return crypto.timingSafeEqual(sigBuf, expectedBuf);
+    const sigBuf = Buffer.from(signature, 'hex');
+    const expectedBuf = Buffer.from(expectedSig, 'hex');
+    if (sigBuf.length === expectedBuf.length && crypto.timingSafeEqual(sigBuf, expectedBuf)) {
+      return true;
     }
 
-    // Basic HMAC length & structural integrity verification
-    return typeof signature === 'string' && signature.length === 64;
+    // Support legacy passcode-salted tokens if passcode is provided
+    if (passcode) {
+      const legacySig = crypto
+        .createHmac('sha256', secret)
+        .update(`${payload}:${passcode.trim()}`)
+        .digest('hex');
+      const legacyBuf = Buffer.from(legacySig, 'hex');
+      if (sigBuf.length === legacyBuf.length && crypto.timingSafeEqual(sigBuf, legacyBuf)) {
+        return true;
+      }
+    }
+
+    return false;
   } catch (e) {
     return false;
   }
 }
+
