@@ -69,47 +69,39 @@ export async function POST(req: NextRequest) {
 }
 
 // GET /api/slots/appointments?streamId=X&date=YYYY-MM-DD[&appointmentId=Y]
-// Operator auth OR public for single appointment by ID
+// Operator auth for stream listings, OR public lookup for single appointment by ID
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const appointmentId = searchParams.get('appointmentId');
-
-  // Public single appointment lookup (for customer pass page)
-  if (appointmentId) {
-    const client = await db.connect();
-    try {
-      await ensureSlotTables(client);
-      const appt = await getAppointmentById(client, appointmentId);
-      if (!appt) {
-        return NextResponse.json({ success: false, error: 'Appointment not found' }, { status: 404 });
-      }
-      return NextResponse.json({ success: true, appointment: appt });
-    } catch (error: any) {
-      await logApiError(req, 'DATABASE', error);
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-    } finally {
-      client.release();
-    }
-  }
-
-  // Operator-authenticated list
   const streamId = searchParams.get('streamId');
   const date = searchParams.get('date');
 
-  if (!streamId) {
+  if (!appointmentId && !streamId) {
     return NextResponse.json({ success: false, error: 'streamId or appointmentId required' }, { status: 400 });
   }
 
-  const authHeader =
-    req.headers.get('x-admin-token') || req.headers.get('authorization')?.replace('Bearer ', '');
-  if (!verifyAdminSessionToken(authHeader, streamId)) {
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  // Operator auth required for stream list queries
+  if (!appointmentId && streamId) {
+    const authHeader =
+      req.headers.get('x-admin-token') || req.headers.get('authorization')?.replace('Bearer ', '');
+    if (!verifyAdminSessionToken(authHeader, streamId)) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
   }
 
   const client = await db.connect();
   try {
     await ensureSlotTables(client);
-    const appointments = await getAppointmentsForStream(client, streamId, date || undefined);
+
+    if (appointmentId) {
+      const appt = await getAppointmentById(client, appointmentId);
+      if (!appt) {
+        return NextResponse.json({ success: false, error: 'Appointment not found' }, { status: 404 });
+      }
+      return NextResponse.json({ success: true, appointment: appt });
+    }
+
+    const appointments = await getAppointmentsForStream(client, streamId!, date || undefined);
     return NextResponse.json({ success: true, appointments, count: appointments.length });
   } catch (error: any) {
     await logApiError(req, 'DATABASE', error);
