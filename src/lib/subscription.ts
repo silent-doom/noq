@@ -62,6 +62,14 @@ export async function ensureSubscriptionTables(client: PoolClient): Promise<void
     CREATE INDEX IF NOT EXISTS idx_trial_reg_phone ON trial_registrations(phone);
     CREATE INDEX IF NOT EXISTS idx_trial_reg_ip ON trial_registrations(client_ip);
   `);
+
+  // Pricing correction: set all legacy monthly_fee values above 499 back to 499.
+  // This silently fixes any businesses that were created with old 599 pricing.
+  await client.query(`
+    UPDATE businesses
+    SET monthly_fee = 499.00
+    WHERE monthly_fee IS NOT NULL AND monthly_fee > 499.00;
+  `);
 }
 
 /**
@@ -99,7 +107,8 @@ export function computeSubscriptionState(business: {
   const now = new Date();
   const createdDate = business.created_at ? new Date(business.created_at) : now;
   const anchorDay = business.billing_anchor_day || createdDate.getDate() || 1;
-  const monthlyFee = Number(business.monthly_fee) || 499;
+  // Cap at canonical 499 — any legacy value (e.g. 599) stored before the pricing correction is silently normalized
+  const monthlyFee = Math.min(Number(business.monthly_fee) || 499, 499);
 
   let nextBillingDate: Date;
   if (business.next_billing_date) {

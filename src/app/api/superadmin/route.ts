@@ -146,7 +146,7 @@ export async function GET(req: NextRequest) {
         nextBillingDate: subState.nextBillingDate,
         daysRemaining: subState.daysRemaining,
         daysOverdue: subState.daysOverdue,
-        monthlyFee: Number(b.monthly_fee) || 499,
+        monthlyFee: Math.min(Number(b.monthly_fee) || 499, 499),
         subscriptionStatus: subState.status,
         totalPaidRevenue,
         paymentCount,
