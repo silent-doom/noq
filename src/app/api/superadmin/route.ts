@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { ensureSubscriptionTables, computeSubscriptionState, recordSubscriptionPayment, purgeExpiredBusinessData, calculateNextBillingDate } from '@/lib/subscription';
+import { ensureSlotTables } from '@/lib/slotBooking';
 import { checkRateLimit, recordRateLimitHit, clearRateLimit } from '@/lib/rateLimit';
 import { logApiError } from '@/lib/incidentLogger';
 
@@ -79,6 +80,9 @@ export async function GET(req: NextRequest) {
 
     await clearRateLimit(rateKey);
 
+    await ensureSlotTables(client);
+    await ensureSubscriptionTables(client);
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS feedbacks (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -109,6 +113,9 @@ export async function GET(req: NextRequest) {
         (SELECT COUNT(*) FROM tokens t JOIN queue_streams qs ON t.stream_id = qs.id WHERE qs.business_id = b.id AND t.status = 'COMPLETED') AS completed_tokens,
         (SELECT COUNT(*) FROM tokens t JOIN queue_streams qs ON t.stream_id = qs.id WHERE qs.business_id = b.id AND t.status = 'WAITING') AS waiting_tokens,
         (SELECT COUNT(*) FROM feedbacks f JOIN queue_streams qs ON f.stream_id = qs.id WHERE qs.business_id = b.id) AS feedback_count,
+        (SELECT COUNT(*) FROM slot_appointments sa WHERE sa.business_id = b.id) AS appointment_count,
+        (SELECT COUNT(*) FROM slot_appointments sa WHERE sa.business_id = b.id AND sa.status = 'CONFIRMED') AS confirmed_appointment_count,
+        (SELECT COUNT(*) FROM slot_appointments sa WHERE sa.business_id = b.id AND sa.slot_date >= CURRENT_DATE AND sa.status != 'CANCELLED') AS upcoming_appointment_count,
         (SELECT COALESCE(SUM(amount), 0) FROM subscription_payments WHERE business_id = b.id AND (payment_status IN ('SUCCESS', 'PAID') OR payment_status IS NULL)) AS total_paid_revenue,
         (SELECT COUNT(*) FROM subscription_payments WHERE business_id = b.id AND (payment_status IN ('SUCCESS', 'PAID') OR payment_status IS NULL)) AS payment_count
       FROM businesses b
@@ -131,9 +138,12 @@ export async function GET(req: NextRequest) {
       const feedbackCount = Number(b.feedback_count || 0);
       const totalPaidRevenue = Number(b.total_paid_revenue || 0);
       const paymentCount = Number(b.payment_count || 0);
+      const appointmentCount = Number(b.appointment_count || 0);
+      const confirmedAppointmentCount = Number(b.confirmed_appointment_count || 0);
+      const upcomingAppointmentCount = Number(b.upcoming_appointment_count || 0);
 
-      // Approximate PostgreSQL row storage footprint (B: 1.2KB base, Token: 450B, Feedback: 300B)
-      const estimatedBytes = (1200 * streamCount) + (totalTokens * 450) + (feedbackCount * 300) + 2048;
+      // Approximate PostgreSQL row storage footprint (B: 1.2KB base, Token: 450B, Feedback: 300B, Appointment: 400B)
+      const estimatedBytes = (1200 * streamCount) + (totalTokens * 450) + (feedbackCount * 300) + (appointmentCount * 400) + 2048;
       const estimatedKB = (estimatedBytes / 1024).toFixed(1);
 
       return {
@@ -155,6 +165,9 @@ export async function GET(req: NextRequest) {
         completedTokens: Number(b.completed_tokens || 0),
         waitingTokens: Number(b.waiting_tokens || 0),
         feedbackCount,
+        appointmentCount,
+        confirmedAppointmentCount,
+        upcomingAppointmentCount,
         slotBookingEnabled: Boolean(b.slot_booking_enabled),
         slotAddonNextBilling: b.slot_addon_next_billing,
         storageFootprint: {
@@ -176,9 +189,70 @@ export async function GET(req: NextRequest) {
     
     const totalTokensIssued = businesses.reduce((acc, b) => acc + b.totalTokens, 0);
     const totalStorageBytes = businesses.reduce((acc, b) => acc + b.storageFootprint.bytes, 0);
+    const activeSlotAddonBusinesses = businesses.filter((b) => b.slotBookingEnabled).length;
+    const slotAddonMrr = activeSlotAddonBusinesses * 299;
 
     let recentIncidents: any[] = [];
     let supportTickets: any[] = [];
+    let recentAppointments: any[] = [];
+    let appointmentStats = {
+      totalAppointments: 0,
+      confirmedAppointments: 0,
+      bookedAppointments: 0,
+      cancelledAppointments: 0,
+      noShowAppointments: 0,
+      upcomingAppointments: 0,
+    };
+
+    try {
+      const apptRes = await client.query(`
+        SELECT 
+          sa.id,
+          sa.stream_id,
+          sa.business_id,
+          sa.customer_name,
+          sa.customer_phone,
+          sa.slot_date,
+          sa.slot_time,
+          sa.appointment_ref,
+          sa.status,
+          sa.created_at,
+          qs.stream_name,
+          b.name AS business_name,
+          b.category
+        FROM slot_appointments sa
+        JOIN queue_streams qs ON sa.stream_id = qs.id
+        JOIN businesses b ON sa.business_id = b.id
+        ORDER BY sa.created_at DESC
+        LIMIT 100
+      `);
+      recentAppointments = apptRes.rows;
+
+      const statsRes = await client.query(`
+        SELECT 
+          COUNT(*) AS total_appointments,
+          COUNT(*) FILTER (WHERE status = 'CONFIRMED') AS confirmed_appointments,
+          COUNT(*) FILTER (WHERE status = 'BOOKED') AS booked_appointments,
+          COUNT(*) FILTER (WHERE status = 'CANCELLED') AS cancelled_appointments,
+          COUNT(*) FILTER (WHERE status = 'NO_SHOW') AS noshow_appointments,
+          COUNT(*) FILTER (WHERE slot_date >= CURRENT_DATE AND status != 'CANCELLED') AS upcoming_appointments
+        FROM slot_appointments
+      `);
+      if (statsRes.rows.length > 0) {
+        const row = statsRes.rows[0];
+        appointmentStats = {
+          totalAppointments: Number(row.total_appointments || 0),
+          confirmedAppointments: Number(row.confirmed_appointments || 0),
+          bookedAppointments: Number(row.booked_appointments || 0),
+          cancelledAppointments: Number(row.cancelled_appointments || 0),
+          noShowAppointments: Number(row.noshow_appointments || 0),
+          upcomingAppointments: Number(row.upcoming_appointments || 0),
+        };
+      }
+    } catch (e) {
+      // ignore if empty
+    }
+
     try {
       const incidentsRes = await client.query(
         `SELECT * FROM production_issue_logs ORDER BY created_at DESC LIMIT 50`
@@ -204,6 +278,8 @@ export async function GET(req: NextRequest) {
         totalTransactions,
         payingBusinessesCount,
         mrr: activeClients * 499,
+        slotAddonMrr,
+        activeSlotAddonBusinesses,
         totalBusinesses: businesses.length,
         activeClients,
         graceClients,
@@ -212,8 +288,10 @@ export async function GET(req: NextRequest) {
         totalTokensIssued,
         totalStorageBytes,
         totalStorageFormatted: totalStorageBytes > 1048576 ? `${(totalStorageBytes / 1048576).toFixed(2)} MB` : `${(totalStorageBytes / 1024).toFixed(1)} KB`,
+        appointmentStats,
       },
       businesses,
+      recentAppointments,
       recentIncidents,
       supportTickets,
     });
@@ -254,9 +332,18 @@ export async function POST(req: NextRequest) {
 
     await clearRateLimit(rateKey);
 
+    await ensureSlotTables(client);
     await ensureSubscriptionTables(client);
     const body = await req.json();
-    const { action, businessId, ticketId, ticketStatus, amount, extensionDays = 7, notes } = body;
+    const { action, businessId, ticketId, ticketStatus, appointmentId, appointmentStatus, amount, extensionDays = 7, notes } = body;
+
+    if (action === 'UPDATE_APPOINTMENT_STATUS' && appointmentId) {
+      const updated = await client.query(
+        `UPDATE slot_appointments SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+        [appointmentStatus || 'CONFIRMED', appointmentId]
+      );
+      return NextResponse.json({ success: true, message: `Appointment status updated to ${appointmentStatus}`, appointment: updated.rows[0] });
+    }
 
     if (action === 'UPDATE_TICKET' && ticketId) {
       const updated = await client.query(

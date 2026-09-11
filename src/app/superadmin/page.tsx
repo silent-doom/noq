@@ -8,6 +8,8 @@ interface PlatformMetrics {
   totalTransactions: number;
   payingBusinessesCount: number;
   mrr: number;
+  slotAddonMrr?: number;
+  activeSlotAddonBusinesses?: number;
   totalBusinesses: number;
   activeClients: number;
   graceClients: number;
@@ -16,6 +18,14 @@ interface PlatformMetrics {
   totalTokensIssued: number;
   totalStorageBytes: number;
   totalStorageFormatted: string;
+  appointmentStats?: {
+    totalAppointments: number;
+    confirmedAppointments: number;
+    bookedAppointments: number;
+    cancelledAppointments: number;
+    noShowAppointments: number;
+    upcomingAppointments: number;
+  };
 }
 
 interface ClientRecord {
@@ -37,6 +47,9 @@ interface ClientRecord {
   completedTokens: number;
   waitingTokens: number;
   feedbackCount: number;
+  appointmentCount?: number;
+  confirmedAppointmentCount?: number;
+  upcomingAppointmentCount?: number;
   slotBookingEnabled: boolean;
   slotAddonNextBilling?: string;
   storageFootprint: {
@@ -44,6 +57,22 @@ interface ClientRecord {
     kb: number;
     formatted: string;
   };
+}
+
+interface AppointmentRecord {
+  id: string;
+  stream_id: string;
+  business_id: string;
+  customer_name: string;
+  customer_phone: string;
+  slot_date: string;
+  slot_time: string;
+  appointment_ref: string;
+  status: 'BOOKED' | 'CONFIRMED' | 'CANCELLED' | 'NO_SHOW';
+  created_at: string;
+  stream_name: string;
+  business_name: string;
+  category?: string;
 }
 
 interface IncidentRecord {
@@ -84,14 +113,16 @@ export default function SuperAdminPage() {
 
   const [metrics, setMetrics] = useState<PlatformMetrics | null>(null);
   const [businesses, setBusinesses] = useState<ClientRecord[]>([]);
+  const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
   const [incidents, setIncidents] = useState<IncidentRecord[]>([]);
   const [supportTickets, setSupportTickets] = useState<SupportTicketRecord[]>([]);
-  const [activeTab, setActiveTab] = useState<'BUSINESSES' | 'INCIDENTS' | 'TICKETS'>('BUSINESSES');
+  const [activeTab, setActiveTab] = useState<'BUSINESSES' | 'APPOINTMENTS' | 'TICKETS' | 'INCIDENTS'>('BUSINESSES');
 
   const [loading, setLoading] = useState<boolean>(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [appointmentStatusFilter, setAppointmentStatusFilter] = useState<string>('ALL');
   const [incidentCategoryFilter, setIncidentCategoryFilter] = useState<string>('ALL');
   const [ticketStatusFilter, setTicketStatusFilter] = useState<string>('ALL');
   const [expandedIncidentId, setExpandedIncidentId] = useState<number | null>(null);
@@ -121,6 +152,7 @@ export default function SuperAdminPage() {
       if (res.ok && json.success) {
         setMetrics(json.platformMetrics);
         setBusinesses(Array.isArray(json.businesses) ? json.businesses : []);
+        setAppointments(Array.isArray(json.recentAppointments) ? json.recentAppointments : []);
         setIncidents(Array.isArray(json.recentIncidents) ? json.recentIncidents : []);
         setSupportTickets(Array.isArray(json.supportTickets) ? json.supportTickets : []);
         setIsAuthenticated(true);
@@ -182,6 +214,35 @@ export default function SuperAdminPage() {
     } catch (err) {
       console.error(err);
       alert('Network error while performing superadmin action');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleUpdateAppointmentStatus = async (appointmentId: string, newStatus: 'CONFIRMED' | 'CANCELLED' | 'NO_SHOW') => {
+    if (!adminKey) return;
+    setActionLoadingId(`APPT_${appointmentId}`);
+    try {
+      const res = await fetch('/api/superadmin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-superadmin-key': adminKey,
+        },
+        body: JSON.stringify({
+          action: 'UPDATE_APPOINTMENT_STATUS',
+          appointmentId,
+          appointmentStatus: newStatus,
+        }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        fetchPlatformData();
+      } else {
+        alert(json.error || 'Failed to update appointment status');
+      }
+    } catch {
+      alert('Network error updating appointment status');
     } finally {
       setActionLoadingId(null);
     }
@@ -249,6 +310,18 @@ export default function SuperAdminPage() {
     if (statusFilter === 'ALL') return true;
     if (statusFilter === 'PAID') return b.totalPaidRevenue > 0;
     return b.subscriptionStatus === statusFilter;
+  });
+
+  const filteredAppointments = appointments.filter((appt) => {
+    const matchesStatus = appointmentStatusFilter === 'ALL' || appt.status === appointmentStatusFilter;
+    const matchesSearch =
+      searchQuery === '' ||
+      appt.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      appt.customer_phone.includes(searchQuery) ||
+      appt.appointment_ref.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      appt.business_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      appt.stream_name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesStatus && matchesSearch;
   });
 
   const filteredIncidents = incidents.filter((inc) => {
@@ -368,41 +441,55 @@ export default function SuperAdminPage() {
 
         {/* Top Metric KPI Cards */}
         {metrics && (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
-            <div className="bg-zinc-950/90 border border-zinc-800/90 p-4 rounded-2xl space-y-1">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+            <div className="bg-zinc-950/90 border border-zinc-800/90 p-3.5 rounded-2xl space-y-1">
               <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Total Revenue</p>
               <p className="text-xl font-black text-emerald-400 font-mono">₹{metrics.totalRevenue.toLocaleString()}</p>
               <p className="text-[10px] text-emerald-500/90 font-medium">
-                {metrics.totalTransactions} paid txn{metrics.totalTransactions === 1 ? '' : 's'} ({metrics.payingBusinessesCount || 0} clients)
+                {metrics.totalTransactions} paid txn{metrics.totalTransactions === 1 ? '' : 's'}
               </p>
             </div>
 
-            <div className="bg-zinc-950/90 border border-zinc-800/90 p-4 rounded-2xl space-y-1">
-              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Monthly Run Rate (MRR)</p>
+            <div className="bg-zinc-950/90 border border-zinc-800/90 p-3.5 rounded-2xl space-y-1">
+              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Monthly Core MRR</p>
               <p className="text-xl font-black text-white font-mono">₹{metrics.mrr.toLocaleString()}</p>
-              <p className="text-[10px] text-emerald-400 font-semibold">{metrics.activeClients} Active Tenants (₹499/mo)</p>
+              <p className="text-[10px] text-emerald-400 font-semibold">{metrics.activeClients} Active Tenants</p>
             </div>
 
-            <div className="bg-zinc-950/90 border border-zinc-800/90 p-4 rounded-2xl space-y-1">
+            <div className="bg-zinc-950/90 border border-emerald-900/40 p-3.5 rounded-2xl space-y-1 bg-emerald-950/10">
+              <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">📅 Slot Add-On MRR</p>
+              <p className="text-xl font-black text-emerald-400 font-mono">₹{(metrics.slotAddonMrr || 0).toLocaleString()}</p>
+              <p className="text-[10px] text-emerald-300/80 font-medium">{metrics.activeSlotAddonBusinesses || 0} Clinics Active (₹299/mo)</p>
+            </div>
+
+            <div className="bg-zinc-950/90 border border-emerald-900/40 p-3.5 rounded-2xl space-y-1 bg-emerald-950/10">
+              <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Total Appts Booked</p>
+              <p className="text-xl font-black text-white font-mono">{metrics.appointmentStats?.totalAppointments || 0}</p>
+              <p className="text-[10px] text-zinc-400 font-medium">
+                {metrics.appointmentStats?.confirmedAppointments || 0} Confirmed • {metrics.appointmentStats?.upcomingAppointments || 0} Upcoming
+              </p>
+            </div>
+
+            <div className="bg-zinc-950/90 border border-zinc-800/90 p-3.5 rounded-2xl space-y-1">
               <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Total Businesses</p>
               <p className="text-xl font-black text-white font-mono">{metrics.totalBusinesses}</p>
               <p className="text-[10px] text-zinc-400">{metrics.activeClients} Active • {metrics.graceClients} Grace</p>
             </div>
 
-            <div className="bg-zinc-950/90 border border-zinc-800/90 p-4 rounded-2xl space-y-1">
+            <div className="bg-zinc-950/90 border border-zinc-800/90 p-3.5 rounded-2xl space-y-1">
               <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Locked / Expired</p>
               <p className="text-xl font-black text-red-400 font-mono">{metrics.lockedClients + metrics.expiredClients}</p>
               <p className="text-[10px] text-red-400/80">{metrics.lockedClients} Locked • {metrics.expiredClients} Purged</p>
             </div>
 
-            <div className="bg-zinc-950/90 border border-zinc-800/90 p-4 rounded-2xl space-y-1">
-              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Total Tokens Served</p>
+            <div className="bg-zinc-950/90 border border-zinc-800/90 p-3.5 rounded-2xl space-y-1">
+              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Live Tokens Served</p>
               <p className="text-xl font-black text-sky-400 font-mono">{metrics.totalTokensIssued.toLocaleString()}</p>
-              <p className="text-[10px] text-zinc-400">System Throughput</p>
+              <p className="text-[10px] text-zinc-400">Queue Throughput</p>
             </div>
 
-            <div className="bg-zinc-950/90 border border-zinc-800/90 p-4 rounded-2xl space-y-1">
-              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">DB Storage Footprint</p>
+            <div className="bg-zinc-950/90 border border-zinc-800/90 p-3.5 rounded-2xl space-y-1">
+              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">DB Storage</p>
               <p className="text-xl font-black text-amber-400 font-mono">{metrics.totalStorageFormatted}</p>
               <p className="text-[10px] text-zinc-400">PostgreSQL Consumption</p>
             </div>
@@ -410,10 +497,10 @@ export default function SuperAdminPage() {
         )}
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-3 border-b border-zinc-800 pb-3 flex-wrap">
+        <div className="flex items-center gap-2.5 border-b border-zinc-800 pb-3 flex-wrap">
           <button
             onClick={() => setActiveTab('BUSINESSES')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'BUSINESSES'
                 ? 'bg-zinc-100 text-black shadow-sm'
                 : 'bg-zinc-900 text-zinc-400 hover:text-white'
@@ -422,24 +509,34 @@ export default function SuperAdminPage() {
             <span>🏢 Clientele Portfolio ({businesses.length})</span>
           </button>
           <button
+            onClick={() => setActiveTab('APPOINTMENTS')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+              activeTab === 'APPOINTMENTS'
+                ? 'bg-emerald-500 text-black shadow-sm'
+                : 'bg-zinc-900 text-zinc-400 hover:text-white'
+            }`}
+          >
+            <span>📅 Appointment Bookings ({appointments.length})</span>
+          </button>
+          <button
             onClick={() => setActiveTab('TICKETS')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'TICKETS'
                 ? 'bg-emerald-500 text-black shadow-sm'
                 : 'bg-zinc-900 text-zinc-400 hover:text-white'
             }`}
           >
-            <span>🎫 Support Inquiries & Help Tickets ({supportTickets.length})</span>
+            <span>🎫 Help Tickets ({supportTickets.length})</span>
           </button>
           <button
             onClick={() => setActiveTab('INCIDENTS')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'INCIDENTS'
                 ? 'bg-zinc-100 text-black shadow-sm'
                 : 'bg-zinc-900 text-zinc-400 hover:text-white'
             }`}
           >
-            <span>🚨 Production DB Incident Logs ({incidents.length})</span>
+            <span>🚨 Incident Logs ({incidents.length})</span>
           </button>
         </div>
 
@@ -451,6 +548,8 @@ export default function SuperAdminPage() {
               placeholder={
                 activeTab === 'BUSINESSES'
                   ? 'Search business name, category, phone...'
+                  : activeTab === 'APPOINTMENTS'
+                  ? 'Search customer name, phone, ref, clinic...'
                   : activeTab === 'TICKETS'
                   ? 'Search tickets by number, name, phone, venue, subject...'
                   : 'Search incident logs, URL path, error message...'
@@ -474,6 +573,22 @@ export default function SuperAdminPage() {
                   }`}
                 >
                   {st === 'PAID' ? '💳 PAID REVENUE' : st.replace('_', ' ')}
+                </button>
+              ))}
+            </div>
+          ) : activeTab === 'APPOINTMENTS' ? (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {['ALL', 'BOOKED', 'CONFIRMED', 'CANCELLED', 'NO_SHOW'].map((st) => (
+                <button
+                  key={st}
+                  onClick={() => setAppointmentStatusFilter(st)}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                    appointmentStatusFilter === st
+                      ? 'bg-emerald-500 text-black shadow-xs'
+                      : 'bg-zinc-900 text-zinc-400 border border-zinc-800 hover:text-white'
+                  }`}
+                >
+                  {st.replace('_', ' ')}
                 </button>
               ))}
             </div>
@@ -541,7 +656,7 @@ export default function SuperAdminPage() {
                 <tbody className="divide-y divide-zinc-900 text-zinc-300">
                   {filteredBusinesses.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-8 text-center text-zinc-500 font-medium">
+                      <td colSpan={9} className="py-8 text-center text-zinc-500 font-medium">
                         No businesses matching current filter or search criteria.
                       </td>
                     </tr>
@@ -621,9 +736,14 @@ export default function SuperAdminPage() {
 
                           <td className="py-4 px-4">
                             {b.slotBookingEnabled ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-950 border border-emerald-700 text-emerald-300 rounded-full text-[10px] font-bold">
-                                📅 Active
-                              </span>
+                              <div className="space-y-1">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-950 border border-emerald-700 text-emerald-300 rounded-full text-[10px] font-bold">
+                                  📅 Active (₹299/mo)
+                                </span>
+                                <span className="text-[10px] text-zinc-400 block font-mono">
+                                  {b.appointmentCount || 0} appts ({b.confirmedAppointmentCount || 0} conf, {b.upcomingAppointmentCount || 0} upc)
+                                </span>
+                              </div>
                             ) : (
                               <span className="text-zinc-600 text-[10px] font-medium">—</span>
                             )}
@@ -684,6 +804,160 @@ export default function SuperAdminPage() {
                             </button>
                           </td>
 
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: Appointment Bookings & Slot Allocation Insights */}
+        {activeTab === 'APPOINTMENTS' && (
+          <div className="bg-zinc-950 border border-zinc-800/90 rounded-3xl overflow-hidden shadow-2xl">
+            <div className="p-5 border-b border-zinc-800 flex justify-between items-center flex-wrap gap-3">
+              <div>
+                <h2 className="text-base font-bold text-white flex items-center gap-2">
+                  <span>📅</span> Slot Appointment Bookings Directory
+                </h2>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Showing {filteredAppointments.length} future and past appointments booked across all clinics
+                </p>
+              </div>
+              <button
+                onClick={() => fetchPlatformData()}
+                className="px-3 py-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-xs font-bold text-zinc-300 rounded-lg transition cursor-pointer"
+              >
+                🔄 Refresh Appointments
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-zinc-900/80 text-zinc-400 uppercase tracking-wider text-[10px] font-bold border-b border-zinc-800">
+                  <tr>
+                    <th className="py-3.5 px-4">Ref & Booked At</th>
+                    <th className="py-3.5 px-4">Customer</th>
+                    <th className="py-3.5 px-4">Clinic / Venue</th>
+                    <th className="py-3.5 px-4">Slot Date & Time</th>
+                    <th className="py-3.5 px-4">Status</th>
+                    <th className="py-3.5 px-4">Pass</th>
+                    <th className="py-3.5 px-4 text-right">Superadmin Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-900 text-zinc-300">
+                  {filteredAppointments.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-zinc-500 font-medium">
+                        📅 No slot appointments matching the current filter.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredAppointments.map((appt) => {
+                      const statusBadge =
+                        appt.status === 'CONFIRMED'
+                          ? 'bg-emerald-950 text-emerald-400 border-emerald-800'
+                          : appt.status === 'BOOKED'
+                          ? 'bg-sky-950 text-sky-400 border-sky-800'
+                          : appt.status === 'CANCELLED'
+                          ? 'bg-red-950 text-red-400 border-red-800'
+                          : 'bg-amber-950 text-amber-400 border-amber-800';
+
+                      const isUpcoming = new Date(appt.slot_date + 'T23:59:59') >= new Date();
+
+                      return (
+                        <tr key={appt.id} className="hover:bg-zinc-900/40 transition">
+                          <td className="py-4 px-4 font-mono">
+                            <span className="font-bold text-white block text-xs">{appt.appointment_ref}</span>
+                            <span className="text-[10px] text-zinc-500 block">
+                              {new Date(appt.created_at).toLocaleDateString()} {new Date(appt.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <span className="font-bold text-white block text-sm">{appt.customer_name}</span>
+                            <a
+                              href={`tel:${appt.customer_phone}`}
+                              className="text-[10px] text-emerald-400 hover:underline font-mono"
+                            >
+                              📞 {appt.customer_phone}
+                            </a>
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <span className="font-bold text-white block">{appt.business_name}</span>
+                            <span className="text-[10px] text-zinc-400 block">{appt.stream_name}</span>
+                          </td>
+
+                          <td className="py-4 px-4 font-mono">
+                            <div className="flex items-center gap-2">
+                              <span className="text-white font-bold block text-xs">
+                                {new Date(appt.slot_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                              </span>
+                              {isUpcoming && appt.status !== 'CANCELLED' && (
+                                <span className="text-[9px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800 px-1.5 py-0.2 rounded">
+                                  Upcoming
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-emerald-400 text-[11px] font-bold block">
+                              ⏰ {appt.slot_time}
+                            </span>
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${statusBadge}`}>
+                              {appt.status}
+                            </span>
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <Link
+                              href={`/appointment/${appt.id}`}
+                              target="_blank"
+                              className="text-emerald-400 hover:text-emerald-300 font-bold text-xs underline flex items-center gap-1"
+                            >
+                              <span>View Pass</span>
+                              <span>↗</span>
+                            </Link>
+                          </td>
+
+                          <td className="py-4 px-4 text-right space-x-1.5">
+                            {appt.status !== 'CONFIRMED' && (
+                              <button
+                                onClick={() => handleUpdateAppointmentStatus(appt.id, 'CONFIRMED')}
+                                disabled={actionLoadingId === `APPT_${appt.id}`}
+                                className="px-2 py-1 bg-emerald-950 hover:bg-emerald-900 text-emerald-400 border border-emerald-800 rounded-lg font-bold text-[10px] transition cursor-pointer"
+                                title="Mark appointment as CONFIRMED"
+                              >
+                                ✓ Confirm
+                              </button>
+                            )}
+
+                            {appt.status !== 'CANCELLED' && (
+                              <button
+                                onClick={() => handleUpdateAppointmentStatus(appt.id, 'CANCELLED')}
+                                disabled={actionLoadingId === `APPT_${appt.id}`}
+                                className="px-2 py-1 bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-900/60 rounded-lg font-bold text-[10px] transition cursor-pointer"
+                                title="Cancel appointment"
+                              >
+                                ✗ Cancel
+                              </button>
+                            )}
+
+                            {appt.status !== 'NO_SHOW' && appt.status !== 'CANCELLED' && (
+                              <button
+                                onClick={() => handleUpdateAppointmentStatus(appt.id, 'NO_SHOW')}
+                                disabled={actionLoadingId === `APPT_${appt.id}`}
+                                className="px-2 py-1 bg-amber-950 hover:bg-amber-900 text-amber-400 border border-amber-800 rounded-lg font-bold text-[10px] transition cursor-pointer"
+                                title="Mark as NO SHOW"
+                              >
+                                ⚠️ No-Show
+                              </button>
+                            )}
+                          </td>
                         </tr>
                       );
                     })
