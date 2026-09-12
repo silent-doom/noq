@@ -6,6 +6,7 @@ import {
   getWorkingHoursForStream,
   upsertWorkingHours,
   deleteWorkingHoursForDay,
+  computeSlotAddonState,
 } from '@/lib/slotBooking';
 import { logApiError } from '@/lib/incidentLogger';
 
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
     await ensureSlotTables(client);
 
     const streamRes = await client.query(
-      `SELECT qs.id, qs.stream_name, b.slot_booking_enabled, b.slot_addon_next_billing, b.name AS business_name
+      `SELECT qs.id, qs.stream_name, b.slot_booking_enabled, b.slot_addon_next_billing, b.slot_addon_status, b.slot_addon_trial_started_at, b.slot_addon_trial_ends_at, b.name AS business_name
        FROM queue_streams qs
        JOIN businesses b ON qs.business_id = b.id
        WHERE qs.id = $1`,
@@ -36,12 +37,14 @@ export async function GET(req: NextRequest) {
     }
 
     const stream = streamRes.rows[0];
+    const slotAddon = computeSlotAddonState(stream);
     const workingHours = await getWorkingHoursForStream(client, streamId);
 
     return NextResponse.json({
       success: true,
-      slotBookingEnabled: Boolean(stream.slot_booking_enabled),
+      slotBookingEnabled: slotAddon.isEnabled,
       slotAddonNextBilling: stream.slot_addon_next_billing,
+      slotAddon,
       businessName: stream.business_name,
       workingHours,
     });

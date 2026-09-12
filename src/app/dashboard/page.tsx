@@ -50,6 +50,16 @@ interface LinkedBranch {
   phone?: string;
 }
 
+interface SlotAddonState {
+  isEnabled: boolean;
+  status: 'NONE' | 'TRIAL' | 'ACTIVE' | 'EXPIRED';
+  isTrial: boolean;
+  trialDaysRemaining: number;
+  trialEndsAt: string | null;
+  nextBillingDate: string | null;
+  message: string;
+}
+
 function DashboardContent() {
   const searchParams = useSearchParams();
   const urlStreamId = searchParams.get('streamId');
@@ -107,9 +117,11 @@ function DashboardContent() {
   const [showTrialModal, setShowTrialModal] = useState<boolean>(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState<boolean>(false);
 
-  // Slot Booking Premium Add-On State
+  // Slot Booking Premium Add-On & Trial State
   const [slotBookingEnabled, setSlotBookingEnabled] = useState<boolean>(false);
+  const [slotAddon, setSlotAddon] = useState<SlotAddonState | null>(null);
   const [slotAddonNextBilling, setSlotAddonNextBilling] = useState<string | null>(null);
+  const [slotTrialLoading, setSlotTrialLoading] = useState<boolean>(false);
   const [showSlotPanel, setShowSlotPanel] = useState<boolean>(false);
   // Slot appointments
   const [slotDate, setSlotDate] = useState<string>(new Date().toISOString().substring(0, 10));
@@ -350,8 +362,13 @@ function DashboardContent() {
           if (Array.isArray(data.stream.operating_days)) setEditOpDays(data.stream.operating_days);
           if (data.stream.queue_structure) setEditQueueStruct(data.stream.queue_structure);
           if (data.stream.google_maps_url !== undefined) setEditGoogleMapsUrl(data.stream.google_maps_url || '');
-          // Slot addon flag
-          setSlotBookingEnabled(Boolean(data.stream.slot_booking_enabled));
+          // Slot addon state
+          if (data.slotAddon) {
+            setSlotAddon(data.slotAddon);
+            setSlotBookingEnabled(Boolean(data.slotAddon.isEnabled));
+          } else {
+            setSlotBookingEnabled(Boolean(data.stream.slot_booking_enabled));
+          }
           if (data.stream.slot_addon_next_billing) setSlotAddonNextBilling(data.stream.slot_addon_next_billing);
         }
       }
@@ -439,6 +456,37 @@ function DashboardContent() {
       }
     } catch { alert('Network error.'); } finally {
       setApptStatusLoading(null);
+    }
+  };
+
+  // ── Slot: Start 7-Day Free Trial ──────────────────────────────────────────
+  const handleStartSlotTrial = async () => {
+    if (!streamId || slotTrialLoading) return;
+    setSlotTrialLoading(true);
+    try {
+      const adminToken = typeof window !== 'undefined' ? sessionStorage.getItem(`noq_token_${streamId}`) : null;
+      const res = await fetch('/api/slots/trial', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(adminToken ? { 'x-admin-token': adminToken } : {}),
+        },
+        body: JSON.stringify({ streamId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSlotBookingEnabled(true);
+        if (data.slotAddon) setSlotAddon(data.slotAddon);
+        alert('🎉 7-Day Free Trial activated! Your customers can now book future appointments.');
+        await fetchQueueData();
+        fetchSlotAppointments(slotDate);
+      } else {
+        alert(data.error || 'Failed to start free trial');
+      }
+    } catch {
+      alert('Network error starting free trial.');
+    } finally {
+      setSlotTrialLoading(false);
     }
   };
 
@@ -1039,7 +1087,9 @@ function DashboardContent() {
             }}
             className={`w-full border font-semibold text-xs py-2.5 px-3 rounded-xl flex items-center justify-between transition cursor-pointer ${
               slotBookingEnabled
-                ? 'bg-emerald-950/40 hover:bg-emerald-900/60 border-emerald-800/60 text-emerald-300'
+                ? slotAddon?.isTrial
+                  ? 'bg-amber-950/30 hover:bg-amber-900/50 border-amber-800/60 text-amber-300'
+                  : 'bg-emerald-950/40 hover:bg-emerald-900/60 border-emerald-800/60 text-emerald-300'
                 : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-400'
             }`}
           >
@@ -1048,9 +1098,21 @@ function DashboardContent() {
               <span>Slot Bookings</span>
             </span>
             {slotBookingEnabled ? (
-              <span className="text-emerald-400 text-[10px] font-bold border border-emerald-700 bg-emerald-950 px-1.5 rounded-full">Active</span>
+              slotAddon?.isTrial ? (
+                <span className="text-amber-300 text-[10px] font-bold border border-amber-700 bg-amber-950 px-1.5 rounded-full animate-pulse">
+                  7D Trial ({slotAddon.trialDaysRemaining}d)
+                </span>
+              ) : (
+                <span className="text-emerald-400 text-[10px] font-bold border border-emerald-700 bg-emerald-950 px-1.5 rounded-full">
+                  Active
+                </span>
+              )
+            ) : slotAddon?.status === 'EXPIRED' ? (
+              <span className="text-amber-400 text-[10px] font-mono">Trial Ended ↗</span>
             ) : (
-              <span className="text-zinc-600 text-[10px] font-mono">₹299/mo ↗</span>
+              <span className="text-emerald-400 text-[10px] font-bold bg-emerald-950/70 border border-emerald-800/80 px-2 py-0.5 rounded-full">
+                7-Day Free Trial ↗
+              </span>
             )}
           </button>
 
@@ -2439,9 +2501,19 @@ function DashboardContent() {
             <div className="sticky top-0 bg-zinc-950 border-b border-zinc-800 p-5 flex items-center justify-between z-10">
               <div>
                 <h2 className="text-white font-black text-base flex items-center gap-2">📅 Slot Bookings</h2>
-                {slotBookingEnabled && slotAddonNextBilling && (
+                {slotBookingEnabled ? (
+                  slotAddon?.isTrial ? (
+                    <p className="text-amber-400 text-[11px] mt-0.5 font-semibold">
+                      ✨ 7-Day Trial: {slotAddon.trialDaysRemaining} {slotAddon.trialDaysRemaining === 1 ? 'day' : 'days'} left {slotAddon.trialEndsAt ? `(Expires ${new Date(slotAddon.trialEndsAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })})` : ''}
+                    </p>
+                  ) : slotAddonNextBilling ? (
+                    <p className="text-zinc-500 text-[11px] mt-0.5">
+                      Renews: {new Date(slotAddonNextBilling).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  ) : null
+                ) : (
                   <p className="text-zinc-500 text-[11px] mt-0.5">
-                    Renews: {new Date(slotAddonNextBilling).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {slotAddon?.status === 'EXPIRED' ? 'Trial Expired — Reactivate below' : '7-Day Free Trial Available'}
                   </p>
                 )}
               </div>
@@ -2462,13 +2534,20 @@ function DashboardContent() {
                           📅
                         </div>
                         <div>
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-0.5">Premium Add-On</p>
-                          <h3 className="text-white font-black text-sm leading-tight">Future Slot Booking</h3>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-0.5">
+                            {slotAddon?.status === 'EXPIRED' ? 'Add-On Renewal' : '7-Day Free Trial Available'}
+                          </p>
+                          <h3 className="text-white font-black text-sm leading-tight">
+                            {slotAddon?.status === 'EXPIRED' ? 'Reactivate Slot Bookings' : 'Future Slot Booking Add-On'}
+                          </h3>
                         </div>
                       </div>
 
                       <p className="text-zinc-400 text-xs leading-relaxed">
-                        Let customers book appointments up to 7 days in advance. Configure working days, hours, and slot duration.
+                        {slotAddon?.status === 'EXPIRED'
+                          ? 'Your 7-day free trial has concluded. Subscribe for ₹299/month to continue accepting advance slot appointments without interruption.'
+                          : 'Let customers book appointments up to 7 days in advance. Test it free for 7 days with zero upfront payment.'
+                        }
                       </p>
 
                       {/* Feature list */}
@@ -2487,17 +2566,42 @@ function DashboardContent() {
                           <span className="text-zinc-500 text-[11px]">Billed monthly, cancel anytime</span>
                           <span className="text-white font-black text-base">₹299<span className="text-zinc-500 text-xs font-normal">/mo</span></span>
                         </div>
-                        <button
-                          id="btn-slot-addon-upgrade"
-                          onClick={handleSlotAddonUpgrade}
-                          disabled={slotAddonLoading}
-                          className="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl text-sm transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/30"
-                        >
-                          {slotAddonLoading
-                            ? <><span className="animate-spin">⟳</span> Processing...</>
-                            : <>Activate Slot Booking →</>
-                          }
-                        </button>
+
+                        {slotAddon?.status !== 'EXPIRED' ? (
+                          <>
+                            <button
+                              id="btn-slot-start-trial"
+                              onClick={handleStartSlotTrial}
+                              disabled={slotTrialLoading}
+                              className="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl text-sm transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/30"
+                            >
+                              {slotTrialLoading
+                                ? <><span className="animate-spin">⟳</span> Activating Trial...</>
+                                : <>✨ Start 7-Day Free Trial (Instant) →</>
+                              }
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleSlotAddonUpgrade}
+                              disabled={slotAddonLoading}
+                              className="w-full text-center text-xs text-zinc-400 hover:text-white transition cursor-pointer py-1"
+                            >
+                              Or subscribe directly for ₹299/mo →
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            id="btn-slot-addon-upgrade"
+                            onClick={handleSlotAddonUpgrade}
+                            disabled={slotAddonLoading}
+                            className="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl text-sm transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/30"
+                          >
+                            {slotAddonLoading
+                              ? <><span className="animate-spin">⟳</span> Processing...</>
+                              : <>Subscribe for ₹299/mo →</>
+                            }
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -2505,6 +2609,31 @@ function DashboardContent() {
 
               ) : (
                 <div className="space-y-6" id="slot-active-panel">
+                  {/* Trial Active Banner */}
+                  {slotAddon?.isTrial && (
+                    <div className="bg-gradient-to-r from-amber-950/60 via-zinc-900 to-amber-950/60 border border-amber-800/80 rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-lg">
+                      <div className="min-w-0">
+                        <p className="text-amber-300 font-extrabold text-xs flex items-center gap-1.5">
+                          <span>✨</span>
+                          <span>7-Day Free Trial Active</span>
+                          <span className="bg-amber-900/80 text-amber-200 border border-amber-700 text-[10px] px-2 py-0.2 rounded-full font-mono">
+                            {slotAddon.trialDaysRemaining} {slotAddon.trialDaysRemaining === 1 ? 'day' : 'days'} left
+                          </span>
+                        </p>
+                        <p className="text-zinc-400 text-[11px] mt-0.5 truncate">
+                          {slotAddon.trialEndsAt ? `Expires ${new Date(slotAddon.trialEndsAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}.` : ''} Upgrade anytime to prevent interruption.
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleSlotAddonUpgrade}
+                        disabled={slotAddonLoading}
+                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition cursor-pointer shrink-0 shadow-md"
+                      >
+                        {slotAddonLoading ? '...' : 'Upgrade (₹299/mo)'}
+                      </button>
+                    </div>
+                  )}
+
                   {/* Date Navigator */}
                   <div>
                     <p className="text-zinc-400 text-[11px] font-bold uppercase tracking-wider mb-2">Viewing Appointments For</p>

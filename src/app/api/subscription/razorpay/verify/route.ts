@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
       await client.query(
         `UPDATE businesses
          SET slot_booking_enabled = TRUE,
+             slot_addon_status = 'ACTIVE',
              slot_addon_next_billing = NOW() + INTERVAL '30 days'
          WHERE id = $1`,
         [targetBizId]

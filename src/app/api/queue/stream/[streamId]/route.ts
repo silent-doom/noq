@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { publishQueueUpdate } from '@/lib/ably';
 import { verifyAdminSessionToken, maskPhoneNumber } from '@/lib/domain';
-import { computeSubscriptionState } from '@/lib/subscription';
+import { computeSubscriptionState, ensureSubscriptionTables } from '@/lib/subscription';
+import { computeSlotAddonState, ensureSlotTables } from '@/lib/slotBooking';
+
+export const runtime = 'nodejs';
 
 export async function GET(
   req: NextRequest,
@@ -10,7 +13,9 @@ export async function GET(
 ) {
   const client = await db.connect();
   try {
-    // Safe params resolution for Next.js 14 & Next.js 15
+    await ensureSubscriptionTables(client);
+    await ensureSlotTables(client);
+
     const resolvedParams = await Promise.resolve(params);
     const { streamId } = resolvedParams;
 
@@ -29,6 +34,9 @@ export async function GET(
               b.monthly_fee,
               b.slot_booking_enabled,
               b.slot_addon_next_billing,
+              b.slot_addon_status,
+              b.slot_addon_trial_started_at,
+              b.slot_addon_trial_ends_at,
               b.created_at AS business_created_at
        FROM queue_streams qs 
        LEFT JOIN businesses b ON qs.business_id = b.id 
@@ -51,6 +59,9 @@ export async function GET(
       monthly_fee: streamRow.monthly_fee,
       created_at: streamRow.business_created_at || streamRow.created_at,
     });
+    const slotAddon = computeSlotAddonState(streamRow);
+    streamRow.slot_booking_enabled = slotAddon.isEnabled;
+    streamRow.slot_addon_status = slotAddon.status;
 
     // Fetch ALL tokens (SERVING, WAITING, SKIPPED) ordered by token_number ASC
     const tokensRes = await client.query(
@@ -70,6 +81,7 @@ export async function GET(
       stream: streamRow,
       tokens: safeTokens,
       subscription: subState,
+      slotAddon,
       isAdmin,
     });
   } catch (error: any) {

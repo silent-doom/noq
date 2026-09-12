@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { ensureSubscriptionTables, computeSubscriptionState, purgeExpiredBusinessData } from '@/lib/subscription';
+import { ensureSlotTables, computeSlotAddonState } from '@/lib/slotBooking';
 
 export async function GET(req: NextRequest) {
   return handleCron(req);
@@ -30,6 +31,7 @@ async function handleCron(req: NextRequest) {
   const client = await db.connect();
   try {
     await ensureSubscriptionTables(client);
+    await ensureSlotTables(client);
 
     const bRes = await client.query(`SELECT * FROM businesses`);
     const businesses = bRes.rows;
@@ -39,6 +41,7 @@ async function handleCron(req: NextRequest) {
     let lockedCount = 0;
     let purgedCount = 0;
     let totalPurgedTokens = 0;
+    let slotExpiredCount = 0;
 
     for (const biz of businesses) {
       const state = computeSubscriptionState(biz);
@@ -55,6 +58,18 @@ async function handleCron(req: NextRequest) {
         totalPurgedTokens += purgedTokens;
       } else if (state.status === 'ACTIVE') {
         activeCount++;
+      }
+
+      // Check slot addon / trial expiration
+      if (biz.slot_booking_enabled) {
+        const slotState = computeSlotAddonState(biz);
+        if (!slotState.isEnabled) {
+          await client.query(
+            `UPDATE businesses SET slot_booking_enabled = FALSE, slot_addon_status = 'EXPIRED' WHERE id = $1`,
+            [biz.id]
+          );
+          slotExpiredCount++;
+        }
       }
     }
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { ensureSubscriptionTables, computeSubscriptionState, recordSubscriptionPayment, purgeExpiredBusinessData, calculateNextBillingDate } from '@/lib/subscription';
-import { ensureSlotTables } from '@/lib/slotBooking';
+import { ensureSlotTables, computeSlotAddonState } from '@/lib/slotBooking';
 import { checkRateLimit, recordRateLimitHit, clearRateLimit } from '@/lib/rateLimit';
 import { logApiError } from '@/lib/incidentLogger';
 
@@ -108,6 +108,9 @@ export async function GET(req: NextRequest) {
         b.monthly_fee,
         b.slot_booking_enabled,
         b.slot_addon_next_billing,
+        b.slot_addon_status,
+        b.slot_addon_trial_started_at,
+        b.slot_addon_trial_ends_at,
         (SELECT COUNT(*) FROM queue_streams WHERE business_id = b.id) AS stream_count,
         (SELECT COUNT(*) FROM tokens t JOIN queue_streams qs ON t.stream_id = qs.id WHERE qs.business_id = b.id) AS total_tokens,
         (SELECT COUNT(*) FROM tokens t JOIN queue_streams qs ON t.stream_id = qs.id WHERE qs.business_id = b.id AND t.status = 'COMPLETED') AS completed_tokens,
@@ -133,6 +136,7 @@ export async function GET(req: NextRequest) {
 
     const businesses = bRes.rows.map((b) => {
       const subState = computeSubscriptionState(b);
+      const slotAddonState = computeSlotAddonState(b);
       const totalTokens = Number(b.total_tokens || 0);
       const streamCount = Number(b.stream_count || 0);
       const feedbackCount = Number(b.feedback_count || 0);
@@ -168,7 +172,11 @@ export async function GET(req: NextRequest) {
         appointmentCount,
         confirmedAppointmentCount,
         upcomingAppointmentCount,
-        slotBookingEnabled: Boolean(b.slot_booking_enabled),
+        slotBookingEnabled: slotAddonState.isEnabled,
+        slotAddonStatus: slotAddonState.status,
+        slotAddonIsTrial: slotAddonState.isTrial,
+        slotAddonTrialDaysRemaining: slotAddonState.isTrial ? slotAddonState.trialDaysRemaining : null,
+        slotAddonTrialEndsAt: b.slot_addon_trial_ends_at,
         slotAddonNextBilling: b.slot_addon_next_billing,
         storageFootprint: {
           bytes: estimatedBytes,
@@ -353,17 +361,51 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, ticket: updated.rows[0] });
     }
 
-    if (action === 'ENABLE_SLOT_ADDON' && businessId) {
+    if (action === 'GRANT_SLOT_TRIAL' && businessId) {
       await client.query(
-        `UPDATE businesses SET slot_booking_enabled = TRUE, slot_addon_next_billing = NOW() + INTERVAL '30 days' WHERE id = $1`,
+        `UPDATE businesses
+         SET slot_booking_enabled = TRUE,
+             slot_addon_status = 'TRIAL',
+             slot_addon_trial_started_at = NOW(),
+             slot_addon_trial_ends_at = NOW() + INTERVAL '7 days',
+             slot_addon_next_billing = NOW() + INTERVAL '7 days'
+         WHERE id = $1`,
         [businessId]
       );
-      return NextResponse.json({ success: true, message: 'Slot Booking Add-On enabled for business' });
+      return NextResponse.json({ success: true, message: '7-Day Slot Booking Free Trial granted' });
+    }
+
+    if (action === 'EXTEND_SLOT_TRIAL' && businessId) {
+      await client.query(
+        `UPDATE businesses
+         SET slot_booking_enabled = TRUE,
+             slot_addon_status = 'TRIAL',
+             slot_addon_trial_ends_at = GREATEST(COALESCE(slot_addon_trial_ends_at, NOW()), NOW()) + INTERVAL '7 days',
+             slot_addon_next_billing = GREATEST(COALESCE(slot_addon_next_billing, NOW()), NOW()) + INTERVAL '7 days'
+         WHERE id = $1`,
+        [businessId]
+      );
+      return NextResponse.json({ success: true, message: 'Slot trial extended by 7 days' });
+    }
+
+    if (action === 'ENABLE_SLOT_ADDON' && businessId) {
+      await client.query(
+        `UPDATE businesses
+         SET slot_booking_enabled = TRUE,
+             slot_addon_status = 'ACTIVE',
+             slot_addon_next_billing = NOW() + INTERVAL '30 days'
+         WHERE id = $1`,
+        [businessId]
+      );
+      return NextResponse.json({ success: true, message: 'Slot Booking Add-On enabled (30 Days Active)' });
     }
 
     if (action === 'DISABLE_SLOT_ADDON' && businessId) {
       await client.query(
-        `UPDATE businesses SET slot_booking_enabled = FALSE WHERE id = $1`,
+        `UPDATE businesses
+         SET slot_booking_enabled = FALSE,
+             slot_addon_status = 'EXPIRED'
+         WHERE id = $1`,
         [businessId]
       );
       return NextResponse.json({ success: true, message: 'Slot Booking Add-On disabled for business' });

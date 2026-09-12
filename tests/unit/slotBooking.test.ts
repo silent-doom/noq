@@ -91,3 +91,79 @@ describe('slot boundary logic (derived from generateTimeSlots)', () => {
     expect(slots).toHaveLength(8);
   });
 });
+
+// ─── computeSlotAddonState ───────────────────────────────────────────────────
+
+import { computeSlotAddonState } from '@/lib/slotBooking';
+
+describe('computeSlotAddonState', () => {
+  it('returns status NONE with 7 trial days when no addon configured', () => {
+    const state = computeSlotAddonState({});
+    expect(state.isEnabled).toBe(false);
+    expect(state.status).toBe('NONE');
+    expect(state.isTrial).toBe(false);
+    expect(state.trialDaysRemaining).toBe(7);
+  });
+
+  it('returns TRIAL active when within trial period', () => {
+    const futureDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000); // 5 days from now
+    const state = computeSlotAddonState({
+      slot_booking_enabled: true,
+      slot_addon_status: 'TRIAL',
+      slot_addon_trial_started_at: new Date(),
+      slot_addon_trial_ends_at: futureDate,
+    });
+    expect(state.isEnabled).toBe(true);
+    expect(state.status).toBe('TRIAL');
+    expect(state.isTrial).toBe(true);
+    expect(state.trialDaysRemaining).toBeGreaterThanOrEqual(4);
+  });
+
+  it('returns EXPIRED when trial date has passed', () => {
+    const pastDate = new Date(Date.now() - 1000 * 60 * 60); // 1 hour ago
+    const state = computeSlotAddonState({
+      slot_booking_enabled: true,
+      slot_addon_status: 'TRIAL',
+      slot_addon_trial_started_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
+      slot_addon_trial_ends_at: pastDate,
+    });
+    expect(state.isEnabled).toBe(false);
+    expect(state.status).toBe('EXPIRED');
+    expect(state.isTrial).toBe(false);
+    expect(state.trialDaysRemaining).toBe(0);
+  });
+
+  it('returns ACTIVE when paid subscription is active', () => {
+    const futureBilling = new Date(Date.now() + 20 * 24 * 60 * 60 * 1000);
+    const state = computeSlotAddonState({
+      slot_booking_enabled: true,
+      slot_addon_status: 'ACTIVE',
+      slot_addon_next_billing: futureBilling,
+    });
+    expect(state.isEnabled).toBe(true);
+    expect(state.status).toBe('ACTIVE');
+    expect(state.isTrial).toBe(false);
+  });
+
+  it('returns EXPIRED when paid subscription billing date has passed', () => {
+    const pastBilling = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    const state = computeSlotAddonState({
+      slot_booking_enabled: true,
+      slot_addon_status: 'ACTIVE',
+      slot_addon_next_billing: pastBilling,
+    });
+    expect(state.isEnabled).toBe(false);
+    expect(state.status).toBe('EXPIRED');
+    expect(state.isTrial).toBe(false);
+  });
+
+  it('handles status EXPIRED explicitly', () => {
+    const state = computeSlotAddonState({
+      slot_booking_enabled: false,
+      slot_addon_status: 'EXPIRED',
+    });
+    expect(state.isEnabled).toBe(false);
+    expect(state.status).toBe('EXPIRED');
+    expect(state.isTrial).toBe(false);
+  });
+});

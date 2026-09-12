@@ -51,6 +51,10 @@ interface ClientRecord {
   confirmedAppointmentCount?: number;
   upcomingAppointmentCount?: number;
   slotBookingEnabled: boolean;
+  slotAddonStatus?: 'NONE' | 'TRIAL' | 'ACTIVE' | 'EXPIRED';
+  slotAddonIsTrial?: boolean;
+  slotAddonTrialDaysRemaining?: number | null;
+  slotAddonTrialEndsAt?: string | null;
   slotAddonNextBilling?: string;
   storageFootprint: {
     bytes: number;
@@ -737,11 +741,26 @@ export default function SuperAdminPage() {
                           <td className="py-4 px-4">
                             {b.slotBookingEnabled ? (
                               <div className="space-y-1">
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-950 border border-emerald-700 text-emerald-300 rounded-full text-[10px] font-bold">
-                                  📅 Active (₹299/mo)
-                                </span>
+                                {b.slotAddonIsTrial ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-950 border border-amber-700 text-amber-300 rounded-full text-[10px] font-bold">
+                                    ✨ 7-Day Trial ({b.slotAddonTrialDaysRemaining}d left)
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-950 border border-emerald-700 text-emerald-300 rounded-full text-[10px] font-bold">
+                                    📅 Active (₹299/mo)
+                                  </span>
+                                )}
                                 <span className="text-[10px] text-zinc-400 block font-mono">
                                   {b.appointmentCount || 0} appts ({b.confirmedAppointmentCount || 0} conf, {b.upcomingAppointmentCount || 0} upc)
+                                </span>
+                              </div>
+                            ) : b.slotAddonStatus === 'EXPIRED' ? (
+                              <div className="space-y-1">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-950/60 border border-red-800 text-red-400 rounded-full text-[10px] font-bold">
+                                  Trial Expired
+                                </span>
+                                <span className="text-[10px] text-zinc-500 block font-mono">
+                                  {b.appointmentCount || 0} appts
                                 </span>
                               </div>
                             ) : (
@@ -777,18 +796,48 @@ export default function SuperAdminPage() {
                               </button>
                             )}
 
-                            <button
-                              onClick={() => handleExecuteAction(b.id, b.slotBookingEnabled ? 'DISABLE_SLOT_ADDON' : 'ENABLE_SLOT_ADDON')}
-                              disabled={actionLoadingId === b.id + (b.slotBookingEnabled ? 'DISABLE_SLOT_ADDON' : 'ENABLE_SLOT_ADDON')}
-                              className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer border ${
-                                b.slotBookingEnabled
-                                  ? 'bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border-emerald-800'
-                                  : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-400 border-zinc-700'
-                              }`}
-                              title={b.slotBookingEnabled ? 'Disable Slot Booking Add-On' : 'Enable Slot Booking Add-On (₹299/mo)'}
-                            >
-                              {b.slotBookingEnabled ? '📅 Disable' : '📅 Enable'}
-                            </button>
+                            {/* Slot Trial / Addon Control */}
+                            {!b.slotBookingEnabled ? (
+                              <>
+                                <button
+                                  onClick={() => handleExecuteAction(b.id, 'GRANT_SLOT_TRIAL')}
+                                  disabled={actionLoadingId === b.id + 'GRANT_SLOT_TRIAL'}
+                                  className="px-2.5 py-1 bg-amber-950/60 hover:bg-amber-900 text-amber-300 border border-amber-700/80 rounded-lg font-bold text-[11px] transition cursor-pointer"
+                                  title="Grant 7-Day Free Trial for Slot Bookings"
+                                >
+                                  ✨ +7d Trial
+                                </button>
+                                <button
+                                  onClick={() => handleExecuteAction(b.id, 'ENABLE_SLOT_ADDON')}
+                                  disabled={actionLoadingId === b.id + 'ENABLE_SLOT_ADDON'}
+                                  className="px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 rounded-lg font-bold text-[11px] transition cursor-pointer"
+                                  title="Enable Slot Add-On (30 Days Active)"
+                                >
+                                  📅 Enable (30d)
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                {b.slotAddonIsTrial && (
+                                  <button
+                                    onClick={() => handleExecuteAction(b.id, 'EXTEND_SLOT_TRIAL')}
+                                    disabled={actionLoadingId === b.id + 'EXTEND_SLOT_TRIAL'}
+                                    className="px-2.5 py-1 bg-amber-950 hover:bg-amber-900 text-amber-300 border border-amber-700 rounded-lg font-bold text-[11px] transition cursor-pointer"
+                                    title="Extend Slot Free Trial by 7 days"
+                                  >
+                                    ✨ +7d
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleExecuteAction(b.id, 'DISABLE_SLOT_ADDON')}
+                                  disabled={actionLoadingId === b.id + 'DISABLE_SLOT_ADDON'}
+                                  className="px-2.5 py-1 bg-red-950/30 hover:bg-red-900/50 text-red-300 border border-red-900/60 rounded-lg font-bold text-[11px] transition cursor-pointer"
+                                  title="Disable Slot Booking Add-On"
+                                >
+                                  📅 Disable
+                                </button>
+                              </>
+                            )}
 
                             <button
                               onClick={() => {

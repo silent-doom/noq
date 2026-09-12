@@ -75,8 +75,132 @@ export async function ensureSlotTables(client: PoolClient): Promise<void> {
 
     ALTER TABLE businesses
       ADD COLUMN IF NOT EXISTS slot_booking_enabled BOOLEAN NOT NULL DEFAULT FALSE,
-      ADD COLUMN IF NOT EXISTS slot_addon_next_billing TIMESTAMPTZ;
+      ADD COLUMN IF NOT EXISTS slot_addon_next_billing TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS slot_addon_trial_started_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS slot_addon_trial_ends_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS slot_addon_status VARCHAR(20) DEFAULT 'NONE';
   `);
+}
+
+// ─── Slot Addon State & Trial Logic ──────────────────────────────────────────
+
+export interface SlotAddonState {
+  isEnabled: boolean;
+  status: 'NONE' | 'TRIAL' | 'ACTIVE' | 'EXPIRED';
+  isTrial: boolean;
+  trialDaysRemaining: number;
+  trialEndsAt: Date | null;
+  nextBillingDate: Date | null;
+  message: string;
+}
+
+export function computeSlotAddonState(business: {
+  slot_booking_enabled?: boolean | null;
+  slot_addon_status?: string | null;
+  slot_addon_trial_started_at?: Date | string | null;
+  slot_addon_trial_ends_at?: Date | string | null;
+  slot_addon_next_billing?: Date | string | null;
+}): SlotAddonState {
+  const now = new Date();
+  const rawStatus = (business.slot_addon_status || '').toUpperCase();
+  const trialEndsAt = business.slot_addon_trial_ends_at ? new Date(business.slot_addon_trial_ends_at) : null;
+  const nextBillingDate = business.slot_addon_next_billing ? new Date(business.slot_addon_next_billing) : null;
+
+  // 1. If explicitly in TRIAL status
+  if (rawStatus === 'TRIAL') {
+    if (trialEndsAt && trialEndsAt.getTime() > now.getTime()) {
+      const diffMs = trialEndsAt.getTime() - now.getTime();
+      const daysRemaining = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+      return {
+        isEnabled: true,
+        status: 'TRIAL',
+        isTrial: true,
+        trialDaysRemaining: daysRemaining,
+        trialEndsAt,
+        nextBillingDate,
+        message: `Free Trial Active (${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'} remaining)`,
+      };
+    } else {
+      return {
+        isEnabled: false,
+        status: 'EXPIRED',
+        isTrial: false,
+        trialDaysRemaining: 0,
+        trialEndsAt,
+        nextBillingDate,
+        message: 'Your 7-day slot booking trial has ended. Subscribe for ₹299/mo to reactivate.',
+      };
+    }
+  }
+
+  // 2. Active status (paid)
+  if (rawStatus === 'ACTIVE' || (business.slot_booking_enabled && !rawStatus)) {
+    if (nextBillingDate && nextBillingDate.getTime() < now.getTime()) {
+      return {
+        isEnabled: false,
+        status: 'EXPIRED',
+        isTrial: false,
+        trialDaysRemaining: 0,
+        trialEndsAt: null,
+        nextBillingDate,
+        message: 'Slot booking subscription has expired. Renew for ₹299/mo to continue.',
+      };
+    }
+    return {
+      isEnabled: true,
+      status: 'ACTIVE',
+      isTrial: false,
+      trialDaysRemaining: 0,
+      trialEndsAt: null,
+      nextBillingDate,
+      message: 'Active Slot Booking Add-On (₹299/mo)',
+    };
+  }
+
+  // 3. Expired status
+  if (rawStatus === 'EXPIRED') {
+    return {
+      isEnabled: false,
+      status: 'EXPIRED',
+      isTrial: false,
+      trialDaysRemaining: 0,
+      trialEndsAt,
+      nextBillingDate,
+      message: 'Slot booking add-on is inactive.',
+    };
+  }
+
+  // 4. Default: NONE
+  return {
+    isEnabled: false,
+    status: 'NONE',
+    isTrial: false,
+    trialDaysRemaining: 7,
+    trialEndsAt: null,
+    nextBillingDate: null,
+    message: 'Start your 7-Day Free Trial of Future Slot Bookings.',
+  };
+}
+
+export async function startSlotTrial(
+  client: PoolClient,
+  businessId: string,
+  trialDays: number = 7
+): Promise<SlotAddonState> {
+  await ensureSlotTables(client);
+  const res = await client.query(
+    `UPDATE businesses
+     SET slot_booking_enabled = TRUE,
+         slot_addon_status = 'TRIAL',
+         slot_addon_trial_started_at = NOW(),
+         slot_addon_trial_ends_at = NOW() + ($2 || ' days')::INTERVAL,
+         slot_addon_next_billing = NOW() + ($2 || ' days')::INTERVAL
+     WHERE id = $1
+     RETURNING *`,
+    [businessId, trialDays]
+  );
+  if (res.rows.length === 0) throw new Error('Business not found');
+  return computeSlotAddonState(res.rows[0]);
 }
 
 // ─── Working Hours ────────────────────────────────────────────────────────────
